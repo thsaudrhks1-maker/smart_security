@@ -1,0 +1,41 @@
+=== 2026-01-29 Service Specification: Smart Safety Guardian ===
+
+1. Project Overview
+   - Service Name: Smart Safety Guardian (Renewal)
+   - Core Concept: Location-based mobile safety management platform for construction sites.
+   - Target Users: Construction Workers (Mobile App), Site Managers (Web Admin).
+
+2. Core Features (Prototype Phase)
+   A. Authentication & User System
+      - Worker Login (Simple auth for prototype)
+      - Profile Management (Job type, Safety implementation status)
+      - Attendance Check (QR Code or Geofencing based)
+
+   B. Real-time Location Safety (The "Killer App" Feature)
+      - Map Visualization: Display User location vs. Construction Site Layout.
+      - Danger Zones (Geofencing): Dynamic Red Zones (e.g., Heavy machinery operation area, Height work area).
+      - Risk Alerts: Proximity alerts when approaching Danger Zones.
+      - Technology: GPS (Outdoor) / Bluetooth Beacons (Indoor/Tunnel) - Simulation for Prototype.
+
+   C. Safety Content & Compliance
+      - Daily Safety Rules: Popups or Cards upon login tailored to user's assigned task.
+      - Weather Integration: Rain/Wind alerts affecting work safety.
+      - Safety Knowledge: Short quizzes or content cards.
+
+   D. Emergency System
+      - SOS Button: One-touch emergency signal to Site Manager.
+      - Evacuation Route: Display nearest exit on map.
+
+3. User Interface (UI) Design Renewal Strategy
+   - Legacy (12 years ago): Skeuomorphic, complex menus, dark static backgrounds.
+   - Modern (2026):
+      - Style: Glassmorphism, Large Typography, High Contrast for outdoor visibility.
+      - Color Palette: Safety Yellow/Orange accents on Dark Mode (to save battery and reduce glare).
+      - Interactions: Micro-animations for alerts and successful attendance.
+
+4. Technology Stack
+   - Frontend: React + Vite (Fast SPA).
+   - State Management: React Context or Zustand (Lightweight).
+   - Map: Leaflet (OpenStreetMap) for web compatibility.
+   - UI Styling: Vanilla CSS (CSS Variables for theming) + Lucide Icons.
+   - Backend: FastAPI (Async handling for real-time location data).

@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node / React / frontend (npm, yarn, pnpm)
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn-integrity
+.next/
+.nuxt/
+.nuxt
+.output
+.cache/
+.parcel-cache/
+.vite/
+
+# IDE / Agent
+.agent/
+.cursor/
