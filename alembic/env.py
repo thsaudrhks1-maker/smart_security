@@ -24,11 +24,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from back.database import Base
 # 모델들을 임포트해야 Base.metadata에 등록됨
-from back.login.repository import UserModel 
-from back.company.repository import Company, Worker, Attendance
-from back.work.repository import DailyJob, JobAllocation, Equipment
-from back.board.repository import Notice
-from back.safety.repository import SafetyRule, DangerZone
+from back.login.model import UserModel 
+from back.company.model import Company, Worker, Attendance
+from back.work.model import DailyJob, JobAllocation, Equipment
+from back.board.model import Notice
+from back.safety.model import SafetyRule, DangerZone
 
 target_metadata = Base.metadata
 

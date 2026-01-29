@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from back.login.repository import AuthRepository, UserModel
+from back.login.model import AuthRepository, UserModel # AuthRepository도 model.py로 같이 이동되었으므로 일단 여기서 임포트
 from back.login.schemas import LoginRequest
 import logging
 
