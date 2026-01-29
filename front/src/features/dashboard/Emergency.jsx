@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, AlertTriangle } from 'lucide-react';
-import './WorkStyles.css';
+import '../work/WorkStyles.css';
 
 const Emergency = () => {
   const navigate = useNavigate();

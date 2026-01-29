@@ -19,6 +19,7 @@ const Login = () => {
 
 import WorkList from './features/work/WorkList';
 import Emergency from './features/dashboard/Emergency';
+import SafetyMap from './features/safety/SafetyMap';
 
 // ... (Login 컴포넌트는 유지)
 
@@ -32,11 +33,11 @@ function App() {
         {/* 구현된 기능 페이지 연결 */}
         <Route path="/work" element={<WorkList />} />
         <Route path="/emergency" element={<Emergency />} />
+        <Route path="/map" element={<SafetyMap />} />
         
         {/* 아직 미구현된 페이지는 Placeholder 유지 */}
         <Route path="/safety-info" element={<PagePlaceholder title="일일 안전 정보" />} />
         <Route path="/workers" element={<PagePlaceholder title="출역 현황" />} />
-        <Route path="/map" element={<PagePlaceholder title="위험 지역 지도" />} />
         <Route path="/notice" element={<PagePlaceholder title="공지사항" />} />
       </Routes>
     </Router>
