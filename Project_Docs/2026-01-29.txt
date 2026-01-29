@@ -24,3 +24,25 @@
 
 2. 문서화
    - Project_Docs/Dev_Environment_Guide.md 작성: 실행 방법 및 향후 클라우드 터널링 추가 가이드.
+
+=== [17:50] 아키텍처 개편 및 DB/UI 고도화 ===
+
+[Backend Refactoring]
+1. 아키텍처 전면 개편 (Modular Monolith & 4-Layer)
+   - 구조: Router -> Service -> Repository -> Model 계층 분리.
+   - 모듈화: `login`, `company`, `work`, `board`, `safety` 등 기능별 폴더로 분리.
+   - `model.py` (Entity 정의)와 `repository.py` (CRUD 쿼리) 역할 분리하여 유지보수성 강화.
+
+2. DB 마이그레이션 (Alembic)
+   - 비동기(Async) 지원: FastAPI용 `asyncpg`, Alembic용 `psycopg` 이원화 전략 적용.
+   - 스키마 구축: 주요 테이블 생성 완료 (Companies, Workers, DailyJobs, DangerZones, Equipments 등).
+
+[Frontend UI Overhaul]
+1. 디자인 테마 변경 (Futuristic Neon)
+   - 다크 테마(Deep Navy) + 네온 오렌지/블루 포인트 컬러 적용.
+   - Glassmorphism(유리 질감) UI 컴포넌트 구현.
+
+2. 대시보드 레이아웃 개선
+   - 4단 Grid Layout (Nav Sidebar | Status | Map | Alerts).
+   - 좌측 내비게이션 바 추가 (메뉴 확장성 확보).
+   - Mock Data 기반의 시뮬레이션 UI 완성 (위험 구역 파장 효과 등).
