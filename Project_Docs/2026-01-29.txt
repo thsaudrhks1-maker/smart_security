@@ -16,3 +16,11 @@
 
 [Tech Stack]
 - 라이브러리: React-Leaflet, Leaflet
+
+=== [15:35] 개발 환경 개선 ===
+1. 통합 실행 스크립트 (dev.ps1) 작성
+   - 프론트엔드와 백엔드를 동시에 실행할 수 있는 PowerShell 스크립트 추가.
+   - 프로젝트 루트에서 .\dev.ps1 실행 시 각각 새 창에서 서버 구동.
+
+2. 문서화
+   - Project_Docs/Dev_Environment_Guide.md 작성: 실행 방법 및 향후 클라우드 터널링 추가 가이드.

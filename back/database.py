@@ -1,27 +1,36 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 from dotenv import load_dotenv
 
 # .env 로드
 load_dotenv()
 
-# SQLite DB URL (프로토타입용)
-SQLALCHEMY_DATABASE_URL = os.getenv("DB_URL", "sqlite:///./smart_security.db")
+# DB URL 가져오기 (없으면 기본값 설정)
+# 주의: Async 엔진을 위해 스키마는 'postgresql+asyncpg'여야 함
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:0000@localhost:5432/smart_security")
 
-# SQLite는 멀티 스레드 통신을 위해 check_same_thread=False 필요
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+# Async Engine 생성
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True, # 쿼리 로깅 (개발 중에만 True)
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Async Session Factory
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
 Base = declarative_base()
 
-# Dependency Injection용 함수
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Dependency Injection (비동기)
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

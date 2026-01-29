@@ -1,3 +1,9 @@
 fastapi
 uvicorn
 python-dotenv
+sqlalchemy
+alembic
+asyncpg
+psycopg[binary]
+python-multipart
+watchfiles

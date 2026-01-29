@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from back.database import get_db
-from back.auth.schemas import LoginRequest, Token
-from back.auth.service import AuthService
+from back.login.schemas import LoginRequest, Token
+from back.login.service import AuthService
 
 # 기능 단위 라우터 생성
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])

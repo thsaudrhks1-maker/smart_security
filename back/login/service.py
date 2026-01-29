@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from back.auth.repository import AuthRepository, UserModel
-from back.auth.schemas import LoginRequest
+from back.login.repository import AuthRepository, UserModel
+from back.login.schemas import LoginRequest
 import logging
 
 # 간단한 로깅 설정

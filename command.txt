@@ -1,8 +1,0 @@
-
-
-python -m venv venv
-
--r requirements.txt
-
-.\venv\Scripts\pip install 
-.\venv\Scripts\activate
