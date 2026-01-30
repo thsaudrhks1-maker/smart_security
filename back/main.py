@@ -11,6 +11,7 @@ from back.map.router import router as map_router, simulate_worker_movement
 from back.work.router import router as work_router
 from back.company.router import router as company_router
 from back.safety.router import router as safety_router
+from back.dashboard.router import router as dashboard_router
 
 app = FastAPI(title="Smart Safety Guardian API")
 
@@ -35,6 +36,7 @@ app.include_router(map_router)
 app.include_router(work_router)
 app.include_router(company_router)
 app.include_router(safety_router)
+app.include_router(dashboard_router)
 
 @app.on_event("startup")
 async def startup_event():

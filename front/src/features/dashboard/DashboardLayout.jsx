@@ -8,83 +8,11 @@ import {
   LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut 
 } from 'lucide-react';
 import L from 'leaflet';
+import apiClient from '../../api/client'; // apiClient directly for dashboard summary
+import { workApi } from '../../api/workApi';
+import { mapApi } from '../../api/mapApi';
 
-// --- Mock Data Generator ---
-// In a real app, this would be fetched from our new backend API
-const MOCK_WORKERS = [
-  { id: 1, name: '김철수', role: '용접공', lat: 37.5665, lng: 126.9780, status: 'normal' },
-  { id: 2, name: '이영희', role: '신호수', lat: 37.5663, lng: 126.9784, status: 'warning' },
-  { id: 3, name: '박민수', role: '배관공', lat: 37.5667, lng: 126.9778, status: 'normal' },
-  { id: 4, name: '최준호', role: '안전관리자', lat: 37.5664, lng: 126.9782, status: 'normal' },
-];
-
-const MOCK_ZONES = [
-  { id: 1, name: 'Zone A (추락주의)', lat: 37.5663, lng: 126.9784, radius: 30, color: '#ef4444' },
-  { id: 2, name: 'Zone B (화기작업)', lat: 37.5668, lng: 126.9775, radius: 25, color: '#f97316' },
-];
-
-const MOCK_ALERTS = [
-  { id: 1, time: '14:32', msg: '이영희 작업자 위험구역 진입 감지', type: 'danger' },
-  { id: 2, time: '14:15', msg: '3호기 크레인 작동 시작', type: 'info' },
-  { id: 3, time: '13:50', msg: '김철수 작업자 심박수 높음 (110bpm)', type: 'warning' },
-];
-
-const MOCK_JOBS = [
-  { id: 1, title: 'A구역 배관 용접', team: '배관 1팀', progress: 75, status: 'working' },
-  { id: 2, title: 'B구역 자재 양중', team: '양중팀', progress: 30, status: 'pending' },
-  { id: 3, title: '지하 1층 전기 배선', team: '전기팀', progress: 90, status: 'finishing' },
-  { id: 4, title: '안전 시설물 점검', team: '안전팀', progress: 100, status: 'done' },
-];
-
-// --- Navigation Sidebar Component ---
-const NavSidebar = () => {
-  const navigate = useNavigate();
-  const activePath = '/dashboard'; // 현재는 대시보드만 활성화
-
-  const NavItem = ({ icon: Icon, path, active = false }) => (
-    <button 
-      onClick={() => path && navigate(path)}
-      className={`btn-icon ${active ? 'active' : ''}`}
-      style={{ 
-        width: '48px', height: '48px', 
-        borderRadius: '12px', border: 'none',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: active ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-        color: active ? 'var(--accent-primary)' : 'var(--text-muted)',
-        cursor: 'pointer', transition: 'all 0.2s',
-        marginBottom: '0.5rem'
-      }}
-    >
-      <Icon size={24} />
-    </button>
-  );
-
-  return (
-    <nav className="sidebar-panel glass-panel">
-      {/* Logo Icon */}
-      <div className="logo-container">
-        <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--accent-primary), #d97706)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)' }}>
-           <Activity size={24} color="#1e1e1e" />
-        </div>
-      </div>
-
-      {/* Main Menu */}
-      <div className="nav-menu-main">
-        <NavItem icon={LayoutDashboard} path="/dashboard" active={true} />
-        <NavItem icon={FileText} path="/notice" />
-        <NavItem icon={Users} path="/workers" />
-        <NavItem icon={Briefcase} path="/work" />
-        <NavItem icon={ShieldAlert} path="/map" />
-      </div>
-
-      {/* Bottom Menu */}
-      <div className="nav-menu-bottom">
-        <NavItem icon={Settings} path="/settings" />
-        <NavItem icon={LogOut} path="/" />
-      </div>
-    </nav>
-  );
-};
+// NavSidebar extracted to components/common/NavSidebar.jsx
 
 // --- Sub Components ---
 
@@ -109,53 +37,112 @@ const AlertItem = ({ alert }) => (
   </div>
 );
 
-const JobCard = ({ job }) => (
-  <div className="glass-panel" style={{ minWidth: '240px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-      <span className="text-xs text-accent">{job.team}</span>
-      <MoreHorizontal size={14} className="text-muted" />
-    </div>
-    <div style={{ fontWeight: '600' }}>{job.title}</div>
-    <div style={{ marginTop: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-        <span className="text-xs text-muted">진행률</span>
-        <span className="text-xs">{job.progress}%</span>
+const JobCard = ({ job }) => {
+  // Derive a "Team Name" based on work type for demo purposes
+  // In real app, this comes from allocations or trade field
+  const getTeamName = (type) => {
+      if (type.includes('용접') || type.includes('배관')) return '설비팀';
+      if (type.includes('전기')) return '전기팀';
+      if (type.includes('양중') || type.includes('크레인')) return '양중팀';
+      if (type.includes('안전')) return '안전팀';
+      return '건축팀';
+  };
+
+  const statusMap = {
+      'PLANNED': { label: '예정', color: 'var(--text-muted)' },
+      'IN_PROGRESS': { label: '진행중', color: 'var(--accent-secondary)' },
+      'DONE': { label: '완료', color: 'var(--success)' },
+  };
+
+  const st = statusMap[job.status] || statusMap['PLANNED'];
+
+  return (
+    <div className="glass-panel" style={{ minWidth: '240px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: job.calculated_risk_score >= 70 ? '3px solid var(--accent-danger)' : '3px solid var(--success)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <span className="text-xs text-accent">{getTeamName(job.work_type)}</span>
+        <span className="text-xs" style={{ color: st.color, border: `1px solid ${st.color}`, padding: '1px 6px', borderRadius: '4px' }}>{st.label}</span>
       </div>
-      <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-        <div style={{ width: `${job.progress}%`, height: '100%', background: 'var(--accent-secondary)', borderRadius: '2px' }}></div>
+      
+      <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{job.description}</div>
+      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display:'flex', alignItems:'center', gap:'4px' }}>
+          <Briefcase size={12}/> {job.work_type}
+      </div>
+
+      <div style={{ marginTop: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <span className="text-xs text-muted">진행상태</span>
+        </div>
+        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px' }}>
+          <div style={{ 
+              width: job.status === 'DONE' ? '100%' : (job.status === 'IN_PROGRESS' ? '60%' : '0%'), 
+              height: '100%', 
+              background: st.color, 
+              borderRadius: '2px',
+              transition: 'width 0.5s ease'
+          }}></div>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- Main Dashboard Layout ---
 
 const DashboardLayout = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Real Data State
+  const [summary, setSummary] = useState({ total_workers: 0, today_plans: 0, active_equipment: 0, safety_accident_free_days: 0 });
+  const [plans, setPlans] = useState([]);
+  const [risks, setRisks] = useState([]);
+  const [workers, setWorkers] = useState([]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  return (
-    <div className="dashboard-grid-with-nav">
-      
-      {/* 0. Navigation Sidebar (New) */}
-      <NavSidebar />
+  // Fetch Data on Mount
+  useEffect(() => {
+    const loadData = async () => {
+        try {
+            // 1. Dashboard Summary
+            const sumRes = await apiClient.get('/dashboard/summary');
+            setSummary(sumRes.data);
 
-      {/* 1. Status Panel (Modified to fit new grid) */}
+            // 2. Today's Plans
+            const planRes = await workApi.getPlans(); // 오늘 날짜 필터링은 백엔드 기본값 확인 필요하지만, 일단 전체 로드
+            setPlans(planRes.filter(p => p.status !== 'DONE')); // 완료된 것 제외하고 표시
+
+            // 3. Risks (Map)
+            const riskRes = await mapApi.getRisks();
+            setRisks(riskRes);
+
+            // 4. Workers (Mock for now or WebSocket)
+            // setWorkers(MOCK_WORKERS); 
+        } catch (e) {
+            console.error("Dashboard Load Error:", e);
+        }
+    };
+    loadData();
+  }, []);
+
+  return (
+    <div className="dashboard-content-grid">
+      
+      {/* 1. Status Panel */}
       <div className="area-status">
-        {/* Header Title moved here */}
         <div style={{ marginBottom: '1rem' }}>
           <h2 className="text-xl">Smart Guardian</h2>
           <div className="text-xs text-muted">Construction Safety System</div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <StatCard title="출역 현황" value="142 / 150" sub="출근율 94.6%" icon={HardHat} color="var(--accent-primary)" />
-          <StatCard title="가동 중 장비" value="12 / 15" sub="3대 점검 중" icon={Truck} color="var(--accent-secondary)" />
-          <StatCard title="무재해 달성" value="D+324" sub="목표까지 41일" icon={Activity} color="#10b981" />
+          <StatCard title="출역 현황" value={`${summary.total_workers}명`} sub="금일 전체 인원" icon={HardHat} color="var(--accent-primary)" />
+          <StatCard title="금일 작업" value={`${summary.today_plans}건`} sub="진행 중인 작업" icon={Briefcase} color="var(--accent-secondary)" />
+          {/* 가동 중 장비 대신 무재해로 대체 (공간상) 혹은 추가 */}
+           <StatCard title="가동 장비" value={`${summary.active_equipment}대`} sub="크레인/리프트 등" icon={Truck} color="#f59e0b" />
+          <StatCard title="무재해 현황" value={`D+${summary.safety_accident_free_days}`} sub="목표 달성 순항 중" icon={Activity} color="#10b981" />
         </div>
         
         <div className="glass-panel" style={{ marginTop: 'auto', padding: '1.25rem' }}>
@@ -170,70 +157,59 @@ const DashboardLayout = () => {
 
       {/* 2. Main Map Area */}
       <div className="area-map glass-panel" style={{ border: 'none', position: 'relative' }}>
-         {/* ... (Map Content 유지) ... */}
-         <div style={{ position: 'absolute', top: '1rem', left: '1rem', right: '1rem', zIndex: 999, display: 'flex', justifyContent: 'space-between' }}>
-          <div className="glass-panel" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Search size={16} className="text-muted" />
-            <input type="text" placeholder="작업자 또는 구역 검색..." style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', width: '200px' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-             <button className="glass-panel" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-               <Bell size={18} />
-             </button>
-          </div>
-        </div>
-
-        <MapContainer center={[37.5665, 126.9780]} zoom={18} style={{ height: '100%', width: '100%', borderRadius: '16px' }} zoomControl={false}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
-          
-          {/* Danger Zones */}
-          {MOCK_ZONES.map(zone => (
-            <Circle 
-              key={zone.id} 
-              center={[zone.lat, zone.lng]} 
-              radius={zone.radius}
-              pathOptions={{ color: zone.color, fillColor: zone.color, fillOpacity: 0.2 }}
-            >
-              <Popup>
-                <div style={{ color: '#000' }}>
-                  <strong>{zone.name}</strong><br/>
-                  반경: {zone.radius}m
-                </div>
-              </Popup>
-            </Circle>
-          ))}
-
-          {/* Workers */}
-          {MOCK_WORKERS.map(worker => (
-             <Marker key={worker.id} position={[worker.lat, worker.lng]}>
+         <MapContainer center={[37.5665, 126.9780]} zoom={18} style={{ height: '100%', width: '100%', borderRadius: '16px' }} zoomControl={false}>
+           <TileLayer
+             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+           />
+           
+           {/* Danger Zones (Risks) */}
+           {/* Mock Zones for demo if API returns empty, otherwise map from API */}
+           {/* {MOCK_ZONES.map(...) } -> Replace with real risks */}
+           {risks.map(risk => (
+             <Circle 
+               key={risk.id} 
+               center={[risk.lat, risk.lng]} 
+               radius={risk.radius || 10}
+               pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2 }}
+             >
                <Popup>
                  <div style={{ color: '#000' }}>
-                   <strong>{worker.name}</strong> <span style={{fontSize:'0.8em', color:'#666'}}>({worker.role})</span><br/>
-                   상태: {worker.status === 'warning' ? '⚠️ 주의' : '정상'}
+                   <strong>{risk.name}</strong><br/>
+                   {risk.type}
                  </div>
                </Popup>
-             </Marker>
-          ))}
+             </Circle>
+           ))}
+
+           {/* Workers - Mock for visual only in this dashboard view */}
+           <Marker position={[37.5665, 126.9780]}>
+             <Popup>김반장 (관리자)</Popup>
+           </Marker>
         </MapContainer>
       </div>
 
-      {/* 3. Right Sidebar: Alerts */}
+      {/* 3. Right Sidebar: Alerts (Mock maintained for demo effect) */}
       <div className="area-sidebar-right">
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
            <h3>실시간 알림</h3>
            <span className="text-xs text-accent">Live</span>
          </div>
          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
-            {MOCK_ALERTS.map(alert => <AlertItem key={alert.id} alert={alert} />)}
+            {/* Mock Alerts */}
+            <AlertItem alert={{ time: '14:32', msg: '위험구역 접근 감지 (A존)', type: 'danger' }} />
+            <AlertItem alert={{ time: '14:15', msg: '크레인 작업 시작', type: 'info' }} />
+            <AlertItem alert={{ time: '13:50', msg: '신규 작업 등록됨 (용접)', type: 'info' }} />
          </div>
       </div>
 
-      {/* 4. Bottom Panel: Jobs */}
+      {/* 4. Bottom Panel: Jobs (Real Data) */}
       <div className="area-bottom">
-         {MOCK_JOBS.map(job => <JobCard key={job.id} job={job} />)}
+         {plans.length === 0 ? (
+             <div style={{color:'gray', padding:'1rem'}}>진행 중인 작업이 없습니다.</div>
+         ) : (
+             plans.map(plan => <JobCard key={plan.id} job={plan} />)
+         )}
       </div>
 
     </div>
