@@ -15,10 +15,11 @@ async def seed_workers():
     # 주의: 운영 환경에서는 절대 금지. Alembic을 써야 함.
     async with engine.begin() as conn:
         print("🔥 Dropping old tables (workers, companies)...")
-        # 의존성 때문에 자식부터 삭제
+        # 의존성 때문에 자식부터 삭제 (users가 최상위 부모 중 하나라 마지막에 삭제 혹은 worker 먼저 삭제됨)
         try:
             await conn.execute(text("DROP TABLE IF EXISTS worker_allocations CASCADE"))
             await conn.execute(text("DROP TABLE IF EXISTS workers CASCADE"))
+            await conn.execute(text("DROP TABLE IF EXISTS users CASCADE")) # Users 테이블도 초기화
             await conn.execute(text("DROP TABLE IF EXISTS companies CASCADE"))
         except Exception as e:
             print(f"⚠️ Drop error (ignored): {e}")
@@ -47,15 +48,46 @@ async def seed_workers():
         company_rows = await db.execute(select(Company))
         company_map = {c.name: c.id for c in company_rows.scalars().all()}
         
-        # 2. Worker 생성 (더미 데이터)
+        # 2. User & Worker 생성 (1:1 매핑)
+        from back.auth.model import UserModel
+        # from passlib.context import CryptContext (패키지 에러 회피용 가짜 해시)
+        # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        
+        # 개발용 더미 비밀번호 문자열 (실제 운영 시엔 passlib 필요)
+        DUMMY_HASH = "$2b$12$DummyHashStringForDevEnvironmentOnlyDO.NOT.USE.IN.PROD"
+        
         first_names = ["김", "이", "박", "최", "정", "강", "조", "윤", "장", "임"]
         last_names = ["민수", "철수", "영희", "길동", "준호", "서준", "하준", "도윤", "예준", "지호"]
         addresses = ["서울 강남구", "경기 성남시", "서울 영등포구", "인천 연수구", "경기 수원시"]
         trades = ["용접공", "배관공", "전기공", "철근공", "안전감시단"]
         comp_names = ["삼성물산", "대성설비", "한일전기", "강남건설"]
         
+        users = []
         workers = []
-        for i in range(20): 
+        
+        admin_user = UserModel(
+            username="admin",
+            hashed_password=DUMMY_HASH,
+            full_name="김반장",
+            role="manager"
+        )
+        db.add(admin_user)
+        await db.commit() # ID 생성을 위해 커밋
+        
+        # 관리자도 Worker로 등록 (현장 관리자)
+        workers.append(Worker(
+            user_id=admin_user.id,
+            name="김반장",
+            company_id=company_map["삼성물산"],
+            trade="관리자",
+            phone_number="010-1111-2222",
+            birth_date="1980-01-01",
+            address="서울 강남구",
+            status="ON_SITE"
+        ))
+
+        # 작업자 19명 생성
+        for i in range(19): 
             name = f"{random.choice(first_names)}{random.choice(last_names)}"
             phone = f"010-{random.randint(2000, 9999)}-{random.randint(1000, 9999)}"
             birth_year = random.randint(1965, 2000)
@@ -63,11 +95,25 @@ async def seed_workers():
             
             c_name = random.choice(comp_names)
             cid = company_map.get(c_name)
+            trade = random.choice(trades)
             
+            # 1. User 계정 생성
+            username = f"user{i+1}"
+            user = UserModel(
+                username=username,
+                hashed_password=DUMMY_HASH,
+                full_name=name,
+                role="worker"
+            )
+            db.add(user)
+            await db.commit()
+            
+            # 2. Worker 프로필 연결
             workers.append(Worker(
+                user_id=user.id,
                 name=name,
                 company_id=cid,
-                trade=random.choice(trades),
+                trade=trade,
                 phone_number=phone,
                 birth_date=birth,
                 address=random.choice(addresses),
@@ -77,7 +123,7 @@ async def seed_workers():
         db.add_all(workers)
         await db.commit()
         
-        print("✅ 20 Workers seeded successfully with detailed info.")
+        print("✅ 20 Users & Workers (Linked) seeded successfully.")
 
 if __name__ == "__main__":
     asyncio.run(seed_workers())

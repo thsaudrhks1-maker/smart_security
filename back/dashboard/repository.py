@@ -1,113 +1,59 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, distinct
-from sqlalchemy.orm import selectinload
-
-from back.work.model import DailyWorkPlan, WorkerAllocation
-from back.company.model import Worker
-from back.work.model import WorkTemplate
+from back.database import fetch_all, fetch_one
+from datetime import datetime
 
 class DashboardRepository:
-    def __init__(self, db: AsyncSession):
-        self.db = db
+    """
+    SQL-First Repository for Dashboard
+    ORM의 복잡성을 제거하고 직관적인 SQL을 사용함.
+    """
 
-    async def get_today_worker_count(self, site_id: int, date: str) -> int:
+    @staticmethod
+    async def get_today_worker_count(site_id: int, date: str) -> int:
+        """금일 투입된 작업자 수"""
+        sql = """
+            SELECT count(distinct wa.worker_id) as cnt
+            FROM daily_work_plans dp
+            JOIN worker_allocations wa ON dp.id = wa.plan_id
+            WHERE dp.site_id = :site_id 
+              AND dp.date = :date
         """
-        금일 실제 작업에 투입된 작업자 수 (중복 제거)
-        WorkerAllocation JOIN DailyWorkPlan
-        """
-        query = (
-            select(func.count(distinct(WorkerAllocation.worker_id)))
-            .join(DailyWorkPlan, WorkerAllocation.plan_id == DailyWorkPlan.id)
-            .where(
-                DailyWorkPlan.site_id == site_id,
-                DailyWorkPlan.date == date
-            )
-        )
-        result = await self.db.execute(query)
-        return result.scalar() or 0
+        result = await fetch_one(sql, {"site_id": site_id, "date": date})
+        return result['cnt'] if result else 0
 
-    async def get_today_plans(self, site_id: int, date: str):
+    @staticmethod
+    async def get_today_plans(site_id: int, date: str):
+        """금일 작업 계획 리스트"""
+        sql = """
+            SELECT dp.*, wt.work_type, wt.base_risk_score
+            FROM daily_work_plans dp
+            JOIN work_templates wt ON dp.template_id = wt.id
+            WHERE dp.site_id = :site_id 
+              AND dp.date = :date
         """
-        금일 작업 계획 리스트 조회 (Template 정보 포함)
-        """
-        query = (
-            select(DailyWorkPlan)
-            .options(selectinload(DailyWorkPlan.template))
-            .where(
-                DailyWorkPlan.site_id == site_id,
-                DailyWorkPlan.date == date
-            )
-        )
-        result = await self.db.execute(query)
-        return result.scalars().all()
+        return await fetch_all(sql, {"site_id": site_id, "date": date})
 
-    async def get_today_worker_list(self, site_id: int, date: str):
+    @staticmethod
+    async def get_today_worker_list_detailed(site_id: int, date: str):
         """
-        금일 투입된 작업자 상세 명단 조회
-        Worker 정보 + 어떤 작업(Plan)에 투입되었는지 + 역할
+        전체 작업자 목록 + 금일 작업 상태 (LEFT JOIN)
+        1. workers 테이블을 기준으로 
+        2. 오늘자 plan에 배정된 allocation 정보를 붙임
         """
-        query = (
-            select(WorkerAllocation)
-            .join(DailyWorkPlan, WorkerAllocation.plan_id == DailyWorkPlan.id)
-            .options(
-                selectinload(WorkerAllocation.worker),
-                selectinload(WorkerAllocation.plan).selectinload(DailyWorkPlan.template)
-            )
-            .where(
-                DailyWorkPlan.site_id == site_id,
-                DailyWorkPlan.date == date
-            )
-        )
-        result = await self.db.execute(query)
-        return result.scalars().all()
-
-    async def get_total_registered_workers(self):
+        sql = """
+            SELECT 
+                w.id, w.name, w.trade, w.phone_number, w.birth_date, w.address,
+                c.name as company_name,
+                CASE WHEN wa.id IS NOT NULL THEN 'WORKING' ELSE 'REST' END as today_status,
+                wa.role as today_role,
+                wt.work_type as today_work
+            FROM workers w
+            JOIN companies c ON w.company_id = c.id
+            LEFT JOIN worker_allocations wa ON w.id = wa.worker_id
+            LEFT JOIN daily_work_plans dp ON wa.plan_id = dp.id AND dp.date = :date AND dp.site_id = :site_id
+            LEFT JOIN work_templates wt ON dp.template_id = wt.id
+            ORDER BY 
+                CASE WHEN wa.id IS NOT NULL THEN 0 ELSE 1 END, -- 작업중인 사람 먼저
+                w.trade, 
+                w.name
         """
-        (참고용) 시스템에 등록된 전체 작업자 수
-        """
-        query = select(func.count(Worker.id))
-        result = await self.db.execute(query)
-        return result.scalar() or 0
-
-    async def get_all_workers_with_today_status(self, site_id: int, date: str):
-        """
-        전체 등록 작업자 목록을 가져오고, 금일 작업 투입 여부를 포함하여 반환
-        """
-        # 1. 전체 작업자 조회 (직종 오름차순)
-        w_query = select(Worker).order_by(Worker.trade, Worker.name)
-        w_res = await self.db.execute(w_query)
-        all_workers = w_res.scalars().all()
-        
-        # 2. 금일 배정 정보 조회 (Worker ID -> Allocation)
-        a_query = (
-            select(WorkerAllocation)
-            .join(DailyWorkPlan, WorkerAllocation.plan_id == DailyWorkPlan.id)
-            .options(selectinload(WorkerAllocation.plan).selectinload(DailyWorkPlan.template))
-            .where(
-                DailyWorkPlan.site_id == site_id,
-                DailyWorkPlan.date == date
-            )
-        )
-        a_res = await self.db.execute(a_query)
-        allocations = a_res.scalars().all()
-        
-        # 3. 매핑 (Worker ID -> 작업 정보)
-        alloc_map = {a.worker_id: a for a in allocations}
-        
-        result = []
-        for w in all_workers:
-            alloc = alloc_map.get(w.id)
-            result.append({
-                "id": w.id,
-                "name": w.name,
-                "trade": w.trade,
-                "phone_number": w.phone_number,
-                "birth_date": w.birth_date,
-                "address": w.address,
-                "company_name": "스마트건설", # 임시 (Join 필요하지만 생략)
-                "today_status": "WORKING" if alloc else "REST",
-                "today_role": alloc.role if alloc else None,
-                "today_work": alloc.plan.template.work_type if alloc else None
-            })
-            
-        return result
+        return await fetch_all(sql, {"site_id": site_id, "date": date})

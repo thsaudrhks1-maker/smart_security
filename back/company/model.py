@@ -31,8 +31,11 @@ class Worker(Base):
     __tablename__ = "workers"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, comment="성명")
     
+    # 계정 연결 (필수)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, comment="로그인 계정 ID")
+    
+    name = Column(String, nullable=False, comment="성명")
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     
     trade = Column(String, nullable=False, comment="직종 (예: 용접공, 신호수)")
