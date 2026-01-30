@@ -61,6 +61,8 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
             created_at=p.created_at,
             zone_name=p.zone.name if p.zone else "Unknown",
             work_type=p.template.work_type if p.template else "Unknown",
+            required_ppe=p.template.required_ppe if p.template else [],
+            checklist_items=p.template.checklist_items if p.template else [],
             allocations=alloc_list
         ))
     return response
@@ -137,5 +139,7 @@ async def create_work_plan(plan: DailyWorkPlanCreate, db: AsyncSession = Depends
         created_at=db_plan.created_at,
         zone_name=zone.name if zone else "Unknown",
         work_type=template.work_type,
+        required_ppe=template.required_ppe,
+        checklist_items=template.checklist_items,
         allocations=[] 
     )

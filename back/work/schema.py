@@ -49,6 +49,8 @@ class DailyWorkPlanRead(DailyWorkPlanBase):
     # Relationships (Simplified for response)
     zone_name: Optional[str] = None
     work_type: Optional[str] = None
+    required_ppe: Optional[List[str]] = []
+    checklist_items: Optional[List[str]] = []
     allocations: List[WorkerAllocationRead] = []
 
     class Config:
