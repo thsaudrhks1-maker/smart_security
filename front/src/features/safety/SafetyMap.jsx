@@ -36,8 +36,7 @@ const MapClickHandler = ({ onMapClick, isEditMode }) => {
     return null;
 };
 
-// 실시간 통신용 URL (전화 통화 같은 역할)
-const WS_URL = "ws://localhost:8010/map/ws/workers";
+
 
 const SafetyMap = () => {
     const navigate = useNavigate();
@@ -85,46 +84,6 @@ const SafetyMap = () => {
             console.error("데이터 로딩 실패:", error);
         }
     };
-
-    // --- 2. WebSocket ---
-    useEffect(() => {
-        const ws = new WebSocket(WS_URL);
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.type === "WORKER_UPDATE") {
-                const updatedWorkers = message.data;
-                setWorkers(updatedWorkers);
-                
-                // Alert Log Simple Logic
-                const dangerWorkers = updatedWorkers.filter(w => w.status === 'DANGER');
-                if (dangerWorkers.length > 0) {
-                    const msg = `[${new Date().toLocaleTimeString()}] ⚠️ 위험: ${dangerWorkers.map(w => w.name).join(', ')}`;
-                    setAlertLog(prev => [msg, ...prev].slice(0, 50));
-                }
-            }
-        };
-        return () => ws.close();
-    }, []);
-
-// --- 2. WebSocket ---
-    useEffect(() => {
-        const ws = new WebSocket(WS_URL);
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.type === "WORKER_UPDATE") {
-                const updatedWorkers = message.data;
-                setWorkers(updatedWorkers);
-                
-                // Alert Log Simple Logic
-                const dangerWorkers = updatedWorkers.filter(w => w.status === 'DANGER');
-                if (dangerWorkers.length > 0) {
-                    const msg = `[${new Date().toLocaleTimeString()}] ⚠️ 위험: ${dangerWorkers.map(w => w.name).join(', ')}`;
-                    setAlertLog(prev => [msg, ...prev].slice(0, 50));
-                }
-            }
-        };
-        return () => ws.close();
-    }, []);
 
     // --- Handlers ---
     const handleFileUpload = async (e) => {

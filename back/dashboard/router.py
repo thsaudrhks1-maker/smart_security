@@ -1,51 +1,60 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from datetime import datetime
+
 from back.database import get_db
-from back.company.model import Worker
-from back.work.model import DailyWorkPlan
+from back.dashboard.repository import DashboardRepository
 
 router = APIRouter(tags=["dashboard"])
 
 @router.get("/dashboard/summary")
 async def get_dashboard_summary(site_id: int = 1, db: AsyncSession = Depends(get_db)):
     """
-    대시보드 상단/하단에 들어갈 요약 정보 조회
+    대시보드 상단 요약 정보 (금일 실시간 데이터)
     """
-    
-    # 1. Total Workers (출역 예정/확정 포함)
-    # 실제로는 출역 테이블과 조인해야 하지만, MVP에서는 전체 Worker 수로 대체하거나 status 컬럼 추가 필요.
-    # 일단 전체 등록 작업자 수로 표시
-    worker_res = await db.execute(select(func.count(Worker.id)))
-    total_workers = worker_res.scalar() or 0
-    
-    # 2. Today's Plans
-    from datetime import datetime
+    repo = DashboardRepository(db)
     today = datetime.now().strftime("%Y-%m-%d")
+
+    # 1. 금일 실제 출역 인원 (작업에 투입된 인원)
+    today_worker_count = await repo.get_today_worker_count(site_id, today)
     
-    plan_query = select(DailyWorkPlan).where(
-        DailyWorkPlan.site_id == site_id,
-        DailyWorkPlan.date == today
-    )
-    plan_res = await db.execute(plan_query)
-    plans = plan_res.scalars().all()
-    
+    # 2. 금일 작업 현황
+    plans = await repo.get_today_plans(site_id, today)
     total_plans = len(plans)
-    
-    # 3. Active Equipment (Plan의 equipment_flags 파싱)
-    # equipment_flags는 JSON 리스트 (예: ['CRANE', 'LIFT'])
+
+    # 3. 가동 장비 (Plan의 equipment_flags 파싱)
     active_equipment_count = 0
     for p in plans:
         if p.equipment_flags:
             active_equipment_count += len(p.equipment_flags)
-            
-    # 4. Status Counts
-    # Mock data for now if needed, or derived from plans
-    
+
     return {
         "site_id": site_id,
-        "total_workers": total_workers, # 출역 인원 (등록된 전체)
-        "today_plans": total_plans,     # 금일 작업 수
-        "active_equipment": active_equipment_count, # 가동 장비
-        "safety_accident_free_days": 1250 # 무재해 일수 (임시 하드코딩)
+        "total_workers": today_worker_count,  # 실제 오늘 출근한(작업 배정된) 인원
+        "today_plans": total_plans,
+        "active_equipment": active_equipment_count, 
+        "safety_accident_free_days": 1250 # (임시) 나중에 Global Config 테이블에서 조회
     }
+
+@router.get("/dashboard/workers/today")
+async def get_today_workers(site_id: int = 1, db: AsyncSession = Depends(get_db)):
+    """
+    금일 출역 작업자 상세 명단 조회
+    """
+    repo = DashboardRepository(db)
+    today = datetime.now().strftime("%Y-%m-%d")
+    
+    allocations = await repo.get_today_worker_list(site_id, today)
+    
+    # 프론트엔드용 데이터 가공 (Flatten)
+    result = []
+    for alloc in allocations:
+        result.append({
+            "worker_name": alloc.worker.name,
+            "work_type": alloc.plan.template.work_type,
+            "role": alloc.role,
+            "blood_type": alloc.worker.blood_type,
+            "status": "투입중" # 나중에 실시간 위치 기반 상태 로직 추가 가능
+        })
+    
+    return result

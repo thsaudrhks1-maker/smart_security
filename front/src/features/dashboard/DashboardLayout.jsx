@@ -5,19 +5,24 @@ import 'leaflet/dist/leaflet.css';
 import { 
   AlertTriangle, HardHat, Activity, Truck, 
   Search, Bell, MoreHorizontal,
-  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut 
+  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut, X
 } from 'lucide-react';
 import L from 'leaflet';
-import apiClient from '../../api/client'; // apiClient directly for dashboard summary
+import apiClient from '../../api/client';
 import { workApi } from '../../api/workApi';
 import { mapApi } from '../../api/mapApi';
-
-// NavSidebar extracted to components/common/NavSidebar.jsx
+import { useAuth } from '../../context/AuthContext'; // Auth Context 추가
 
 // --- Sub Components ---
 
-const StatCard = ({ title, value, sub, icon: Icon, color }) => (
-  <div className="glass-panel" style={{ padding: '1.25rem' }}>
+const StatCard = ({ title, value, sub, icon: Icon, color, onClick }) => (
+  <div 
+    className="glass-panel" 
+    style={{ padding: '1.25rem', cursor: onClick ? 'pointer' : 'default', transition: 'transform 0.2s' }}
+    onClick={onClick}
+    onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'scale(1.02)')}
+    onMouseLeave={(e) => onClick && (e.currentTarget.style.transform = 'scale(1)')}
+  >
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
       <span className="text-muted text-sm">{title}</span>
       <Icon size={18} color={color} />
@@ -38,8 +43,6 @@ const AlertItem = ({ alert }) => (
 );
 
 const JobCard = ({ job }) => {
-  // Derive a "Team Name" based on work type for demo purposes
-  // In real app, this comes from allocations or trade field
   const getTeamName = (type) => {
       if (type.includes('용접') || type.includes('배관')) return '설비팀';
       if (type.includes('전기')) return '전기팀';
@@ -77,7 +80,7 @@ const JobCard = ({ job }) => {
               width: job.status === 'DONE' ? '100%' : (job.status === 'IN_PROGRESS' ? '60%' : '0%'), 
               height: '100%', 
               background: st.color, 
-              borderRadius: '2px',
+              borderRadius: '2px', 
               transition: 'width 0.5s ease'
           }}></div>
         </div>
@@ -86,16 +89,77 @@ const JobCard = ({ job }) => {
   );
 };
 
+// --- Worker List Modal ---
+const WorkersModal = ({ onClose }) => {
+    const [workers, setWorkers] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchWorkers = async () => {
+            try {
+                const res = await apiClient.get('/dashboard/workers/today');
+                setWorkers(res.data);
+            } catch (err) {
+                console.error(err);
+                alert("명단 로딩 실패");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchWorkers();
+    }, []);
+
+    return (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+            <div className="glass-panel" style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: '#1e293b' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3>📋 금일 출역 명단</h3>
+                    <button onClick={onClose} className="btn-icon"><X size={20} /></button>
+                </div>
+                
+                <div style={{ padding: '1rem', overflowY: 'auto' }}>
+                    {loading ? (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+                    ) : workers.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>금일 투입된 인원이 없습니다.</div>
+                    ) : (
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {workers.map((w, idx) => (
+                                <li key={idx} style={{ 
+                                    padding: '1rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.05)', 
+                                    borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+                                }}>
+                                    <div>
+                                        <div style={{ fontWeight: 'bold' }}>{w.worker_name} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft:'4px' }}>({w.blood_type})</span></div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-secondary)' }}>{w.work_type} | {w.role || '작업원'}</div>
+                                    </div>
+                                    <div className="badge" style={{ background: 'var(--success)', color: 'black' }}>{w.status}</div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Main Dashboard Layout ---
 
 const DashboardLayout = () => {
+  const { user } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Real Data State
   const [summary, setSummary] = useState({ total_workers: 0, today_plans: 0, active_equipment: 0, safety_accident_free_days: 0 });
   const [plans, setPlans] = useState([]);
   const [risks, setRisks] = useState([]);
-  const [workers, setWorkers] = useState([]);
+  
+  // Modal State
+  const [showWorkerModal, setShowWorkerModal] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -111,15 +175,12 @@ const DashboardLayout = () => {
             setSummary(sumRes.data);
 
             // 2. Today's Plans
-            const planRes = await workApi.getPlans(); // 오늘 날짜 필터링은 백엔드 기본값 확인 필요하지만, 일단 전체 로드
-            setPlans(planRes.filter(p => p.status !== 'DONE')); // 완료된 것 제외하고 표시
+            const planRes = await workApi.getPlans();
+            setPlans(planRes.filter(p => p.status !== 'DONE')); 
 
             // 3. Risks (Map)
             const riskRes = await mapApi.getRisks();
             setRisks(riskRes);
-
-            // 4. Workers (Mock for now or WebSocket)
-            // setWorkers(MOCK_WORKERS); 
         } catch (e) {
             console.error("Dashboard Load Error:", e);
         }
@@ -129,19 +190,32 @@ const DashboardLayout = () => {
 
   return (
     <div className="dashboard-content-grid">
+      {/* Modal */}
+      {showWorkerModal && <WorkersModal onClose={() => setShowWorkerModal(false)} />}
       
       {/* 1. Status Panel */}
       <div className="area-status">
         <div style={{ marginBottom: '1rem' }}>
           <h2 className="text-xl">Smart Guardian</h2>
-          <div className="text-xs text-muted">Construction Safety System</div>
+          <div className="text-sm text-accent" style={{ marginTop:'4px' }}>
+              안녕하세요, {user?.name || '관리자'}님 👋
+          </div>
+          <div className="text-xs text-muted" style={{ marginTop:'2px' }}>
+              {user?.role === 'manager' ? '현장 관리자 (Manager)' : '현장 작업자 (Worker)'}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <StatCard title="출역 현황" value={`${summary.total_workers}명`} sub="금일 전체 인원" icon={HardHat} color="var(--accent-primary)" />
+          <StatCard 
+            title="출역 현황" 
+            value={`${summary.total_workers}명`} 
+            sub="금일 투입 인원 (Click 상세)" 
+            icon={HardHat} 
+            color="var(--accent-primary)" 
+            onClick={() => setShowWorkerModal(true)} // Click Event
+          />
           <StatCard title="금일 작업" value={`${summary.today_plans}건`} sub="진행 중인 작업" icon={Briefcase} color="var(--accent-secondary)" />
-          {/* 가동 중 장비 대신 무재해로 대체 (공간상) 혹은 추가 */}
-           <StatCard title="가동 장비" value={`${summary.active_equipment}대`} sub="크레인/리프트 등" icon={Truck} color="#f59e0b" />
+          <StatCard title="가동 장비" value={`${summary.active_equipment}대`} sub="크레인/리프트 등" icon={Truck} color="#f59e0b" />
           <StatCard title="무재해 현황" value={`D+${summary.safety_accident_free_days}`} sub="목표 달성 순항 중" icon={Activity} color="#10b981" />
         </div>
         
@@ -163,9 +237,6 @@ const DashboardLayout = () => {
              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
            />
            
-           {/* Danger Zones (Risks) */}
-           {/* Mock Zones for demo if API returns empty, otherwise map from API */}
-           {/* {MOCK_ZONES.map(...) } -> Replace with real risks */}
            {risks.map(risk => (
              <Circle 
                key={risk.id} 
@@ -181,29 +252,23 @@ const DashboardLayout = () => {
                </Popup>
              </Circle>
            ))}
-
-           {/* Workers - Mock for visual only in this dashboard view */}
-           <Marker position={[37.5665, 126.9780]}>
-             <Popup>김반장 (관리자)</Popup>
-           </Marker>
         </MapContainer>
       </div>
 
-      {/* 3. Right Sidebar: Alerts (Mock maintained for demo effect) */}
+      {/* 3. Right Sidebar: Alerts */}
       <div className="area-sidebar-right">
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
            <h3>실시간 알림</h3>
            <span className="text-xs text-accent">Live</span>
          </div>
          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1 }}>
-            {/* Mock Alerts */}
             <AlertItem alert={{ time: '14:32', msg: '위험구역 접근 감지 (A존)', type: 'danger' }} />
             <AlertItem alert={{ time: '14:15', msg: '크레인 작업 시작', type: 'info' }} />
             <AlertItem alert={{ time: '13:50', msg: '신규 작업 등록됨 (용접)', type: 'info' }} />
          </div>
       </div>
 
-      {/* 4. Bottom Panel: Jobs (Real Data) */}
+      {/* 4. Bottom Panel: Jobs */}
       <div className="area-bottom">
          {plans.length === 0 ? (
              <div style={{color:'gray', padding:'1rem'}}>진행 중인 작업이 없습니다.</div>
