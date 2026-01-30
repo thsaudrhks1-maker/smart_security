@@ -35,8 +35,8 @@ const MapClickHandler = ({ onMapClick, isEditMode }) => {
     return null;
 };
 
-const API_BASE = "http://localhost:8000/api/map";
-const WS_URL = "ws://localhost:8000/api/map/ws/workers";
+const API_BASE = "http://168.107.52.201:8000/api/map";
+const WS_URL = "ws://168.107.52.201:8000/api/map/ws/workers";
 
 const SafetyMap = () => {
     const navigate = useNavigate();

@@ -13,3 +13,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "$env:PYTHONPATH='
 
 Write-Host "✅ 모든 서비스가 실행되었습니다." -ForegroundColor Cyan
 Write-Host "Cloud Tunneling(ngrok 등) 설정이 필요하면 이 스크립트에 추가할 수 있습니다." -ForegroundColor Gray
+
+
+# 프로젝트 루트에서 실행
+# .\command\dev.ps1

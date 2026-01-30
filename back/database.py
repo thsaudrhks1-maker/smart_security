@@ -34,3 +34,13 @@ async def get_db():
             yield session
         finally:
             await session.close()
+
+# ==========================================
+# 모든 모델 Import (Alembic 자동 감지용)
+# ==========================================
+# 이 파일(back.database)만 임포트해도 Base.metadata에 모든 테이블이 등록됨
+from back.login.model import UserModel
+from back.company.model import Company, Worker, Attendance
+from back.work.model import DailyJob, JobAllocation, Equipment
+from back.board.model import Notice
+from back.safety.model import SafetyRule, DangerZone

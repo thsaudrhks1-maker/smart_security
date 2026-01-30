@@ -60,19 +60,16 @@ const NavSidebar = () => {
   );
 
   return (
-    <div className="glass-panel" style={{ 
-      gridColumn: '1', gridRow: '1 / span 2', 
-      width: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 0' 
-    }}>
+    <nav className="sidebar-panel glass-panel">
       {/* Logo Icon */}
-      <div style={{ marginBottom: '2rem' }}>
+      <div className="logo-container">
         <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--accent-primary), #d97706)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)' }}>
            <Activity size={24} color="#1e1e1e" />
         </div>
       </div>
 
       {/* Main Menu */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+      <div className="nav-menu-main">
         <NavItem icon={LayoutDashboard} path="/dashboard" active={true} />
         <NavItem icon={FileText} path="/notice" />
         <NavItem icon={Users} path="/workers" />
@@ -81,11 +78,11 @@ const NavSidebar = () => {
       </div>
 
       {/* Bottom Menu */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div className="nav-menu-bottom">
         <NavItem icon={Settings} path="/settings" />
         <NavItem icon={LogOut} path="/" />
       </div>
-    </div>
+    </nav>
   );
 };
 
