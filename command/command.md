@@ -8,7 +8,8 @@ docker-compose up -d
 # DB 중지 시:
 # docker-compose down
 
-# 2. Backend (터미널 2)
+# 접속 (스크립트 사용 추천: .\command\server_connect.ps1)
+ssh -i "C:\Users\P6\.ssh\id_rsa" ubuntu@168.107.52.201 Backend (터미널 2)
 .\venv\Scripts\uvicorn back.main:app --reload
 .\venv\Scripts\python -m uvicorn back.main:app --reload --port 8000
 

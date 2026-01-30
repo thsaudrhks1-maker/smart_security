@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './features/dashboard_new/DashboardLayout';
+import Dashboard from './features/dashboard/DashboardLayout';
 import PagePlaceholder from './components/common/PagePlaceholder';
 import { Shield } from 'lucide-react';
 
