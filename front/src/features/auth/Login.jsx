@@ -7,7 +7,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
   
-  const [formData, setFormData] = useState({ username: 'admin', password: '1234' });
+  const [formData, setFormData] = useState({ username: 'admin', password: '0000' });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 

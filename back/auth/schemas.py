@@ -21,6 +21,7 @@ class Token(BaseModel):
     full_name: Optional[str] = None
     role: str
     user_id: Optional[int] = None
+    birth_date: Optional[str] = None
 
 # 사용자 정보 DTO
 class User(BaseModel):

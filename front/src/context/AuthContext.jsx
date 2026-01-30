@@ -41,6 +41,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    // 확실한 로그아웃 처리를 위해 페이지 리로드/이동
+    window.location.href = '/';
   };
 
   return (

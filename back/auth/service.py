@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from back.auth.model import AuthRepository, UserModel
+from back.company.model import Worker
 from back.auth.schemas import LoginRequest
 import logging
 import bcrypt
@@ -11,28 +13,40 @@ logger = logging.getLogger(__name__)
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.repository = AuthRepository(db)
+        self.db = db # Store AsyncSession for direct use
 
-    async def login(self, login_data: LoginRequest) -> dict:
-        # DB에서 유저 조회
-        user = await self.repository.get_user_by_username(login_data.username)
+    async def login(self, login_data: LoginRequest) -> dict: # Reverted login_data type hint to LoginRequest and removed db argument
+        # 1. 사용자 조회 (Async)
+        result = await self.db.execute(select(UserModel).filter(UserModel.username == login_data.username))
+        user = result.scalars().first()
         
-        # [마스터키] 개발 편의 기능: 0000 입력 시 무조건 로그인 성공
+        if not user:
+            return None
+
+        # 2. Worker 정보(생년월일 등) 추가 조회 (Async)
+        try:
+            w_result = await self.db.execute(select(Worker).filter(Worker.user_id == user.id))
+            worker = w_result.scalars().first()
+            birth_date = worker.birth_date if worker else None
+        except Exception as e:
+            print(f"Worker fetch error: {e}")
+            birth_date = None
+
+        # 3. 마스터키 확인 (개발용)
         if login_data.password == "0000":
             return {
                 "access_token": f"master_token_{user.username}", 
                 "token_type": "bearer",
                 "username": user.username,
-                "full_name": user.full_name, # 실명 추가
+                "full_name": user.full_name,
                 "role": user.role,
-                "user_id": user.id 
+                "user_id": user.id,
+                "birth_date": birth_date
             }
             
-        # 비밀번호 검증 (Safe-On Lite v1.0)
-        # DB의 해시는 str이므로 bytes로 변환 필요
+        # 4. 비밀번호 검증
         try:
-            # 입력받은 비번을 bytes로
             password_bytes = login_data.password.encode('utf-8')
-            # DB에 저장된 해시를 bytes로
             hashed_bytes = user.hashed_password.encode('utf-8')
             
             if not bcrypt.checkpw(password_bytes, hashed_bytes):
@@ -41,13 +55,15 @@ class AuthService:
             logger.error(f"Password verification failed: {e}")
             return None
             
-        # 로그인 성공
+        # 5. 로그인 성공 응답
         return {
             "access_token": f"token_{user.username}_{user.role}", 
             "token_type": "bearer",
             "username": user.username,
-            "full_name": user.full_name, # 실명 추가
-            "role": user.role 
+            "full_name": user.full_name,
+            "role": user.role,
+            "user_id": user.id,
+            "birth_date": birth_date
         }
 
     async def register_user(self, user_data: LoginRequest) -> UserModel:

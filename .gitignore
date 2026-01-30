@@ -208,6 +208,3 @@ __marimo__/
 
 # Node / frontend
 node_modules/
-
-# Agent / IDE
-.agent/

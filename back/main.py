@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from back.database import engine, Base
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from back.database import Base, engine, get_db
 import asyncio
 
 # 모듈별 라우터 임포트
@@ -38,6 +40,40 @@ app.include_router(company_router)
 app.include_router(safety_router)
 app.include_router(dashboard_router)
 
+# --- Admin / Data Endpoints ---
+@app.get("/admin/db/workers")
+async def get_all_workers_admin(
+    db: AsyncSession = Depends(get_db),
+    # current_user: User = Depends(get_current_active_user) # 권한 체크는 추후 적용
+):
+    """
+    관리자용: 모든 작업자 정보 조회 (엑셀 뷰용)
+    """
+    from sqlalchemy.future import select
+    from back.company.model import Worker
+    from back.auth.model import UserModel
+
+    # Worker와 User 조인
+    query = select(Worker, UserModel).join(UserModel, Worker.user_id == UserModel.id)
+    result = await db.execute(query)
+    rows = result.all()
+
+    data = []
+    for worker, user in rows:
+        data.append({
+            "id": worker.id,
+            "name": worker.name,
+            "username": user.username,
+            "role": user.role,
+            "birth_date": worker.birth_date,
+            "phone_number": user.phone_number,
+            "trade": worker.trade,
+            "address": worker.address,
+            "company_id": worker.company_id,
+            "status": worker.status
+        })
+    return data
+
 @app.on_event("startup")
 async def startup_event():
     # 백그라운드에서 작업자 이동 시뮬레이션 시작
@@ -45,6 +81,5 @@ async def startup_event():
 
 @app.get("/")
 def read_root():
-    print("ROOT ACCESSED - RELOAD CHECK") 
+    print("ROOT ACCESSED - RELOAD CHECK")
     return {"message": "Smart Safety Guardian API is running"}
- 
