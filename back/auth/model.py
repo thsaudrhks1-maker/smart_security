@@ -11,16 +11,19 @@ class UserModel(Base):
     full_name = Column(String)
     role = Column(String, default="worker")
 
+from sqlalchemy import select
+
 class AuthRepository:
     def __init__(self, db):
         self.db = db
 
-    def get_user_by_username(self, username: str):
-        return self.db.query(UserModel).filter(UserModel.username == username).first()
+    async def get_user_by_username(self, username: str):
+        result = await self.db.execute(select(UserModel).where(UserModel.username == username))
+        return result.scalars().first()
     
     # 프로토타입용: 사용자 생성 (테스트용)
-    def create_user(self, user: UserModel):
+    async def create_user(self, user: UserModel):
         self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        await self.db.commit()
+        await self.db.refresh(user)
         return user

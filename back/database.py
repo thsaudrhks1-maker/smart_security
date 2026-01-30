@@ -36,11 +36,66 @@ async def get_db():
             await session.close()
 
 # ==========================================
+# Raw SQL 헬퍼 함수 (간소화)
+# ==========================================
+from sqlalchemy import text
+
+async def execute(query: str, params: dict = None):
+    """
+    INSERT, UPDATE, DELETE 쿼리 실행 (비동기)
+    """
+    try:
+        async with engine.begin() as conn:  # 비동기 트랜잭션 (성공 시 자동 Commit)
+            result = await conn.execute(text(query), params or {})
+            return result
+    except Exception as e:
+        print(f"❌ execute 실패: {e}")
+        raise e
+
+async def fetch_one(query: str, params: dict = None) -> dict | None:
+    """
+    SELECT 단건 조회 (비동기, Dict 반환)
+    """
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text(query), params or {})
+            row = result.mappings().first()
+            return dict(row) if row else None
+    except Exception as e:
+        print(f"❌ fetch_one 실패: {e}")
+        raise e
+
+async def fetch_all(query: str, params: dict = None) -> list[dict]:
+    """
+    SELECT 다건 조회 (비동기, List[Dict] 반환)
+    """
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text(query), params or {})
+            rows = result.mappings().all()
+            return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"❌ fetch_all 실패: {e}")
+        raise e
+
+async def insert_and_return(query: str, params: dict = None) -> dict | None:
+    """
+    INSERT/UPDATE 후 결과 반환 (비동기, Transaction Commit 포함)
+    """
+    try:
+        async with engine.begin() as conn:
+            result = await conn.execute(text(query), params or {})
+            row = result.mappings().first()
+            return dict(row) if row else None
+    except Exception as e:
+        print(f"❌ insert_and_return 실패: {e}")
+        raise e
+
+# ==========================================
 # 모든 모델 Import (Alembic 자동 감지용)
 # ==========================================
 # 이 파일(back.database)만 임포트해도 Base.metadata에 모든 테이블이 등록됨
-from back.login.model import UserModel
-from back.company.model import Company, Worker, Attendance
-from back.work.model import DailyJob, JobAllocation, Equipment
-from back.board.model import Notice
-from back.safety.model import SafetyRule, DangerZone
+from back.auth.model import UserModel
+from back.company.model import Site, Company, Worker
+from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
+from back.safety.model import Zone, SafetyLog

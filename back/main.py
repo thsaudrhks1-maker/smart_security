@@ -5,11 +5,12 @@ from back.database import engine, Base
 import asyncio
 
 # 모듈별 라우터 임포트
-from back.login.router import router as login_router
+# 모듈별 라우터 임포트
+from back.auth.router import router as auth_router
 from back.map.router import router as map_router, simulate_worker_movement
-
-# DB 테이블 생성 (비동기 엔진 사용 시 Alembic으로 관리하므로 생략 가능하나, 프로토타입 편의상 유지 시 engine 설정 주의 필요)
-# 현재는 Alembic을 쓰므로 Base.metadata.create_all 관련 코드는 제거하거나 주석 처리함
+from back.work.router import router as work_router
+from back.company.router import router as company_router
+from back.safety.router import router as safety_router
 
 app = FastAPI(title="Smart Safety Guardian API")
 
@@ -29,8 +30,11 @@ app.add_middleware(
 )
 
 # 라우터 등록
-app.include_router(login_router)
+app.include_router(auth_router)
 app.include_router(map_router)
+app.include_router(work_router)
+app.include_router(company_router)
+app.include_router(safety_router)
 
 @app.on_event("startup")
 async def startup_event():

@@ -1,41 +1,99 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
-import './WorkStyles.css';
-
-// 더미 데이터: 실제 작업 리스트
-const dummyWorks = [
-  { id: 1, title: '지상 2층 슬래브 거푸집 설치', location: '202호', time: '08:00 ~ 17:00', status: '진행중', risk: '추락 위험' },
-  { id: 2, title: '지하 1층 자재 정리', location: '자재 창고', time: '13:00 ~ 15:00', status: '대기', risk: '협착 위험' }
-];
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { workApi } from '../../api/workApi';
+import { Plus, Trash2, Calendar, MapPin, User, AlertTriangle } from 'lucide-react';
 
 const WorkList = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch Plans
+  useEffect(() => {
+    fetchPlans();
+  }, []); // Run once on mount
+
+  const fetchPlans = async () => {
+    try {
+        // workApi.getPlans()는 response.data를 반환
+        const data = await workApi.getPlans();
+        setPlans(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRiskColor = (score) => {
+      if (score >= 70) return 'var(--accent-danger)';
+      if (score >= 40) return 'var(--accent-warning)';
+      return 'var(--success)';
+  }
+
+  const handleDelete = async (id) => {
+      if(!window.confirm("정말 삭제하시겠습니까? (관련 로그와 할당 정보도 삭제됩니다)")) return;
+      try {
+          await workApi.deletePlan(id);
+          fetchPlans(); // Refresh
+      } catch(err) {
+          alert("삭제 실패");
+      }
+  }
+
+  if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="container" style={{ padding: '1rem' }}>
-      <header className="glass-panel" style={{ padding: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-          <ArrowLeft />
-        </button>
-        <h2>금일 나의 작업</h2>
-      </header>
+    <div className="animate-fade-in" style={{ padding: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div>
+           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>금일 작업 현황</h2>
+           <p className="text-muted">Today's Work Plan</p>
+        </div>
+        
+        {/* 관리자(manager)만 버튼 보임 */}
+        {user?.role === 'manager' && (
+          <button className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Plus size={18} />
+            작업 등록
+          </button>
+        )}
+      </div>
 
-      <div className="work-list">
-        {dummyWorks.map((work) => (
-          <div key={work.id} className="glass-panel work-card animate-fade-in">
-            <h3 style={{ marginBottom: '0.5rem' }}>{work.title}</h3>
-            <p className="text-sm"><span className="text-accent">📍 {work.location}</span> | 🕒 {work.time}</p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', alignItems: 'center' }}>
-              <span className="text-danger" style={{ fontSize: '0.9rem' }}>⚠️ {work.risk}</span>
-              <span className={`work-status ${work.status === '진행중' ? 'status-pending' : 'status-done'}`}>
-                {work.status}
-              </span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        {plans.map(plan => (
+          <div key={plan.id} className="glass-panel" style={{ padding: '1.5rem', borderLeft: `4px solid ${getRiskColor(plan.calculated_risk_score)}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom:'1rem' }}>
+                <span className="badge" style={{ background: 'rgba(255,255,255,0.1)' }}>{plan.work_type}</span>
+                {user?.role === 'manager' && (
+                    <button onClick={() => handleDelete(plan.id)} className="btn-icon" style={{ color: 'var(--text-muted)' }}><Trash2 size={16}/></button>
+                )}
             </div>
-            {/* 작업 시작/종료 시뮬레이션 버튼 */}
-            <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%', padding: '0.8rem' }}>
-              작업 시작 보고
-            </button>
+            
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{plan.description || "작업 내용 없음"}</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <MapPin size={16} /> {plan.zone_name}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                     <User size={16} /> {plan.allocations.length}명 투입
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                     <AlertTriangle size={16} color={getRiskColor(plan.calculated_risk_score)} /> 
+                     위험도: {plan.calculated_risk_score} 
+                </div>
+            </div>
+
+            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {plan.allocations.map(a => (
+                        <div key={a.id} style={{ fontSize: '0.8rem', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', display:'flex', alignItems:'center', gap:'4px' }}>
+                             {a.role === '화기감시' || a.role === '팀장' ? '⭐' : ''} {a.worker_name}
+                        </div>
+                    ))}
+                </div>
+            </div>
           </div>
         ))}
       </div>

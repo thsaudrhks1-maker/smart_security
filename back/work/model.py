@@ -1,44 +1,59 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Float, JSON, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from back.database import Base
 
-class DailyJob(Base):
-    __tablename__ = "daily_jobs"
+class WorkTemplate(Base):
+    """3.4 WorkTemplate: 작업 라이브러리"""
+    __tablename__ = "work_templates"
 
     id = Column(Integer, primary_key=True, index=True)
-    date = Column(DateTime, default=datetime.now, nullable=False, comment="작업 일자")
-    title = Column(String, nullable=False, comment="작업명 (예: A구역 배관 용접)")
-    description = Column(Text, nullable=True, comment="작업 상세 내용")
-    location = Column(String, nullable=True, comment="작업 위치")
-    risk_level = Column(String, default="LOW", comment="위험도 (LOW, MEDIUM, HIGH)")
+    work_type = Column(String, nullable=False, unique=True, comment="작업 유형 (예: 고소작업, 용접)")
+    
+    base_risk_score = Column(Integer, default=10, comment="기본 위험도 점수")
+    required_ppe = Column(JSON, nullable=True, comment="필수 보호구 목록 (JSON, 예: ['안전모', '안전대'])")
+    required_qualifications = Column(JSON, nullable=True, comment="필수 자격 (JSON)")
+    checklist_items = Column(JSON, nullable=True, comment="기본 점검 항목 리스트 (JSON)")
+    
+    plans = relationship("DailyWorkPlan", back_populates="template")
+
+class DailyWorkPlan(Base):
+    """3.5 DailyWorkPlan: 오늘의 작업 계획"""
+    __tablename__ = "daily_work_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=False)
+    zone_id = Column(Integer, ForeignKey("zones.id"), nullable=False)
+    template_id = Column(Integer, ForeignKey("work_templates.id"), nullable=False)
+    
+    date = Column(String, nullable=False, comment="YYYY-MM-DD")
+    
+    # 작업 상세 및 위험도
+    description = Column(String, nullable=True, comment="작업 내용 요약")
+    equipment_flags = Column(JSON, nullable=True, comment="사용 장비 (JSON, 예: ['CRANE', 'LIFT'])")
+    
+    calculated_risk_score = Column(Integer, default=0, comment="계산된 위험도 점수")
+    status = Column(String, default="PLANNED", comment="PLANNED, IN_PROGRESS, DONE")
     
     created_at = Column(DateTime, default=datetime.now)
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
-    # 관계 설정
-    allocations = relationship("JobAllocation", back_populates="job")
+    # 관계
+    site = relationship("Site", back_populates="daily_plans")
+    zone = relationship("Zone", back_populates="daily_plans")
+    template = relationship("WorkTemplate", back_populates="plans")
+    
+    allocations = relationship("WorkerAllocation", back_populates="plan")
+    logs = relationship("SafetyLog", back_populates="plan")
 
-class JobAllocation(Base):
-    """작업-인력 매핑 테이블 (어떤 작업에 누가 투입되었나)"""
-    __tablename__ = "job_allocations"
+class WorkerAllocation(Base):
+    """작업-작업자 매핑"""
+    __tablename__ = "worker_allocations"
 
     id = Column(Integer, primary_key=True, index=True)
-    job_id = Column(Integer, ForeignKey("daily_jobs.id"), nullable=False)
+    plan_id = Column(Integer, ForeignKey("daily_work_plans.id"), nullable=False)
     worker_id = Column(Integer, ForeignKey("workers.id"), nullable=False)
     
-    role = Column(String, nullable=True, comment="당일 역할 (예: 작업반장, 신호수)")
-    assigned_at = Column(DateTime, default=datetime.now)
+    role = Column(String, nullable=True, comment="당일 역할 (팀장, 작업자)")
 
-    job = relationship("DailyJob", back_populates="allocations")
+    plan = relationship("DailyWorkPlan", back_populates="allocations")
     worker = relationship("Worker", back_populates="allocations")
-
-class Equipment(Base):
-    __tablename__ = "equipments"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, comment="장비명 (예: 1호기 크레인)")
-    type = Column(String, nullable=False, comment="장비 타입 (CRANE, FORKLIFT, EXCAVATOR)")
-    status = Column(String, default="IDLE", comment="상태 (IDLE, WORKING, MAINTENANCE)")
-    
-    last_inspection_date = Column(DateTime, nullable=True, comment="마지막 점검일")

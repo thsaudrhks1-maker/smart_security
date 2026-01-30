@@ -7,7 +7,7 @@ import uuid
 import asyncio
 import random
 
-router = APIRouter(prefix="/api/map", tags=["map"])
+router = APIRouter(tags=["map"])
 
 # --- In-Memory Data Store ---
 class RiskZone(BaseModel):
@@ -104,23 +104,23 @@ async def simulate_worker_movement():
 
 # --- API Endpoints ---
 
-@router.get("/risks", response_model=List[RiskZone])
+@router.get("/map/risks", response_model=List[RiskZone])
 def get_risks():
     return risks_db
 
-@router.post("/risks", response_model=RiskZone)
+@router.post("/map/risks", response_model=RiskZone)
 def add_risk(risk: RiskZone):
     risk.id = len(risks_db) + 1
     risks_db.append(risk)
     return risk
 
-@router.delete("/risks/{risk_id}")
+@router.delete("/map/risks/{risk_id}")
 def delete_risk(risk_id: int):
     global risks_db
     risks_db = [r for r in risks_db if r.id != risk_id]
     return {"status": "success"}
 
-@router.post("/blueprint")
+@router.post("/map/blueprint")
 async def upload_blueprint(file: UploadFile = File(...)):
     global current_blueprint_url
     try:
@@ -140,7 +140,7 @@ async def upload_blueprint(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/blueprint")
+@router.get("/map/blueprint")
 def get_blueprint():
     return {"url": current_blueprint_url}
 

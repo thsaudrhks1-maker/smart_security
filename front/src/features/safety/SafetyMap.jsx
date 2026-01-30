@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Circle, SVGOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import '../dashboard/Dashboard.css'; // 기본 스타일 유지를 위해
+import '../dashboard/Dashboard.css';
+import { mapApi } from '../../api/mapApi'; // mapApi 사용
 
 // --- 아이콘 리소스 설정 ---
 const createIcon = (colorUrl) => new L.Icon({
@@ -35,8 +36,8 @@ const MapClickHandler = ({ onMapClick, isEditMode }) => {
     return null;
 };
 
-const API_BASE = "http://168.107.52.201:8010/api/map";
-const WS_URL = "ws://168.107.52.201:8010/api/map/ws/workers";
+// 실시간 통신용 URL (전화 통화 같은 역할)
+const WS_URL = "ws://localhost:8010/map/ws/workers";
 
 const SafetyMap = () => {
     const navigate = useNavigate();
@@ -66,20 +67,46 @@ const SafetyMap = () => {
 
     // --- 1. Initial Data Load ---
     useEffect(() => {
-        // Risks
-        fetch(`${API_BASE}/risks`)
-            .then(res => res.json())
-            .then(data => setRisks(data))
-            .catch(err => console.error(err));
-
-        // Blueprint
-        fetch(`${API_BASE}/blueprint`)
-            .then(res => res.json())
-            .then(data => setFloorPlanUrl(data.url))
-            .catch(err => console.error(err));
+        loadInitialData();
     }, []);
 
+    const loadInitialData = async () => {
+        try {
+            // Risks
+            const riskData = await mapApi.getRisks();
+            setRisks(riskData);
+            
+            // Zones (추가 예정)
+            // const zoneRes = await apiClient.get('/safety/zones');
+            
+            // Blueprint (도면 정보)
+            // const bpRes = await apiClient.get('/map/blueprint');
+        } catch (error) {
+            console.error("데이터 로딩 실패:", error);
+        }
+    };
+
     // --- 2. WebSocket ---
+    useEffect(() => {
+        const ws = new WebSocket(WS_URL);
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === "WORKER_UPDATE") {
+                const updatedWorkers = message.data;
+                setWorkers(updatedWorkers);
+                
+                // Alert Log Simple Logic
+                const dangerWorkers = updatedWorkers.filter(w => w.status === 'DANGER');
+                if (dangerWorkers.length > 0) {
+                    const msg = `[${new Date().toLocaleTimeString()}] ⚠️ 위험: ${dangerWorkers.map(w => w.name).join(', ')}`;
+                    setAlertLog(prev => [msg, ...prev].slice(0, 50));
+                }
+            }
+        };
+        return () => ws.close();
+    }, []);
+
+// --- 2. WebSocket ---
     useEffect(() => {
         const ws = new WebSocket(WS_URL);
         ws.onmessage = (event) => {
@@ -103,13 +130,24 @@ const SafetyMap = () => {
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const formData = new FormData();
-        formData.append("file", file);
+
         try {
-            const res = await fetch(`${API_BASE}/blueprint`, { method: "POST", body: formData });
-            const data = await res.json();
+            const data = await mapApi.uploadBlueprint(file);
             setFloorPlanUrl(data.url);
-        } catch(e) { alert("업로드 실패"); }
+            
+            if (data.lat && data.lng) {
+                setPlan({
+                    lat: data.lat,
+                    lng: data.lng,
+                    width: data.width,
+                    height: data.height,
+                    rotation: data.rotation
+                });
+            }
+        } catch(e) { 
+            console.error(e);
+            alert("업로드 실패"); 
+        }
     };
 
     const handleMapClick = (latlng) => setNewRiskPos(latlng);
@@ -117,14 +155,9 @@ const SafetyMap = () => {
     const addRisk = async (type, name) => {
         if (!newRiskPos) return;
         try {
-            const res = await fetch(`${API_BASE}/risks`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    id: 0, name, type, lat: newRiskPos.lat, lng: newRiskPos.lng, radius: 10
-                })
+            const newRisk = await mapApi.createRisk({
+                id: 0, name, type, lat: newRiskPos.lat, lng: newRiskPos.lng, radius: 10
             });
-            const newRisk = await res.json();
             setRisks([...risks, newRisk]);
             setNewRiskPos(null);
         } catch(e) { alert("추가 실패"); }
@@ -133,7 +166,7 @@ const SafetyMap = () => {
     const deleteRisk = async (id) => {
         if(!window.confirm("삭제하시겠습니까?")) return;
         try {
-            await fetch(`${API_BASE}/risks/${id}`, { method: "DELETE" });
+            await mapApi.deleteRisk(id);
             setRisks(risks.filter(r => r.id !== id));
         } catch(e) { alert("삭제 실패"); }
     };
