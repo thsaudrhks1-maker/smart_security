@@ -5,9 +5,31 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# ------------------------------------------------------------------------
+# [Custom] .env 파일 로드 및 모델 메타데이터 연결
+# ------------------------------------------------------------------------
+import os
+import sys
+from dotenv import load_dotenv
+
+# 프로젝트 루트 경로 추가 (back 모듈 찾기 위함)
+sys.path.append(os.getcwd())
+
+# .env 로드
+load_dotenv()
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# .env에서 DB URL 가져와서 덮어쓰기
+# (postgresql+asyncpg -> postgresql+psycopg 로 변경 필요, alembic은 동기 드라이버 사용)
+db_url = os.getenv("ALEMBIC_URL")
+if not db_url:
+    # 혹시 ALEMBIC_URL이 없으면 DATABASE_URL에서 변환
+    db_url = os.getenv("DATABASE_URL").replace("+asyncpg", "+psycopg")
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -16,16 +38,13 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-import sys
-import os
-
-# 현재 프로젝트 루트 경로 추가 (back 모듈 인식을 위해)
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+# 타겟 메타데이터 (우리 모델의 Base)
 from back.database import Base
-# back.database에서 모든 모델을 이미 임포트했으므로, Base.metadata에 자동으로 포함됨.
-
 target_metadata = Base.metadata
+
+# ------------------------------------------------------------------------
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -65,7 +84,7 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
