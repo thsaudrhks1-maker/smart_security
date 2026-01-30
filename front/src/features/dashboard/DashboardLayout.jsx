@@ -32,28 +32,56 @@ const StatCard = ({ title, value, sub, icon: Icon, color, onClick }) => (
   </div>
 );
 
-// Map Overlay for Risks
-const RiskListOverlay = ({ risks }) => (
-    <div style={{ 
-        position: 'absolute', top: '15px', right: '15px', zIndex: 1000,
-        width: '180px', maxHeight: '250px', overflowY: 'auto',
-        background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(10px)',
-        borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)',
-        padding: '12px', pointerEvents: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
-    }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <AlertTriangle size={14} color="#ef4444" /> 위험 요소 ({risks.length})
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {risks.length > 0 ? risks.map(r => (
-                <div key={r.id} style={{ paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: '700' }}>{r.name}</div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>Category: {r.type}</div>
+// Map Overlay for Risks - Sleek Side Panel Version
+const RiskSidePanel = ({ risks, isOpen, onClose }) => {
+    if (!isOpen) return null;
+    return (
+        <div style={{ 
+            position: 'absolute', top: 0, right: 0, height: '100%', 
+            width: '220px', zIndex: 1000,
+            background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(15px)',
+            borderLeft: '1px solid rgba(255,255,255,0.1)',
+            padding: '1.25rem', display: 'flex', flexDirection: 'column',
+            animation: 'slideIn 0.3s ease-out',
+            boxShadow: '-10px 0 30px rgba(0,0,0,0.3)'
+        }}>
+            <style>{`
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `}</style>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangle size={16} color="#ef4444" /> 위험 목록
                 </div>
-            )) : <div style={{ fontSize: '0.75rem', color: '#64748b' }}>감지된 위험 없음</div>}
+                <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                    <X size={18} />
+                </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1 }} className="scroll-hide">
+                {risks.length > 0 ? risks.map(r => (
+                    <div key={r.id} style={{ 
+                        padding: '12px', borderRadius: '10px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                        <div style={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: '700', marginBottom: '4px' }}>{r.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }}></span>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase' }}>{r.type}</span>
+                        </div>
+                    </div>
+                )) : (
+                    <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8rem', marginTop: '2rem' }}>감지된 위험 없음</div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
+
 
 // --- Modals ---
 
@@ -248,6 +276,7 @@ const DashboardLayout = () => {
   const [showPlansModal, setShowPlansModal] = useState(false);
   const [showAppMenu, setShowAppMenu] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
@@ -301,8 +330,33 @@ const DashboardLayout = () => {
             ))}
           </MapContainer>
           
-          {/* List Overlay for Risks on Map */}
-          <RiskListOverlay risks={risks} />
+          {/* Toggle Button for Risk Panel */}
+          <button 
+            onClick={() => setShowRiskPanel(!showRiskPanel)}
+            style={{
+                position: 'absolute', top: '16px', right: '16px', zIndex: 1001,
+                width: '44px', height: '44px', borderRadius: '12px',
+                background: showRiskPanel ? '#ef4444' : 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+            }}
+          >
+            <ShieldAlert size={22} color="white" />
+            {risks.length > 0 && !showRiskPanel && (
+                <span style={{ 
+                    position: 'absolute', top: '-5px', right: '-5px', 
+                    background: '#ef4444', color: 'white', fontSize: '0.65rem', 
+                    fontWeight: '900', padding: '2px 6px', borderRadius: '10px',
+                    border: '2px solid #0f172a'
+                }}>{risks.length}</span>
+            )}
+            {showRiskPanel && <X size={22} color="white" />}
+          </button>
+
+          {/* Side Panel for Risks */}
+          <RiskSidePanel risks={risks} isOpen={showRiskPanel} onClose={() => setShowRiskPanel(false)} />
       </div>
 
       {/* Stats Area (Below map, organized in two columns on mobile if needed) */}
