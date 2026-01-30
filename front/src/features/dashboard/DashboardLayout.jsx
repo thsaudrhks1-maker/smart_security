@@ -93,6 +93,8 @@ const JobCard = ({ job }) => {
 const WorkersModal = ({ onClose }) => {
     const [workers, setWorkers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('ALL'); // ALL, WORKING, REST
+    const [expandedId, setExpandedId] = useState(null);
 
     useEffect(() => {
         const fetchWorkers = async () => {
@@ -109,34 +111,95 @@ const WorkersModal = ({ onClose }) => {
         fetchWorkers();
     }, []);
 
+    const filteredWorkers = workers.filter(w => {
+        if (filter === 'WORKING') return w.today_status === 'WORKING';
+        if (filter === 'REST') return w.today_status === 'REST';
+        return true;
+    });
+
+    const getAge = (birthDate) => {
+        if (!birthDate) return '-세';
+        const year = parseInt(birthDate.split('-')[0]);
+        const currentYear = new Date().getFullYear();
+        return `${currentYear - year}세`;
+    };
+
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
             background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center'
         }}>
-            <div className="glass-panel" style={{ width: '90%', maxWidth: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', background: '#1e293b' }}>
+            <div className="glass-panel" style={{ width: '90%', maxWidth: '600px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', background: '#1e293b' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3>📋 금일 출역 명단</h3>
+                    <div>
+                        <h3 style={{ margin: 0 }}>📋 금일 인력 현황</h3>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                            총 {workers.length}명 / 출역 {workers.filter(w=>w.today_status==='WORKING').length}명
+                        </div>
+                    </div>
                     <button onClick={onClose} className="btn-icon"><X size={20} /></button>
                 </div>
                 
+                {/* 탭 필터 */}
+                <div style={{ display: 'flex', gap: '10px', padding: '10px 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <button 
+                        onClick={() => setFilter('ALL')}
+                        style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: filter==='ALL'?'var(--accent-primary)':'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}
+                    >전체 ({workers.length})</button>
+                    <button 
+                        onClick={() => setFilter('WORKING')}
+                        style={{ flex: 1, padding: '8px', borderRadius: '6px', border: 'none', background: filter==='WORKING'?'var(--success)':'rgba(255,255,255,0.1)', color: 'white', cursor: 'pointer' }}
+                    >출역중 ({workers.filter(w=>w.today_status==='WORKING').length})</button>
+                </div>
+
                 <div style={{ padding: '1rem', overflowY: 'auto' }}>
                     {loading ? (
                         <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
-                    ) : workers.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>금일 투입된 인원이 없습니다.</div>
                     ) : (
                         <ul style={{ listStyle: 'none', padding: 0 }}>
-                            {workers.map((w, idx) => (
-                                <li key={idx} style={{ 
-                                    padding: '1rem', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.05)', 
-                                    borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
+                            {filteredWorkers.map((w) => (
+                                <li key={w.id} style={{ 
+                                    padding: '1rem', marginBottom: '0.8rem', background: 'rgba(255,255,255,0.03)', 
+                                    borderRadius: '8px', borderLeft: `4px solid ${w.today_status==='WORKING' ? 'var(--success)' : 'gray'}`
                                 }}>
-                                    <div>
-                                        <div style={{ fontWeight: 'bold' }}>{w.worker_name} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft:'4px' }}>({w.blood_type})</span></div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--accent-secondary)' }}>{w.work_type} | {w.role || '작업원'}</div>
+                                    {/* 요약 정보 (항상 표시) */}
+                                    <div 
+                                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                                        onClick={() => setExpandedId(expandedId === w.id ? null : w.id)}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{w.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{w.trade} | {getAge(w.birth_date)}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            {w.today_status === 'WORKING' && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--accent-secondary)' }}>
+                                                    {w.today_work} ({w.today_role})
+                                                </span>
+                                            )}
+                                            <div className="badge" style={{ 
+                                                background: w.today_status === 'WORKING' ? 'var(--success)' : 'rgba(255,255,255,0.1)', 
+                                                color: w.today_status === 'WORKING' ? 'black' : 'gray' 
+                                            }}>
+                                                {w.today_status === 'WORKING' ? '작업중' : '대기'}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="badge" style={{ background: 'var(--success)', color: 'black' }}>{w.status}</div>
+
+                                    {/* 상세 정보 (클릭 시 확장) */}
+                                    {expandedId === w.id && (
+                                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                            <div>📞 {w.phone_number || '정보없음'}</div>
+                                            <div>🎂 {w.birth_date}</div>
+                                            <div style={{ gridColumn: 'span 2' }}>🏠 {w.address || '주소 미등록'}</div>
+                                            <div style={{ gridColumn: 'span 2',color: 'white' }}>
+                                                {w.today_status === 'WORKING' 
+                                                    ? `✅ 금일 [${w.today_work}] 현장에 ${w.today_role}(으)로 투입되었습니다.` 
+                                                    : `💤 금일 배정된 작업이 없습니다.`
+                                                }
+                                            </div>
+                                        </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>

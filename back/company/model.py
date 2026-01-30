@@ -38,6 +38,11 @@ class Worker(Base):
     trade = Column(String, nullable=False, comment="직종 (예: 용접공, 신호수)")
     qualification_tags = Column(String, nullable=True, comment="자격 태그 (콤마로 구분, 예: '고소작업,지게차')")
     
+    # 신규 추가 필드 (상세 정보)
+    phone_number = Column(String, nullable=True, comment="연락처")
+    birth_date = Column(String, nullable=True, comment="생년월일 (YYYY-MM-DD)")
+    address = Column(String, nullable=True, comment="거주지 (간략 주소)")
+
     status = Column(String, default="OFF_SITE", comment="상태: ON_SITE, OFF_SITE, RESTRICTED")
     
     created_at = Column(DateTime, default=datetime.now)

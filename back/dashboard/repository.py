@@ -68,3 +68,46 @@ class DashboardRepository:
         query = select(func.count(Worker.id))
         result = await self.db.execute(query)
         return result.scalar() or 0
+
+    async def get_all_workers_with_today_status(self, site_id: int, date: str):
+        """
+        전체 등록 작업자 목록을 가져오고, 금일 작업 투입 여부를 포함하여 반환
+        """
+        # 1. 전체 작업자 조회 (직종 오름차순)
+        w_query = select(Worker).order_by(Worker.trade, Worker.name)
+        w_res = await self.db.execute(w_query)
+        all_workers = w_res.scalars().all()
+        
+        # 2. 금일 배정 정보 조회 (Worker ID -> Allocation)
+        a_query = (
+            select(WorkerAllocation)
+            .join(DailyWorkPlan, WorkerAllocation.plan_id == DailyWorkPlan.id)
+            .options(selectinload(WorkerAllocation.plan).selectinload(DailyWorkPlan.template))
+            .where(
+                DailyWorkPlan.site_id == site_id,
+                DailyWorkPlan.date == date
+            )
+        )
+        a_res = await self.db.execute(a_query)
+        allocations = a_res.scalars().all()
+        
+        # 3. 매핑 (Worker ID -> 작업 정보)
+        alloc_map = {a.worker_id: a for a in allocations}
+        
+        result = []
+        for w in all_workers:
+            alloc = alloc_map.get(w.id)
+            result.append({
+                "id": w.id,
+                "name": w.name,
+                "trade": w.trade,
+                "phone_number": w.phone_number,
+                "birth_date": w.birth_date,
+                "address": w.address,
+                "company_name": "스마트건설", # 임시 (Join 필요하지만 생략)
+                "today_status": "WORKING" if alloc else "REST",
+                "today_role": alloc.role if alloc else None,
+                "today_work": alloc.plan.template.work_type if alloc else None
+            })
+            
+        return result

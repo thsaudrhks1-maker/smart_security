@@ -39,22 +39,11 @@ async def get_dashboard_summary(site_id: int = 1, db: AsyncSession = Depends(get
 @router.get("/dashboard/workers/today")
 async def get_today_workers(site_id: int = 1, db: AsyncSession = Depends(get_db)):
     """
-    금일 출역 작업자 상세 명단 조회
+    금일 출역 현황 상세 (전체 등록 인원 포함)
     """
     repo = DashboardRepository(db)
     today = datetime.now().strftime("%Y-%m-%d")
     
-    allocations = await repo.get_today_worker_list(site_id, today)
-    
-    # 프론트엔드용 데이터 가공 (Flatten)
-    result = []
-    for alloc in allocations:
-        result.append({
-            "worker_name": alloc.worker.name,
-            "work_type": alloc.plan.template.work_type,
-            "role": alloc.role,
-            "blood_type": alloc.worker.blood_type,
-            "status": "투입중" # 나중에 실시간 위치 기반 상태 로직 추가 가능
-        })
-    
-    return result
+    # 전체 인원 + 금일 상태 조회
+    workers = await repo.get_all_workers_with_today_status(site_id, today)
+    return workers
