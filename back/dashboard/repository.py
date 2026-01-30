@@ -41,12 +41,13 @@ class DashboardRepository:
         """
         sql = """
             SELECT 
-                w.id, w.name, w.trade, w.phone_number, w.birth_date, w.address,
+                w.id, w.name, w.trade, u.phone_number, w.birth_date, w.address,
                 c.name as company_name,
                 CASE WHEN wa.id IS NOT NULL THEN 'WORKING' ELSE 'REST' END as today_status,
                 wa.role as today_role,
                 wt.work_type as today_work
             FROM workers w
+            JOIN users u ON w.user_id = u.id
             JOIN companies c ON w.company_id = c.id
             LEFT JOIN worker_allocations wa ON w.id = wa.worker_id
             LEFT JOIN daily_work_plans dp ON wa.plan_id = dp.id AND dp.date = :date AND dp.site_id = :site_id

@@ -69,6 +69,7 @@ async def seed_workers():
             username="admin",
             hashed_password=DUMMY_HASH,
             full_name="김반장",
+            phone_number="010-1111-2222",
             role="manager"
         )
         db.add(admin_user)
@@ -80,7 +81,6 @@ async def seed_workers():
             name="김반장",
             company_id=company_map["삼성물산"],
             trade="관리자",
-            phone_number="010-1111-2222",
             birth_date="1980-01-01",
             address="서울 강남구",
             status="ON_SITE"
@@ -103,6 +103,7 @@ async def seed_workers():
                 username=username,
                 hashed_password=DUMMY_HASH,
                 full_name=name,
+                phone_number=phone,
                 role="worker"
             )
             db.add(user)
@@ -114,7 +115,6 @@ async def seed_workers():
                 name=name,
                 company_id=cid,
                 trade=trade,
-                phone_number=phone,
                 birth_date=birth,
                 address=random.choice(addresses),
                 status="OFF_SITE"

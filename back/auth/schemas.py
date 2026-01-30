@@ -18,7 +18,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     username: str
+    full_name: Optional[str] = None
     role: str
+    user_id: Optional[int] = None
 
 # 사용자 정보 DTO
 class User(BaseModel):

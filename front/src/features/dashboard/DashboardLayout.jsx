@@ -4,14 +4,14 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { 
   AlertTriangle, HardHat, Activity, Truck, 
-  Search, Bell, MoreHorizontal,
+  Search, Bell, MoreHorizontal, Grid,
   LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut, X
 } from 'lucide-react';
 import L from 'leaflet';
 import apiClient from '../../api/client';
 import { workApi } from '../../api/workApi';
 import { mapApi } from '../../api/mapApi';
-import { useAuth } from '../../context/AuthContext'; // Auth Context 추가
+import { useAuth } from '../../context/AuthContext';
 
 // --- Sub Components ---
 
@@ -210,10 +210,85 @@ const WorkersModal = ({ onClose }) => {
     );
 };
 
+// --- App Menu Modal (All Features) ---
+const AppMenuModal = ({ onClose, onLogout, user }) => {
+    const menuItems = [
+        { id: 'dashboard', label: '대시보드', icon: LayoutDashboard, color: '#3b82f6', action: onClose },
+        { id: 'workers', label: '작업자 관리', icon: Users, color: '#10b981', action: () => alert('작업자 관리 페이지 준비중') },
+        { id: 'work', label: '작업 계획', icon: Briefcase, color: '#f59e0b', action: () => alert('작업 계획 페이지 준비중') },
+        { id: 'map', label: '현장 지도', icon: Search, color: '#8b5cf6', action: () => alert('지도 관리 페이지 준비중') },
+        { id: 'sos', label: '긴급 호출', icon: ShieldAlert, color: '#ef4444', action: () => alert('긴급 호출 기능 테스트') },
+        { id: 'settings', label: '시스템 설정', icon: Settings, color: '#64748b', action: () => alert('설정 페이지 준비중') },
+    ];
+
+    return (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(15, 23, 42, 0.95)', zIndex: 99999, 
+            backdropFilter: 'blur(10px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+        }}>
+            <button onClick={onClose} style={{ position: 'absolute', top: '20px', right: '20px' }} className="btn-icon">
+                <X size={32} color="white" />
+            </button>
+
+            <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Smart Guardian</h2>
+                <p className="text-muted">전체 메뉴</p>
+            </div>
+
+            <div style={{ 
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', 
+                width: '90%', maxWidth: '500px' 
+            }}>
+                {menuItems.map(item => (
+                    <div key={item.id} onClick={item.action} style={{
+                        background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '1.5rem',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
+                        cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)',
+                        transition: '0.2s'
+                    }}>
+                        <div style={{ 
+                            background: `${item.color}20`, padding: '12px', borderRadius: '12px',
+                            color: item.color
+                        }}>
+                            <item.icon size={32} />
+                        </div>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>{item.label}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div style={{ marginTop: '3rem', width: '90%', maxWidth: '500px' }}>
+                 <div style={{ 
+                    background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '40px', height: '40px', background: '#3b82f6', borderRadius: '50%', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'bold' }}>
+                            {user?.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                            <div style={{ fontWeight: 'bold' }}>{user?.full_name}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user?.role}</div>
+                        </div>
+                    </div>
+                    <button onClick={onLogout} style={{ 
+                        background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: 'none', 
+                        padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
+                    }}>
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Main Dashboard Layout ---
 
 const DashboardLayout = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Real Data State
@@ -223,6 +298,7 @@ const DashboardLayout = () => {
   
   // Modal State
   const [showWorkerModal, setShowWorkerModal] = useState(false);
+  const [showAppMenu, setShowAppMenu] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -253,18 +329,37 @@ const DashboardLayout = () => {
 
   return (
     <div className="dashboard-content-grid">
-      {/* Modal */}
+      {/* Modals */}
       {showWorkerModal && <WorkersModal onClose={() => setShowWorkerModal(false)} />}
+      {showAppMenu && <AppMenuModal onClose={() => setShowAppMenu(false)} onLogout={logout} user={user} />}
       
       {/* 1. Status Panel */}
       <div className="area-status">
         <div style={{ marginBottom: '1rem' }}>
           <h2 className="text-xl">Smart Guardian</h2>
-          <div className="text-sm text-accent" style={{ marginTop:'4px' }}>
-              안녕하세요, {user?.name || '관리자'}님 👋
+          <div className="text-sm text-accent" style={{ marginTop:'4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>안녕하세요, {user?.full_name || user?.username}님</span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                    onClick={() => setShowAppMenu(true)} 
+                    className="btn-icon" 
+                    style={{ padding: '4px', color: 'var(--text-muted)' }} 
+                    title="전체 메뉴"
+                >
+                    <Grid size={20} />
+                </button>
+                <button 
+                    onClick={logout} 
+                    className="btn-icon" 
+                    style={{ padding: '4px', color: 'var(--text-muted)' }} 
+                    title="로그아웃"
+                >
+                    <LogOut size={20} />
+                </button>
+              </div>
           </div>
           <div className="text-xs text-muted" style={{ marginTop:'2px' }}>
-              {user?.role === 'manager' ? '현장 관리자 (Manager)' : '현장 작업자 (Worker)'}
+              {(user?.role === 'manager' || user?.role === 'admin') ? '현장 관리자 (Manager)' : '현장 작업자 (Worker)'}
           </div>
         </div>
 

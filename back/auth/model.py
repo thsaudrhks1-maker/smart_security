@@ -10,6 +10,7 @@ class UserModel(Base):
     hashed_password = Column(String)
     full_name = Column(String)
     role = Column(String, default="worker")
+    phone_number = Column(String, nullable=True, comment="연락처 (Login ID 대용 가능)")
 
 from sqlalchemy import select
 

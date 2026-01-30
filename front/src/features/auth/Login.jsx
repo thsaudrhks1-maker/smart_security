@@ -58,7 +58,7 @@ const Login = () => {
                  <Lock size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
                 <input 
                     type="password" 
-                    placeholder="비밀번호 (1234)"
+                    placeholder="비밀번호 (0000)"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     style={{ 
