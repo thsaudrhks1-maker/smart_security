@@ -251,19 +251,89 @@ const AdminDataModal = ({ onClose }) => {
     );
 };
 
-const AppMenuModal = ({ onClose, onLogout, user, onOpenAdmin }) => (
-    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.98)', zIndex: 99999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none' }}><X size={32} color="white" /></button>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', width: '80%', maxWidth: '400px' }}>
-             <div onClick={onClose} className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', cursor: 'pointer' }}><LayoutDashboard size={32} color="#3b82f6" /><div>대시보드</div></div>
-             <div onClick={onOpenAdmin} className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center', cursor: 'pointer' }}><Database size={32} color="#ec4899" /><div>데이터 센터</div></div>
+const AppMenuModal = ({ onClose, onLogout, user, onOpenAdmin }) => {
+    const menus = [
+        { icon: LayoutDashboard, label: '통합 대시보드', color: '#3b82f6', action: onClose },
+        { icon: MapPin, label: '현장 맵 관제', color: '#10b981', action: onClose },
+        { icon: Users, label: '인력 관리', color: '#8b5cf6', action: onClose },
+        { icon: Truck, label: '장비 현황', color: '#f59e0b', action: onClose },
+        { icon: ShieldAlert, label: '위험성 평가', color: '#ef4444', action: onClose },
+        { icon: FileText, label: '안전 작업 허가서', color: '#06b6d4', action: onClose },
+        { icon: Database, label: '데이터 센터', color: '#ec4899', action: onOpenAdmin },
+        { icon: Settings, label: '시스템 설정', color: '#94a3b8', action: onClose },
+    ];
+
+    return (
+        <div style={{ 
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+            background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)', 
+            zIndex: 99999, display: 'flex', flexDirection: 'column', 
+            padding: '2rem', animation: 'fadeIn 0.3s ease-out',
+            overflowY: 'auto' // 스크롤 추가
+        }}>
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                .menu-grid-item:active { transform: scale(0.95); }
+                .scroll-hide::-webkit-scrollbar { display: none; }
+            `}</style>
+
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: '900', color: 'white' }}>Smart Guardian <span style={{ color: '#3b82f6', fontSize: '1rem' }}>Menu</span></div>
+                <button onClick={onClose} className="btn-icon" style={{ background: 'rgba(255,255,255,0.1)' }}><X size={28} color="white" /></button>
+            </div>
+
+            <div style={{ 
+                display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', 
+                gap: '1.25rem', width: '100%', maxWidth: '800px', margin: '0 auto', flex: 1
+            }}>
+                {menus.map((m, idx) => (
+                    <div 
+                        key={idx} 
+                        onClick={m.action}
+                        className="menu-grid-item"
+                        style={{ 
+                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '24px', padding: '1.5rem', textAlign: 'center', cursor: 'pointer',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        <div style={{ 
+                            width: '56px', height: '56px', borderRadius: '16px', 
+                            background: `${m.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                        }}>
+                            <m.icon size={28} color={m.color} />
+                        </div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#e2e8f0' }}>{m.label}</div>
+                    </div>
+                ))}
+            </div>
+
+            <div style={{ 
+                marginTop: 'auto', padding: '1.5rem', background: 'rgba(255,255,255,0.03)', 
+                borderRadius: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                maxWidth: '800px', width: '100%', margin: '2rem auto 0', border: '1px solid rgba(255,255,255,0.05)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(45deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                        {user?.full_name?.[0]}
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'white' }}>{user?.full_name} 관리자</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{user?.username}</div>
+                    </div>
+                </div>
+                <button onClick={onLogout} style={{ 
+                    padding: '10px 20px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', 
+                    color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', fontWeight: 'bold', cursor: 'pointer'
+                }}>
+                    로그아웃
+                </button>
+            </div>
         </div>
-        <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', textAlign: 'center' }}>
-            <div style={{ fontWeight: 'bold' }}>{user?.full_name} 님</div>
-            <button onClick={onLogout} style={{ marginTop: '10px', color: '#ef4444', border: 'none', background: 'none' }}>로그아웃</button>
-        </div>
-    </div>
-);
+    );
+};
 
 // --- Main Layout ---
 
