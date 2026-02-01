@@ -19,9 +19,9 @@ app = FastAPI(title="Smart Safety Guardian API")
 
 # CORS 설정 (프론트엔드 포트 허용)
 origins = [
-    "http://localhost:3005",
-    "http://127.0.0.1:3005",
-    "http://168.107.52.201:3005",
+    "http://localhost:3500",
+    "http://127.0.0.1:3500",
+    "http://168.107.52.201:3500",
 ]
 
 app.add_middleware(
