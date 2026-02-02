@@ -11,6 +11,7 @@ import AdminDashboard from './features/admin/dashboard/AdminDashboard';
 import ProjectList from './features/admin/projects/ProjectList';
 import CreateProject from './features/admin/projects/CreateProject';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
+import CompanyList from './features/admin/companies/CompanyList';
 
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
@@ -37,6 +38,7 @@ function App() {
             <Route path="projects" element={<ProjectList />} />
             <Route path="projects/create" element={<CreateProject />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
+            <Route path="companies" element={<CompanyList />} />
           </Route>
           
           {/* 작업자 전용 (모바일) */}

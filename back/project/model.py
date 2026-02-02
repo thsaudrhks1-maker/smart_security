@@ -48,8 +48,9 @@ class Project(Base):
     created_at = Column(DateTime, default=datetime.now)
     
     # 관계 (Relationships)
-    # sites = relationship("Site", back_populates="project")
-    # companies = relationship("Company", back_populates="project")
-    # workers = relationship("Worker", back_populates="project")
+    sites = relationship("Site", back_populates="project")
+    # companies = relationship("Company", back_populates="project") <- N:M으로 대체됨
+    workers = relationship("Worker", back_populates="project")
     
-    # 주의: 관계는 Site/Company/Worker 모델에 project_id 추가 후 활성화
+    # [신규] 참여 회사 (N:M)
+    participations = relationship("ProjectParticipant", back_populates="project", cascade="all, delete-orphan")

@@ -4,7 +4,11 @@ from datetime import datetime
 
 class CompanyBase(BaseModel):
     name: str
+    type: Optional[str] = "SPECIALTY" # GENERAL(원청), SPECIALTY(협력사)
     trade_type: Optional[str] = None
+
+class CompanyCreate(CompanyBase):
+    pass
 
 class CompanyRead(CompanyBase):
     id: int

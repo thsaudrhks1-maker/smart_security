@@ -19,7 +19,7 @@ import {
 
 /**
  * Admin용 네비게이션 사이드바
- * 화이트 베이스 디자인 (Clean & Modern)
+ * Dark Theme (검정 바탕 + 밝은 글씨) - 상무님 Pick
  */
 const NavSidebar = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const NavSidebar = () => {
     { category: "Project & Work", items: [
       { icon: Folder, label: "현장 관리", path: "/admin/projects", implemented: true },
       { icon: Users, label: "근로자 관리", path: "/admin/workers", implemented: false }, 
-      { icon: Building2, label: "협력사(고객사) 관리", path: "/admin/companies", implemented: false },
+      { icon: Building2, label: "협력사(고객사) 관리", path: "/admin/companies", implemented: true },
       { icon: Briefcase, label: "작업 관리", path: "/admin/work", implemented: false },
     ]},
     { category: "Safety & Content", items: [
@@ -61,20 +61,30 @@ const NavSidebar = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: '12px',
-          background: isActive ? '#f0f9ff' : 'transparent',
-          color: implemented ? (isActive ? '#0284c7' : '#475569') : '#ef4444',
+          background: isActive ? '#0f172a' : 'transparent', // 더 어두운 배경으로 강조
+          color: implemented ? (isActive ? '#ffffff' : '#94a3b8') : '#ef4444',
           border: 'none',
-          borderLeft: isActive ? '3px solid #0284c7' : '3px solid transparent',
+          borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
           cursor: 'pointer', 
           transition: 'all 0.2s',
           padding: '13px 20px',
           textAlign: 'left',
           fontSize: '0.9rem',
-          fontWeight: isActive ? '600' : '500',
+          fontWeight: isActive ? '600' : '400', // 선택 안된건 얇게
           position: 'relative'
         }}
-        onMouseEnter={(e) => !implemented && (e.currentTarget.style.background = '#fef2f2')}
-        onMouseLeave={(e) => !implemented && !isActive && (e.currentTarget.style.background = 'transparent')}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.color = implemented ? '#cbd5e1' : '#f87171';
+            e.currentTarget.style.background = '#334155';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.color = implemented ? '#94a3b8' : '#ef4444';
+            e.currentTarget.style.background = 'transparent';
+          }
+        }}
       >
         <Icon size={18} />
         <span style={{ flex: 1 }}>{label}</span>
@@ -87,31 +97,31 @@ const NavSidebar = () => {
     <nav style={{ 
       width: '260px',
       height: '100vh',
-      background: '#ffffff',
-      borderRight: '1px solid #e5e7eb',
+      background: '#1e293b', // Dark Slate BG
+      color: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      boxShadow: '2px 0 8px rgba(0,0,0,0.04)'
+      boxShadow: '4px 0 10px rgba(0,0,0,0.3)'
     }}>
       {/* 헤더 */}
-      <div style={{ padding: '24px 20px', borderBottom: '1px solid #f3f4f6' }}>
+      <div style={{ padding: '24px 20px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
         <h1 style={{ 
           fontSize: '1.25rem', 
           fontWeight: '800', 
-          color: '#111827', 
+          color: '#ffffff', 
           margin: 0, 
           display: 'flex', 
           alignItems: 'center', 
           gap: '8px' 
         }}>
-          <ShieldAlert size={26} color="#0284c7" />
+          <ShieldAlert size={26} color="#3b82f6" />
           Smart Guardian
         </h1>
-        <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '4px', paddingLeft: '34px' }}>
-          Total Safety Solution
+        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', paddingLeft: '34px', letterSpacing: '0.05em' }}>
+          SYSTEM ADMINISTRATOR
         </div>
       </div>
 
@@ -120,10 +130,10 @@ const NavSidebar = () => {
         {menuConfig.map((group, idx) => (
           <div key={idx} style={{ marginBottom: '10px' }}>
             <div style={{ 
-              padding: '10px 20px 5px', 
+              padding: '15px 20px 8px', 
               fontSize: '0.7rem', 
               fontWeight: '700', 
-              color: '#cbd5e1', 
+              color: '#475569', 
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
             }}>
@@ -139,13 +149,14 @@ const NavSidebar = () => {
         <div style={{ 
           margin: '20px', 
           padding: '12px', 
-          background: '#fef2f2', 
+          background: 'rgba(239, 68, 68, 0.1)', 
           borderRadius: '6px',
           fontSize: '0.75rem',
-          color: '#991b1b',
+          color: '#fca5a5',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px'
+          gap: '6px',
+          border: '1px solid rgba(239, 68, 68, 0.2)'
         }}>
           <AlertCircle size={14} />
           <span>붉은색 메뉴는 준비 중입니다</span>
@@ -153,14 +164,14 @@ const NavSidebar = () => {
       </div>
 
       {/* 하단 유저 프로필 및 로그아웃 */}
-      <div style={{ padding: '16px', borderTop: '1px solid #f3f4f6', background: '#f8fafc' }}>
+      <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Users size={20} color="#64748b" />
+          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Users size={20} color="#cbd5e1" />
           </div>
           <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#334155' }}>시스템 관리자</div>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>admin@safe.com</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f1f5f9' }}>시스템 관리자</div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>admin@safe.com</div>
           </div>
         </div>
         <button 
@@ -169,9 +180,9 @@ const NavSidebar = () => {
             width: '100%', 
             padding: '10px', 
             borderRadius: '6px', 
-            background: 'white', 
-            color: '#dc2626', 
-            border: '1px solid #e2e8f0', 
+            background: '#334155', 
+            color: '#f87171', 
+            border: '1px solid #475569', 
             fontWeight: '600',
             cursor: 'pointer', 
             display: 'flex', 
@@ -179,16 +190,17 @@ const NavSidebar = () => {
             justifyContent: 'center', 
             gap: '8px',
             fontSize: '0.85rem',
-            transition: 'all 0.2s',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+            transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#fef2f2';
-            e.currentTarget.style.borderColor = '#fecaca';
+            e.currentTarget.style.background = '#ef4444';
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.borderColor = '#ef4444';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'white';
-            e.currentTarget.style.borderColor = '#e2e8f0';
+            e.currentTarget.style.background = '#334155';
+            e.currentTarget.style.color = '#f87171';
+            e.currentTarget.style.borderColor = '#475569';
           }}
         >
           <LogOut size={16} /> 로그아웃
