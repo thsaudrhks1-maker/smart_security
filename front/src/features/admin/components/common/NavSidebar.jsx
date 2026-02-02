@@ -1,19 +1,20 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../../context/AuthContext';
 import { 
   LayoutDashboard, 
   Folder, 
-  Briefcase, 
   Users, 
+  Building2, 
+  Briefcase,
   ShieldAlert,
-  LogOut,
-  AlertCircle,
-  Building2,
   FileText,
   CheckSquare,
-  Globe,
+  Globe, 
   Settings,
   Wrench,
+  AlertCircle,
+  LogOut,
   Megaphone
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ import {
 const NavSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const currentPath = location.pathname;
 
   // 메뉴 설정
@@ -49,6 +51,13 @@ const NavSidebar = () => {
       { icon: Megaphone, label: "시스템 공지", path: "/admin/notice", implemented: false },
     ]}
   ];
+
+  const handleLogout = () => {
+    if (window.confirm('로그아웃 하시겠습니까?')) {
+      logout();
+      navigate('/');
+    }
+  };
 
   const NavItem = ({ icon: Icon, label, path, implemented }) => {
     const isActive = currentPath === path || (path !== '/admin' && currentPath.startsWith(path));
@@ -169,13 +178,17 @@ const NavSidebar = () => {
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Users size={20} color="#cbd5e1" />
           </div>
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f1f5f9' }}>시스템 관리자</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>admin@safe.com</div>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user?.full_name || 'GUEST'} <span style={{fontSize:'0.7rem', color:'#94a3b8', fontWeight:'normal'}}>({user?.role})</span>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user?.username || 'user_id'}
+            </div>
           </div>
         </div>
         <button 
-          onClick={() => navigate('/')}
+          onClick={handleLogout}
           style={{ 
             width: '100%', 
             padding: '10px', 
@@ -209,4 +222,5 @@ const NavSidebar = () => {
     </nav>
   );
 };
+
 export default NavSidebar;

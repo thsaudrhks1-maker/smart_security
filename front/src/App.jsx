@@ -13,6 +13,10 @@ import CreateProject from './features/admin/projects/CreateProject';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CompanyList from './features/admin/companies/CompanyList';
 
+// 중간 관리자 (현장 소장)
+import ManagerLayout from './features/manager/components/layout/ManagerLayout';
+import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
+
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
@@ -41,6 +45,12 @@ function App() {
             <Route path="companies" element={<CompanyList />} />
           </Route>
           
+          {/* 중간 관리자 (현장 소장) */}
+          <Route path="/manager/*" element={<ManagerLayout />}>
+            <Route index element={<ManagerDashboard />} />
+            {/* 추후 추가될 하위 라우트들 */}
+          </Route>
+
           {/* 작업자 전용 (모바일) */}
           <Route path="/worker/*" element={<WorkerLayout />}>
             <Route index element={<WorkerDashboard />} />

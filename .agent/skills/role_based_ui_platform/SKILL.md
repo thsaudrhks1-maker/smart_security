@@ -17,14 +17,19 @@ description: 역할 기반 UI 플랫폼 구조 - 관리자(데스크탑) vs 작�
 
 ```
 front/src/features/
-├── admin/              ← 관리자 전용 (데스크탑, 화이트)
-│   ├── dashboard/      AdminDashboard.jsx
-│   ├── projects/       ProjectList.jsx, CreateProject.jsx, ProjectDetail.jsx
-│   ├── sites/          SiteManagement.jsx
-│   ├── companies/      CompanyManagement.jsx
-│   └── workers/        WorkerManagement.jsx (관리자가 보는 작업자 목록)
+├── admin/              ← 최고 관리자 (System Admin, 데스크탑)
+│   ├── dashboard/      AdminDashboard.jsx (전체 통합 관제)
+│   ├── projects/       ProjectList.jsx, CreateProject.jsx
+│   ├── companies/      CompanyList.jsx (업체 마스터 관리)
+│   └── system/         SystemConfig.jsx
 │
-├── worker/             ← 작업자 전용 (모바일, 다크)
+├── manager/            ← 중간 관리자 (Site Manager, 현장 소장/안전관리자, 데스크탑)
+│   ├── dashboard/      ManagerDashboard.jsx (담당 현장 현황)
+│   ├── my_project/     ProjectOverview.jsx (내 현장 관리)
+│   ├── approvals/      WorkerApproval.jsx (작업자/업체 투입 승인)
+│   └── safety/         SafetyCheck.jsx (TBM, 위험성 평가)
+│
+├── worker/             ← 작업자 (Worker, 모바일)
 │   ├── dashboard/      WorkerDashboard.jsx
 │   ├── work/           WorkList.jsx (작업 목록)
 │   ├── safety/         SafetyMap.jsx (위험 지도)
