@@ -22,12 +22,9 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          {/* Dashboard는 독립적인 레이아웃 사용 (관리자 전용) */}
-          <Route path="/dashboard" element={<AdminDashboard />} />
-          
-          {/* 프로젝트 관리 페이지는 MainLayout 사용 */}
+          {/* 모든 메인 페이지는 하단 네비게이션 포함 */}
           <Route element={<MainLayout />}>
-             {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+             <Route path="/dashboard" element={<AdminDashboard />} />
              <Route path="/projects" element={<ProjectList />} />
              <Route path="/projects/create" element={<CreateProject />} />
              <Route path="/projects/:id" element={<ProjectDetail />} />

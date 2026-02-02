@@ -1,268 +1,308 @@
 import React, { useState, useEffect } from 'react';
-import { Database, Users, Briefcase, MapPin, FileText, TrendingUp, Grid, User } from 'lucide-react';
-import apiClient from '../../api/client';
-import WorkerDashboard from './WorkerDashboard';
-import './AdminDashboard.css'; // 화이트 테마 전용 CSS
+import { useNavigate } from 'react-router-dom';
+import { getAllProjects } from '../../api/projectApi';
+import { 
+  Briefcase, Plus, MapPin, Users, AlertTriangle, 
+  Database, FileText, TrendingUp, Settings 
+} from 'lucide-react';
+import './AdminDashboard.css';
 
 /**
- * 관리자 전용 대시보드
- * - 전체 DB 데이터 조회 (엑셀 스타일 테이블)
- * - 작업자 뷰 전환 가능
- * - 흰색 배경 + 어두운 글씨
+ * 관리자 메인 대시보드 (프로젝트 중심)
+ * - 전체 프로젝트 현황 요약
+ * - 빠른 작업 버튼
+ * - 최근 활동 프로젝트 표시
  */
 const AdminDashboard = () => {
-  const [viewMode, setViewMode] = useState('database'); // 'database' or 'worker'
-  const [activeTable, setActiveTable] = useState('workers');
-  const [tableData, setTableData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    total_workers: 0,
-    total_sites: 0,
-    total_plans: 0,
-    total_zones: 0
-  });
+  const navigate = useNavigate();
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // 통계 데이터 로드
   useEffect(() => {
-    apiClient.get('/dashboard/summary').then(res => {
-      setStats(res.data);
-    }).catch(err => console.error('통계 로드 실패:', err));
+    loadProjects();
   }, []);
 
-  // 테이블 데이터 로드
-  useEffect(() => {
-    if (viewMode !== 'database') return;
-    
-    setLoading(true);
-    const endpoints = {
-      workers: '/admin/db/workers',
-      sites: '/admin/db/sites',
-      plans: '/admin/db/plans',
-      zones: '/admin/db/zones',
-      companies: '/admin/db/companies'
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error('프로젝트 목록 조회 실패:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 프로젝트 상태별 개수
+  const activeCount = projects.filter(p => p.status === 'ACTIVE').length;
+  const plannedCount = projects.filter(p => p.status === 'PLANNED').length;
+  const doneCount = projects.filter(p => p.status === 'DONE').length;
+
+  // 최근 프로젝트 (최대 3개)
+  const recentProjects = projects.slice(0, 3);
+
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      PLANNED: { label: '계획', color: '#ffc107' },
+      ACTIVE: { label: '진행 중', color: '#4caf50' },
+      DONE: { label: '완료', color: '#9e9e9e' },
     };
+    const { label, color } = statusMap[status] || { label: status, color: '#666' };
+    return (
+      <span style={{ 
+        padding: '0.35rem 0.75rem', 
+        borderRadius: '20px', 
+        fontSize: '0.85rem', 
+        fontWeight: '600',
+        background: color,
+        color: 'white'
+      }}>
+        {label}
+      </span>
+    );
+  };
 
-    apiClient.get(endpoints[activeTable] || endpoints.workers)
-      .then(res => {
-        setTableData(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('데이터 로드 실패:', err);
-        setLoading(false);
-      });
-  }, [activeTable, viewMode]);
-
-  const tables = [
-    { key: 'workers', label: '작업자', icon: Users, color: '#3b82f6' },
-    { key: 'sites', label: '현장', icon: MapPin, color: '#10b981' },
-    { key: 'plans', label: '작업계획', icon: Briefcase, color: '#f59e0b' },
-    { key: 'zones', label: '구역', icon: TrendingUp, color: '#8b5cf6' },
-    { key: 'companies', label: '협력사', icon: FileText, color: '#ec4899' }
-  ];
-
-  // 작업자 뷰 모드
-  if (viewMode === 'worker') {
-    return <WorkerDashboard isAdminView={true} onBackToAdmin={() => setViewMode('database')} />;
+  if (loading) {
+    return <div className="admin-dashboard-white" style={{ padding: '2rem', textAlign: 'center' }}>프로젝트 목록을 불러오는 중...</div>;
   }
 
-  // 데이터베이스 뷰 모드
   return (
     <div className="admin-dashboard-white" style={{ padding: '1.5rem' }}>
       {/* 헤더 */}
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#1e293b', marginBottom: '0.5rem' }}>
-            <Database size={28} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'middle' }} />
-            데이터 센터
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '0.9rem' }}>전체 데이터베이스 조회 및 관리</p>
-        </div>
-        
-        {/* 뷰 전환 버튼 */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setViewMode('database')}
-            style={{
-              padding: '0.75rem 1.25rem',
-              borderRadius: '12px',
-              border: viewMode === 'database' ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-              background: viewMode === 'database' ? '#eff6ff' : 'white',
-              color: viewMode === 'database' ? '#3b82f6' : '#64748b',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Grid size={18} />
-            데이터베이스
-          </button>
-          <button
-            onClick={() => setViewMode('worker')}
-            style={{
-              padding: '0.75rem 1.25rem',
-              borderRadius: '12px',
-              border: viewMode === 'worker' ? '2px solid #10b981' : '1px solid #e2e8f0',
-              background: viewMode === 'worker' ? '#f0fdf4' : 'white',
-              color: viewMode === 'worker' ? '#10b981' : '#64748b',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <User size={18} />
-            작업자 뷰
-          </button>
-        </div>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#1e293b', marginBottom: '0.5rem' }}>
+          🏗️ 프로젝트 관리 대시보드
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+          전체 프로젝트를 관리하고 현황을 확인하세요
+        </p>
       </div>
 
-      {/* 통계 카드 */}
+      {/* 프로젝트 현황 요약 */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
         gap: '1rem', 
         marginBottom: '2rem' 
       }}>
-        <StatCard title="총 작업자" value={stats.total_workers} icon={Users} color="#3b82f6" />
-        <StatCard title="현장 수" value={stats.total_sites || 0} icon={MapPin} color="#10b981" />
-        <StatCard title="작업 계획" value={stats.today_plans} icon={Briefcase} color="#f59e0b" />
-        <StatCard title="위험 구역" value={stats.total_zones || 0} icon={TrendingUp} color="#ef4444" />
+        <SummaryCard 
+          title="진행 중" 
+          count={activeCount} 
+          icon={TrendingUp} 
+          color="#4caf50" 
+          onClick={() => navigate('/projects?filter=active')}
+        />
+        <SummaryCard 
+          title="계획 단계" 
+          count={plannedCount} 
+          icon={FileText} 
+          color="#ffc107" 
+          onClick={() => navigate('/projects?filter=planned')}
+        />
+        <SummaryCard 
+          title="완료" 
+          count={doneCount} 
+          icon={Briefcase} 
+          color="#9e9e9e" 
+          onClick={() => navigate('/projects?filter=done')}
+        />
+        <SummaryCard 
+          title="전체 프로젝트" 
+          count={projects.length} 
+          icon={Database} 
+          color="#667eea" 
+          onClick={() => navigate('/projects')}
+        />
       </div>
 
-      {/* 테이블 탭 */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '0.5rem', 
-        marginBottom: '1.5rem', 
-        overflowX: 'auto',
-        paddingBottom: '0.5rem'
-      }}>
-        {tables.map(table => (
+      {/* 빠른 작업 */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '1rem' }}>
+          🚀 빠른 작업
+        </h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: '1rem' 
+        }}>
+          <QuickActionButton 
+            icon={Plus} 
+            label="새 프로젝트 생성" 
+            color="#667eea" 
+            onClick={() => navigate('/projects/create')}
+          />
+          <QuickActionButton 
+            icon={Briefcase} 
+            label="프로젝트 목록" 
+            color="#10b981" 
+            onClick={() => navigate('/projects')}
+          />
+          <QuickActionButton 
+            icon={AlertTriangle} 
+            label="위험지역 설정" 
+            color="#ef4444" 
+            onClick={() => navigate('/map')}
+          />
+          <QuickActionButton 
+            icon={Users} 
+            label="작업자 관리" 
+            color="#3b82f6" 
+            onClick={() => navigate('/work')}
+          />
+        </div>
+      </div>
+
+      {/* 최근 활동 프로젝트 */}
+      {recentProjects.length > 0 && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '1rem' }}>
+            📌 최근 프로젝트 ({recentProjects.length}개)
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {recentProjects.map(project => (
+              <ProjectCard key={project.id} project={project} navigate={navigate} getStatusBadge={getStatusBadge} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 빈 상태 */}
+      {projects.length === 0 && (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '4rem 2rem', 
+          background: 'white', 
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
+        }}>
+          <h3 style={{ fontSize: '1.5rem', color: '#333', marginBottom: '1rem' }}>
+            등록된 프로젝트가 없습니다
+          </h3>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>
+            첫 프로젝트를 생성하여 시작하세요!
+          </p>
           <button
-            key={table.key}
-            onClick={() => setActiveTable(table.key)}
+            onClick={() => navigate('/projects/create')}
             style={{
-              padding: '0.75rem 1.25rem',
-              borderRadius: '12px',
-              border: activeTable === table.key ? `2px solid ${table.color}` : '1px solid #e2e8f0',
-              background: activeTable === table.key ? `${table.color}15` : 'white',
-              color: activeTable === table.key ? table.color : '#64748b',
-              fontWeight: '700',
+              padding: '0.75rem 2rem',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              fontWeight: 'bold',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+              transition: 'all 0.3s'
             }}
           >
-            <table.icon size={18} />
-            {table.label}
+            + 첫 프로젝트 만들기
           </button>
-        ))}
-      </div>
-
-      {/* 데이터 테이블 */}
-      <div style={{ 
-        padding: '1.5rem', 
-        overflowX: 'auto',
-        background: 'white',
-        border: '1px solid #e2e8f0',
-        borderRadius: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-            데이터 로딩 중...
-          </div>
-        ) : (
-          <DataTable data={tableData} tableType={activeTable} />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// 통계 카드 컴포넌트
-const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div style={{ 
-    padding: '1.25rem', 
-    background: 'white',
-    border: '1px solid #e2e8f0',
-    borderRadius: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-  }}>
+// 요약 카드 컴포넌트
+const SummaryCard = ({ title, count, icon: Icon, color, onClick }) => (
+  <div
+    onClick={onClick}
+    style={{
+      padding: '1.5rem',
+      background: 'white',
+      border: '1px solid #e2e8f0',
+      borderRadius: '16px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      cursor: onClick ? 'pointer' : 'default',
+      transition: 'all 0.2s',
+    }}
+    onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'translateY(-3px)')}
+    onMouseLeave={(e) => onClick && (e.currentTarget.style.transform = 'translateY(0)')}
+  >
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
       <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>{title}</span>
       <Icon size={20} color={color} />
     </div>
-    <div style={{ fontSize: '2rem', fontWeight: '900', color: '#1e293b' }}>{value}</div>
+    <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#1e293b' }}>{count}</div>
   </div>
 );
 
-// 데이터 테이블 컴포넌트
-const DataTable = ({ data, tableType }) => {
-  if (!data || data.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>데이터가 없습니다.</div>;
-  }
+// 빠른 작업 버튼
+const QuickActionButton = ({ icon: Icon, label, color, onClick }) => (
+  <button
+    onClick={onClick}
+    style={{
+      padding: '1rem',
+      background: 'white',
+      border: `2px solid ${color}`,
+      borderRadius: '12px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      fontWeight: '600',
+      color: color,
+      transition: 'all 0.2s',
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = color;
+      e.currentTarget.style.color = 'white';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = 'white';
+      e.currentTarget.style.color = color;
+    }}
+  >
+    <Icon size={20} />
+    {label}
+  </button>
+);
 
-  // 테이블 헤더 정의
-  const headers = {
-    workers: ['ID', '이름', '직종', '회사', '상태'],
-    sites: ['ID', '현장명', '주소', '안전관리자'],
-    plans: ['ID', '작업명', '구역', '위험도', '상태'],
-    zones: ['ID', '구역명', '레벨', '타입', '위도', '경도'],
-    companies: ['ID', '회사명', '업종']
-  };
-
-  const currentHeaders = headers[tableType] || Object.keys(data[0] || {});
-
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
-          {currentHeaders.map((header, idx) => (
-            <th key={idx} style={{ 
-              textAlign: 'left', 
-              padding: '1rem', 
-              color: '#475569', 
-              fontWeight: '700',
-              fontSize: '0.85rem',
-              textTransform: 'uppercase',
-              background: '#f8fafc'
-            }}>
-              {header}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, rowIdx) => (
-          <tr key={rowIdx} style={{ 
-            borderBottom: '1px solid #f1f5f9',
-            transition: 'background 0.2s ease'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            {Object.values(row).slice(0, currentHeaders.length).map((cell, cellIdx) => (
-              <td key={cellIdx} style={{ 
-                padding: '1rem', 
-                color: '#1e293b',
-                fontSize: '0.9rem'
-              }}>
-                {cell !== null && cell !== undefined ? String(cell) : '-'}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
+// 프로젝트 카드
+const ProjectCard = ({ project, navigate, getStatusBadge }) => (
+  <div style={{
+    background: 'white',
+    padding: '1.5rem',
+    borderRadius: '12px',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+    border: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    transition: 'all 0.2s',
+  }}>
+    <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+          {project.name}
+        </h3>
+        {getStatusBadge(project.status)}
+      </div>
+      <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
+        📍 {project.location_address || '위치 미정'} | 
+        🏢 {project.constructor_company || '-'} | 
+        📅 {project.start_date || '미정'} ~ {project.end_date || '미정'}
+      </p>
+    </div>
+    <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <button
+        onClick={() => navigate(`/projects/${project.id}`)}
+        style={{
+          padding: '0.6rem 1.2rem',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+        }}
+      >
+        상세보기
+      </button>
+    </div>
+  </div>
+);
 
 export default AdminDashboard;
