@@ -20,23 +20,12 @@ $SSH_HOST = "ubuntu@168.107.52.201"
 $REMOTE_DIR = "~/smart_security"
 
 # --------------------------------------------------------
-# 1. Git 경로 찾기 (PowerShell 환경 변수 문제 해결용)
-# --------------------------------------------------------
-$GitExe = "git" # 기본값
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    $PossiblePaths = @(
-        "C:\Program Files\Git\cmd\git.exe",
-        "C:\Program Files\Git\bin\git.exe",
-        "$env:LOCALAPPDATA\Programs\Git\cmd\git.exe"
-    )
-    foreach ($path in $PossiblePaths) {
-        if (Test-Path $path) {
-            $GitExe = "& `"$path`""
-            Write-Host "ℹ️  Git found at: $path" -ForegroundColor Gray
-            break
-        }
-    }
-}
+# 1. Git 경로 자동 설정 (PATH 추가)
+# 1. Git 설정
+# 시스템에 Git이 설치되어 있으므로 기본 명령어 사용
+$GitExe = "git"
+
+Write-Host "✅ Git 사용: $GitExe" -ForegroundColor Green
 
 # --------------------------------------------------------
 # 2. Git Push
@@ -66,8 +55,6 @@ $RemoteCommand = "
     git reset --hard origin/main && 
     echo '📦 Backend Dependencies...' &&
     ./venv/bin/pip install -r requirements.txt && 
-    echo '🗄️ Database Migration...' &&
-    ./venv/bin/alembic upgrade head && 
     echo '📦 Frontend Build...' &&
     cd front && 
     npm install && 
