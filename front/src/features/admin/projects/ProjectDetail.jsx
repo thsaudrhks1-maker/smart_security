@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProjectById } from '../../../api/projectApi';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import './ProjectDetail.css';
+
+// Leaflet 아이콘 이슈 해결
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -216,21 +227,32 @@ const ProjectDetail = () => {
                   </div>
                 </div>
 
-                <div className="info-card">
-                  <h3>위치 정보</h3>
-                  <div className="info-row">
-                    <span className="label">주소</span>
-                    <span className="value">{project.location_address || '-'}</span>
+                  <div className="info-card" style={{ gridColumn: 'span 2' }}>
+                    <h3>위치 정보</h3>
+                    <div className="info-row">
+                      <span className="label">주소</span>
+                      <span className="value">{project.location_address || '-'}</span>
+                    </div>
+                    {project.location_lat && project.location_lng ? (
+                      <div style={{ marginTop: '1rem', height: '300px', borderRadius: '8px', overflow: 'hidden' }}>
+                        <MapContainer 
+                          center={[project.location_lat, project.location_lng]} 
+                          zoom={15} 
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          />
+                          <Marker position={[project.location_lat, project.location_lng]} />
+                        </MapContainer>
+                      </div>
+                    ) : (
+                       <div style={{ padding: '2rem', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', color: '#94a3b8' }}>
+                         위치 좌표가 설정되지 않았습니다.
+                       </div>
+                    )}
                   </div>
-                  <div className="info-row">
-                    <span className="label">좌표</span>
-                    <span className="value">
-                      {project.location_lat && project.location_lng
-                        ? `${project.location_lat.toFixed(4)}, ${project.location_lng.toFixed(4)}`
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           )}

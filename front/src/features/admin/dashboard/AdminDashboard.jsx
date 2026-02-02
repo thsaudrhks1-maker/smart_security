@@ -17,6 +17,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  // UI State
+  const [showMapSection, setShowMapSection] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -63,6 +65,8 @@ const AdminDashboard = () => {
     );
   };
 
+
+
   if (loading) {
     return <div className="admin-dashboard-white" style={{ padding: '2rem', textAlign: 'center' }}>데이터를 불러오는 중...</div>;
   }
@@ -70,62 +74,7 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard-white" style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* 1. 스마트 안전 관제 센터 (상단 배치) */}
-      <section style={{ marginBottom: '3rem' }}>
-        <SafetyControlCenter />
-      </section>
-
-      {/* 구분선 */}
-      <div style={{ height: '1px', background: '#e2e8f0', margin: '0 0 3rem 0' }}></div>
-
-      {/* 2. 프로젝트 관리 영역 */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem' }}>
-          🏗️ 프로젝트 관리
-        </h1>
-        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-          진행 중인 모든 건설 현장의 프로젝트를 통합 관리합니다.
-        </p>
-      </div>
-
-      {/* 프로젝트 현황 요약 */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '1rem', 
-        marginBottom: '2rem' 
-      }}>
-        <SummaryCard 
-          title="진행 중" 
-          count={activeCount} 
-          icon={TrendingUp} 
-          color="#4caf50" 
-          onClick={() => navigate('/projects?filter=active')}
-        />
-        <SummaryCard 
-          title="계획 단계" 
-          count={plannedCount} 
-          icon={FileText} 
-          color="#ffc107" 
-          onClick={() => navigate('/projects?filter=planned')}
-        />
-        <SummaryCard 
-          title="완료" 
-          count={doneCount} 
-          icon={Briefcase} 
-          color="#9e9e9e" 
-          onClick={() => navigate('/projects?filter=done')}
-        />
-        <SummaryCard 
-          title="전체 프로젝트" 
-          count={projects.length} 
-          icon={Database} 
-          color="#667eea" 
-          onClick={() => navigate('/projects')}
-        />
-      </div>
-
-      {/* 빠른 작업 */}
+      {/* 1. 빠른 작업 (최상단) */}
       <div style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '1rem' }}>
           🚀 빠른 작업
@@ -139,30 +88,30 @@ const AdminDashboard = () => {
             icon={Plus} 
             label="새 프로젝트 생성" 
             color="#667eea" 
-            onClick={() => navigate('/projects/create')}
+            onClick={() => navigate('/admin/projects/create')}
           />
           <QuickActionButton 
             icon={Briefcase} 
             label="프로젝트 목록" 
             color="#10b981" 
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/admin/projects')}
           />
           <QuickActionButton 
-            icon={AlertTriangle} 
-            label="위험지역 설정" 
+            icon={MapPin} 
+            label={showMapSection ? "안전 지도 숨기기" : "안전 지도 보기"}
             color="#ef4444" 
-            onClick={() => navigate('/map')}
+            onClick={() => setShowMapSection(!showMapSection)}
           />
           <QuickActionButton 
             icon={Users} 
             label="작업자 관리" 
             color="#3b82f6" 
-            onClick={() => navigate('/work')}
+            onClick={() => navigate('/admin/workers')} // 라우트 없으면 /admin/projects 로 대체 가능
           />
         </div>
       </div>
 
-      {/* 최근 활동 프로젝트 */}
+      {/* 2. 최근 프로젝트 (상단) */}
       {recentProjects.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '1rem' }}>
@@ -175,6 +124,63 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* 3. 스마트 안전 관제 센터 (토글 섹션) */}
+      {showMapSection && (
+        <section style={{ marginBottom: '3rem', animation: 'fadeIn 0.3s ease-in-out' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+             <h2 style={{ fontSize: '1.5rem', fontWeight:'800', color: '#1e293b' }}>🗺️ 전체 현장 관제</h2>
+             <button onClick={() => setShowMapSection(false)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', textDecoration: 'underline' }}>접기</button>
+          </div>
+          <SafetyControlCenter />
+        </section>
+      )}
+
+      {/* 구분선 */}
+      <div style={{ height: '1px', background: '#e2e8f0', margin: '0 0 3rem 0' }}></div>
+
+      {/* 4. 프로젝트 통계 */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem' }}>
+          📊 통합 현황
+        </h1>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+        gap: '1rem', 
+        marginBottom: '2rem' 
+      }}>
+        <SummaryCard 
+          title="진행 중" 
+          count={activeCount} 
+          icon={TrendingUp} 
+          color="#4caf50" 
+          onClick={() => navigate('/admin/projects?filter=active')}
+        />
+        <SummaryCard 
+          title="계획 단계" 
+          count={plannedCount} 
+          icon={FileText} 
+          color="#ffc107" 
+          onClick={() => navigate('/admin/projects?filter=planned')}
+        />
+        <SummaryCard 
+          title="완료" 
+          count={doneCount} 
+          icon={Briefcase} 
+          color="#9e9e9e" 
+          onClick={() => navigate('/admin/projects?filter=done')}
+        />
+        <SummaryCard 
+          title="전체 프로젝트" 
+          count={projects.length} 
+          icon={Database} 
+          color="#667eea" 
+          onClick={() => navigate('/admin/projects')}
+        />
+      </div>
 
       {/* 빈 상태 */}
       {projects.length === 0 && (
@@ -192,7 +198,7 @@ const AdminDashboard = () => {
             첫 프로젝트를 생성하여 시작하세요!
           </p>
           <button
-            onClick={() => navigate('/projects/create')}
+            onClick={() => navigate('/admin/projects/create')}
             style={{
               padding: '0.75rem 2rem',
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -296,7 +302,7 @@ const ProjectCard = ({ project, navigate, getStatusBadge }) => (
     </div>
     <div style={{ display: 'flex', gap: '0.5rem' }}>
       <button
-        onClick={() => navigate(`/projects/${project.id}`)}
+        onClick={() => navigate(`/admin/projects/${project.id}`)}
         style={{
           padding: '0.6rem 1.2rem',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',

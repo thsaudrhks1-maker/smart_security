@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../api/client';
 import { createProject } from '../../../api/projectApi';
 import LocationPicker from '../components/common/LocationPicker';
 import './CreateProject.css';
 
 const CreateProject = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     location_address: '',
@@ -17,6 +20,24 @@ const CreateProject = () => {
     end_date: '',
     status: 'PLANNED',
   });
+
+  const [companies, setCompanies] = useState([]);
+  const [isDirectClient, setIsDirectClient] = useState(false);
+  const [isDirectConstructor, setIsDirectConstructor] = useState(false);
+
+  React.useEffect(() => {
+    loadCompanies();
+  }, []);
+
+  const loadCompanies = async () => {
+    try {
+      // 회사 목록 조회 API (admin/db/companies 사용)
+      const res = await apiClient.get('/admin/db/companies');
+      if (res.data) setCompanies(res.data);
+    } catch (err) {
+      console.error('회사 목록 로드 실패', err);
+    }
+  };
 
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +76,7 @@ const CreateProject = () => {
 
       await createProject(payload);
       alert('프로젝트가 생성되었습니다!');
-      window.location.href = '/projects'; // 목록으로 이동
+      navigate('/admin/projects'); // 목록으로 이동
     } catch (error) {
       console.error('프로젝트 생성 실패:', error);
       alert('프로젝트 생성에 실패했습니다.');
@@ -68,7 +89,7 @@ const CreateProject = () => {
     <div className="create-project-container">
       <div className="create-header">
         <h1>새 프로젝트 생성</h1>
-        <button className="btn-back" onClick={() => window.location.href = '/projects'}>
+        <button className="btn-back" onClick={() => navigate('/admin/projects')}>
           ← 목록으로
         </button>
       </div>
@@ -171,26 +192,78 @@ const CreateProject = () => {
         <section className="form-section">
           <h2>관계사 정보</h2>
           
+          {/* 발주처 선택 */}
           <div className="form-group">
-            <label>발주처</label>
-            <input
-              type="text"
-              name="client_company"
-              value={formData.client_company}
-              onChange={handleChange}
-              placeholder="예: OO건설"
-            />
+            <label>발주처 {isDirectClient && <span style={{fontSize:'0.8rem', color:'#666'}}>(직접 입력)</span>}</label>
+            {!isDirectClient ? (
+              <select 
+                name="client_company" 
+                value={formData.client_company} 
+                onChange={(e) => {
+                  if (e.target.value === '__DIRECT__') {
+                    setIsDirectClient(true);
+                    setFormData({...formData, client_company: ''});
+                  } else {
+                    handleChange(e);
+                  }
+                }}
+              >
+                <option value="">선택하세요</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.name}>{c.name} {c.trade_type ? `(${c.trade_type})` : ''}</option>
+                ))}
+                <option value="__DIRECT__">+ 직접 입력</option>
+              </select>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  name="client_company"
+                  value={formData.client_company}
+                  onChange={handleChange}
+                  placeholder="발주처명 직접 입력"
+                  autoFocus
+                />
+                <button type="button" onClick={() => setIsDirectClient(false)} style={{ padding: '0 8px' }}>취소</button>
+              </div>
+            )}
           </div>
 
+          {/* 시공사 선택 */}
           <div className="form-group">
-            <label>시공사</label>
-            <input
-              type="text"
-              name="constructor_company"
-              value={formData.constructor_company}
-              onChange={handleChange}
-              placeholder="예: XX종합건설"
-            />
+            <label>시공사 {isDirectConstructor && <span style={{fontSize:'0.8rem', color:'#666'}}>(직접 입력)</span>}</label>
+            {!isDirectConstructor ? (
+              <select 
+                name="constructor_company" 
+                value={formData.constructor_company} 
+                onChange={(e) => {
+                  if (e.target.value === '__DIRECT__') {
+                    setIsDirectConstructor(true);
+                    setFormData({...formData, constructor_company: ''});
+                  } else {
+                    handleChange(e);
+                  }
+                }}
+              >
+                <option value="">선택하세요</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.name}>{c.name} {c.trade_type ? `(${c.trade_type})` : ''}</option>
+                ))}
+                <option value="__DIRECT__">+ 직접 입력</option>
+              </select>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  name="constructor_company"
+                  value={formData.constructor_company}
+                  onChange={handleChange}
+                  placeholder="시공사명 직접 입력"
+                  autoFocus
+                />
+                <button type="button" onClick={() => setIsDirectConstructor(false)} style={{ padding: '0 8px' }}>취소</button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -235,7 +308,7 @@ const CreateProject = () => {
 
         {/* 제출 버튼 */}
         <div className="form-actions">
-          <button type="button" className="btn-cancel" onClick={() => window.location.href = '/projects'}>
+          <button type="button" className="btn-cancel" onClick={() => navigate('/admin/projects')}>
             취소
           </button>
           <button type="submit" className="btn-submit" disabled={loading}>

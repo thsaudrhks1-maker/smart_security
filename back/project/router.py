@@ -14,11 +14,59 @@ async def create_project(
 ):
     """
     프로젝트 생성 (관리자 전용)
-    
-    - 공사명, 위치, 금액, 기간 등 기본 정보 입력
-    - 담당 소장 및 안전관리자 지정
+    - 입력된 발주처/시공사가 Company 테이블에 없으면 자동 등록 (role 구분)
     """
+    # 프로젝트 생성 (ProjectRepository에서 commit 수행됨)
     project = await ProjectRepository.create(db, project_data)
+    
+    # [관계 설정] Project - Company (N:M)
+    from sqlalchemy.future import select
+    from back.company.model import Company, ProjectParticipant
+
+    # 헬퍼: 회사 조회 또는 생성
+    async def get_or_create_company(name: str):
+        # 이미 세션에 추가된 객체 확인 (flush 전)
+        for obj in db.new:
+            if isinstance(obj, Company) and obj.name == name:
+                return obj
+                
+        result = await db.execute(select(Company).where(Company.name == name))
+        comp = result.scalars().first()
+        if not comp:
+            comp = Company(name=name) # 순수 회사 정보
+            db.add(comp)
+            await db.flush() # ID 생성을 위해 flush
+        return comp
+
+    try:
+        # 1. 발주처(CLIENT) 등록
+        if project_data.client_company:
+            client = await get_or_create_company(project_data.client_company)
+            # 참여 관계 생성
+            client_part = ProjectParticipant(
+                project_id=project.id,
+                company_id=client.id,
+                role="CLIENT"
+            )
+            db.add(client_part)
+
+        # 2. 시공사(CONSTRUCTOR) 등록
+        if project_data.constructor_company:
+            constructor = await get_or_create_company(project_data.constructor_company)
+            constructor_part = ProjectParticipant(
+                project_id=project.id,
+                company_id=constructor.id,
+                role="CONSTRUCTOR"
+            )
+            db.add(constructor_part)
+            
+        await db.commit()
+        
+    except Exception as e:
+        print(f"회사 관계 설정 중 오류 발생: {e}")
+        # 프로젝트는 이미 생성되었으므로 롤백하지 않음 (비즈니스 정책에 따라 다름)
+        # 필요하다면 프로젝트 삭제 로직 추가 가능
+    
     return project
 
 @router.get("/", response_model=List[ProjectResponse])
@@ -78,3 +126,73 @@ async def delete_project(
     if not success:
         raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     return None
+
+# --- 협력사(참여자) 관리 API ---
+
+@router.get("/{project_id}/participants")
+async def get_project_participants(
+    project_id: int, 
+    db: AsyncSession = Depends(get_db)
+):
+    """프로젝트 참여 기업 목록 조회"""
+    from back.company.model import Company, ProjectParticipant
+    from sqlalchemy.future import select
+
+    result = await db.execute(
+        select(ProjectParticipant, Company)
+        .join(Company, ProjectParticipant.company_id == Company.id)
+        .where(ProjectParticipant.project_id == project_id)
+    )
+    
+    participants = []
+    for part, comp in result:
+        participants.append({
+            "id": part.id,
+            "project_id": part.project_id,
+            "company_id": comp.id,
+            "company_name": comp.name,
+            "role": part.role,
+            "trade_type": comp.trade_type
+        })
+    return participants
+
+@router.post("/{project_id}/participants")
+async def add_project_participant(
+    project_id: int,
+    company_name: str,
+    role: str = "PARTNER",
+    db: AsyncSession = Depends(get_db)
+):
+    """프로젝트에 협력사 추가 (이름으로 검색/생성)"""
+    from back.company.model import Company, ProjectParticipant
+    from sqlalchemy.future import select
+
+    # 1. 회사 조회/생성
+    result = await db.execute(select(Company).where(Company.name == company_name))
+    comp = result.scalars().first()
+    if not comp:
+        comp = Company(name=company_name, trade_type="미지정")
+        db.add(comp)
+        await db.flush()
+
+    # 2. 중복 체크
+    exists = await db.execute(
+        select(ProjectParticipant)
+        .where(
+            ProjectParticipant.project_id == project_id,
+            ProjectParticipant.company_id == comp.id
+        )
+    )
+    if exists.scalars().first():
+        return {"message": "이미 등록된 협력사입니다.", "status": "exists"}
+
+    # 3. 관계 생성
+    part = ProjectParticipant(
+        project_id=project_id,
+        company_id=comp.id,
+        role=role
+    )
+    db.add(part)
+    await db.commit()
+    
+    return {"message": "협력사가 추가되었습니다.", "status": "success", "company_id": comp.id}
