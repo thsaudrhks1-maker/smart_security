@@ -18,13 +18,23 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> UserModel:
     """
-    현재 로그인한 사용자 조회
+    현재 로그인한 사용자 조회 (JWT 기반)
     """
     token = credentials.credentials
     
-    # 임시: 개발 편의성을 위해 admin 사용자 반환
+    # JWT 토큰 검증
+    auth_service = AuthService(db)
+    username = auth_service.verify_token(token)
+    
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 토큰입니다"
+        )
+    
+    # 사용자 조회
     result = await db.execute(
-        select(UserModel).filter(UserModel.username == "admin")
+        select(UserModel).filter(UserModel.username == username)
     )
     user = result.scalar_one_or_none()
     

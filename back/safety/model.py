@@ -18,6 +18,9 @@ class Zone(Base):
     lat = Column(Float, nullable=True)
     lng = Column(Float, nullable=True)
     
+    # 구역별 고정 위험 요소 (예: ["추락위험", "환기불량"])
+    default_hazards = Column(JSON, nullable=True, comment="해당 구역의 고정 위험 요소 목록")
+    
     site = relationship("Site", back_populates="zones")
     daily_plans = relationship("DailyWorkPlan", back_populates="zone")
 

@@ -53,11 +53,29 @@ async def seed_all_data():
             db.add(c)
         await db.flush()
 
-        # 3. 위험 구역 (Zones)
+        # 3. 위험 구역 (Zones) - 고정 위험 요소 포함
         zones = [
-            Zone(id=1, site_id=1, name="3층 C zone (추락위험)", type="DANGER", level="HIGH", lat=37.5, lng=127.0),
-            Zone(id=2, site_id=1, name="지하 1층 기계실", type="SAFE", level="LOW", lat=37.5, lng=127.0),
-            Zone(id=3, site_id=1, name="옥상 슬라브 (강풍주의)", type="DANGER", level="CRITICAL", lat=37.5, lng=127.0)
+            Zone(
+                id=1, site_id=1, 
+                name="3층 C zone (추락위험)", 
+                type="DANGER", level="HIGH", 
+                lat=37.5, lng=127.0,
+                default_hazards=["추락위험", "강풍주의", "안전난간 미설치"]
+            ),
+            Zone(
+                id=2, site_id=1, 
+                name="지하 1층 기계실", 
+                type="SAFE", level="LOW", 
+                lat=37.5, lng=127.0,
+                default_hazards=["밀폐공간", "환기불량", "소음"]
+            ),
+            Zone(
+                id=3, site_id=1, 
+                name="옥상 슬라브 (강풍주의)", 
+                type="DANGER", level="CRITICAL", 
+                lat=37.5, lng=127.0,
+                default_hazards=["강풍", "추락위험", "미끄럼"]
+            )
         ]
         for z in zones:
             db.add(z)
@@ -87,7 +105,7 @@ async def seed_all_data():
             db.add(w)
         await db.flush()
 
-        # 5. 작업 템플릿 및 일일 작업 계획
+        # 5. 작업 템플릿 및 일일 작업 계획 - 일일 위험 요소 포함
         templates = [
             WorkTemplate(id=1, work_type="기초파일항타", required_ppe=["안전모", "안전화"], checklist_items=["장비 점검", "신호수 배치"]),
             WorkTemplate(id=2, work_type="배관용접", required_ppe=["용접면", "가죽장갑"], checklist_items=["소화기 비치", "불티 비산방지"]),
@@ -97,17 +115,19 @@ async def seed_all_data():
         await db.flush()
         
         plans = [
-            # 김철수: 3층 C zone에서 기초파일항타
+            # 김철수: 3층 C zone에서 기초파일항타 (고정위험 + 일일위험)
             DailyWorkPlan(
                 id=1, site_id=1, zone_id=1, template_id=1, 
                 date=today_str, description="파일공사 - 기초파일항타", 
-                calculated_risk_score=85, status="IN_PROGRESS"
+                calculated_risk_score=85, status="IN_PROGRESS",
+                daily_hazards=["낙하물 위험", "중장비 작업", "소음"]
             ),
-            # 이영희: 지하 1층에서 용접
+            # 이영희: 지하 1층에서 용접 (고정위험 + 일일위험)
             DailyWorkPlan(
                 id=2, site_id=1, zone_id=2, template_id=2, 
                 date=today_str, description="기계실 배관 용접", 
-                calculated_risk_score=40, status="PLANNED"
+                calculated_risk_score=40, status="PLANNED",
+                daily_hazards=["화재위험", "유독가스", "화상위험"]
             )
         ]
         for p in plans:

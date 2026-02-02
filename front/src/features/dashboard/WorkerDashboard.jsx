@@ -336,13 +336,38 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             )}
              
             {myWork.checklist_items && (
-              <div>
+              <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: '#10b981' }}>✅ 안전 점검 리스트</div>
                 <ul style={{ paddingLeft: '20px', margin: 0 }}>
                   {myWork.checklist_items.map((item, i) => (
                     <li key={i} style={{ marginBottom: '4px', fontSize: '0.9rem', color: '#334155' }}>{item}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* 위험 요소 표시 */}
+            {myWork.hazards && myWork.hazards.length > 0 && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '1rem' }}>
+                <div style={{ fontWeight: '700', marginBottom: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={18} />
+                  ⚠️ 주의: 위험 요소
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {myWork.hazards.map((hazard, i) => (
+                    <span key={i} style={{ 
+                      background: '#fee2e2', 
+                      color: '#991b1b', 
+                      padding: '6px 10px', 
+                      borderRadius: '6px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: '600',
+                      border: '1px solid #fca5a5'
+                    }}>
+                      {hazard}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>

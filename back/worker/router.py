@@ -60,6 +60,13 @@ async def get_my_work_today(
     
     allocation, plan, zone, template = result
     
+    # 위험 요소 합산 (구역 고정 위험 + 일일 작업 위험)
+    all_hazards = []
+    if zone.default_hazards:
+        all_hazards.extend(zone.default_hazards)
+    if plan.daily_hazards:
+        all_hazards.extend(plan.daily_hazards)
+    
     return {
         "id": plan.id,
         "description": plan.description,
@@ -68,7 +75,10 @@ async def get_my_work_today(
         "calculated_risk_score": plan.calculated_risk_score,
         "required_ppe": template.required_ppe or [],
         "checklist_items": template.checklist_items or [],
-        "my_role": allocation.role
+        "my_role": allocation.role,
+        "hazards": all_hazards,  # 합산된 위험 요소
+        "zone_hazards": zone.default_hazards or [],  # 구역 고정 위험
+        "daily_hazards": plan.daily_hazards or []  # 일일 작업 위험
     }
 
 

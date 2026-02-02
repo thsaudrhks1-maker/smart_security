@@ -15,6 +15,23 @@ class AuthService:
         self.repository = AuthRepository(db)
         self.db = db # Store AsyncSession for direct use
 
+    def verify_token(self, token: str) -> str | None:
+        """
+        토큰에서 사용자명 추출
+        현재는 간단한 토큰 형식: master_token_{username} 또는 token_{username}_{role}
+        """
+        try:
+            if token.startswith("master_token_"):
+                return token.replace("master_token_", "")
+            elif token.startswith("token_"):
+                parts = token.split("_")
+                if len(parts) >= 2:
+                    return parts[1]  # token_{username}_{role}
+            return None
+        except Exception as e:
+            logger.error(f"Token verification failed: {e}")
+            return None
+
     async def login(self, login_data: LoginRequest) -> dict: # Reverted login_data type hint to LoginRequest and removed db argument
         # 1. 사용자 조회 (Async)
         result = await self.db.execute(select(UserModel).filter(UserModel.username == login_data.username))

@@ -32,6 +32,9 @@ class DailyWorkPlan(Base):
     description = Column(String, nullable=True, comment="작업 내용 요약")
     equipment_flags = Column(JSON, nullable=True, comment="사용 장비 (JSON, 예: ['CRANE', 'LIFT'])")
     
+    # 일일 위험 요소 (작업별 동적 위험, 예: ["화재위험", "낙하물위험"])
+    daily_hazards = Column(JSON, nullable=True, comment="해당 날짜/작업의 추가 위험 요소")
+    
     calculated_risk_score = Column(Integer, default=0, comment="계산된 위험도 점수")
     status = Column(String, default="PLANNED", comment="PLANNED, IN_PROGRESS, DONE")
     
