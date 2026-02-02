@@ -5,14 +5,14 @@ import '../../features/dashboard/Dashboard.css'; // 전역 레이아웃 스타�
 
 const MainLayout = () => {
     return (
-        <div className="app-container">
-            {/* 고정 사이드바 */}
-            <NavSidebar />
-            
+        <div className="app-container" style={{ display: 'block' }}>
             {/* 페이지 콘텐츠 영역 */}
-            <div className="app-content">
+            <div className="app-content" style={{ marginLeft: 0, paddingBottom: '80px', minHeight: '100vh', background: '#f8fafc' }}>
                 <Outlet />
             </div>
+
+            {/* 하단 고정 네비게이션 */}
+            <NavSidebar />
         </div>
     );
 };

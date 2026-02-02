@@ -14,6 +14,8 @@ from back.work.router import router as work_router
 from back.company.router import router as company_router
 from back.safety.router import router as safety_router
 from back.dashboard.router import router as dashboard_router
+from back.worker.router import router as worker_router
+from back.admin.router import router as admin_router
 
 app = FastAPI(title="Smart Safety Guardian API")
 
@@ -39,6 +41,8 @@ app.include_router(work_router)
 app.include_router(company_router)
 app.include_router(safety_router)
 app.include_router(dashboard_router)
+app.include_router(worker_router)
+app.include_router(admin_router)
 
 # --- Admin / Data Endpoints ---
 @app.get("/admin/db/workers")

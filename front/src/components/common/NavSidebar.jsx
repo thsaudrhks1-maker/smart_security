@@ -1,62 +1,80 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut, Activity 
+  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut 
 } from 'lucide-react';
-import '../../features/dashboard/Dashboard.css'; // 스타일 재사용
+import '../../features/dashboard/Dashboard.css';
 
 const NavSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const NavItem = ({ icon: Icon, path, activePath }) => {
-    // path가 현재 경로에 포함되면 active 처리 (단, 루트/대시보드 구분)
+  const NavItem = ({ icon: Icon, path }) => {
+    // path가 현재 경로에 포함되면 active 처리
     const isActive = currentPath === path || (path !== '/' && currentPath.startsWith(path));
     
     return (
       <button 
         onClick={() => path && navigate(path)}
-        className={`btn-icon ${isActive ? 'active' : ''}`}
         style={{ 
-          width: '48px', height: '48px', 
-          borderRadius: '12px', border: 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: isActive ? 'rgba(249, 115, 22, 0.2)' : 'transparent',
-          color: isActive ? 'var(--accent-primary)' : 'var(--text-muted)',
-          cursor: 'pointer', transition: 'all 0.2s',
-          marginBottom: '0.5rem'
+          flex: 1,
+          height: '100%',
+          border: 'none',
+          display: 'flex', 
+          flexDirection: 'column',
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: 'transparent',
+          color: isActive ? '#f97316' : '#94a3b8',
+          cursor: 'pointer', 
+          transition: 'all 0.2s',
+          padding: '8px 0',
+          position: 'relative'
         }}
-        title={path}
       >
-        <Icon size={24} />
+        <div style={{
+          padding: '8px',
+          borderRadius: '12px',
+          background: isActive ? '#fff7ed' : 'transparent',
+          marginBottom: '2px'
+        }}>
+          <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+        </div>
+        {isActive && (
+          <div style={{
+            position: 'absolute',
+            bottom: '0',
+            width: '20px',
+            height: '3px',
+            background: '#f97316',
+            borderRadius: '2px 2px 0 0'
+          }} />
+        )}
       </button>
     );
   };
 
   return (
-    <nav className="sidebar-panel glass-panel" style={{ zIndex: 1000 }}>
-      {/* Logo Icon (Click to Home) */}
-      <div className="logo-container" onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
-        <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--accent-primary), #d97706)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.4)' }}>
-           <Activity size={24} color="#1e1e1e" />
-        </div>
-      </div>
-
-      {/* Main Menu */}
-      <div className="nav-menu-main">
-        <NavItem icon={LayoutDashboard} path="/dashboard" />
-        {/* <NavItem icon={FileText} path="/notice" /> */}
-        {/* <NavItem icon={Users} path="/workers" /> */}
-        <NavItem icon={Briefcase} path="/work" />
-        <NavItem icon={ShieldAlert} path="/map" />
-      </div>
-
-      {/* Bottom Menu */}
-      <div className="nav-menu-bottom">
-        {/* <NavItem icon={Settings} path="/settings" /> */}
-        <NavItem icon={LogOut} path="/" />
-      </div>
+    <nav style={{ 
+      position: 'fixed',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: '70px',
+      background: 'white',
+      borderTop: '1px solid #e2e8f0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-around',
+      zIndex: 1000,
+      boxShadow: '0 -4px 6px -1px rgba(0, 0, 0, 0.05)',
+      paddingBottom: 'safe-area-inset-bottom' // 아이폰 하단 바 대응
+    }}>
+      <NavItem icon={LayoutDashboard} path="/dashboard" />
+      <NavItem icon={Briefcase} path="/work" />
+      <NavItem icon={ShieldAlert} path="/map" />
+      <NavItem icon={LogOut} path="/" />
     </nav>
   );
 };

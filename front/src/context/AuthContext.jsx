@@ -22,9 +22,10 @@ export const AuthProvider = ({ children }) => {
     try {
       // authApi.login은 response.data를 직접 반환하도록 설계됨
       const data = await authApi.login(username, password);
-      const { access_token, role, username: returnedUsername } = data;
+      // full_name 추가 추출
+      const { access_token, role, username: returnedUsername, full_name } = data;
       
-      const userData = { username: returnedUsername, role };
+      const userData = { username: returnedUsername, role, full_name };
       
       localStorage.setItem('token', access_token);
       localStorage.setItem('user', JSON.stringify(userData));

@@ -337,6 +337,9 @@ const AppMenuModal = ({ onClose, onLogout, user, onOpenAdmin }) => {
 
 // --- Main Layout ---
 
+import AdminDashboard from './AdminDashboard';
+import WorkerDashboard from './WorkerDashboard';
+
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const [summary, setSummary] = useState({ total_workers: 0, today_plans: 0, active_equipment: 0, safety_accident_free_days: 0 });
@@ -348,6 +351,7 @@ const DashboardLayout = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showRiskPanel, setShowRiskPanel] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [showMap, setShowMap] = useState(true); // 지도 토글 상태
 
   useEffect(() => {
     const loadData = async () => {
@@ -363,6 +367,16 @@ const DashboardLayout = () => {
     loadData();
   }, []);
 
+  // 역할별 대시보드 분기
+  if (user?.role === 'admin') {
+    return <AdminDashboard />;
+  }
+
+  if (user?.role === 'worker') {
+    return <WorkerDashboard />;
+  }
+
+  // 기본 대시보드 (관리자 + 지도)
   return (
     <div className="dashboard-content-grid">
       {showWorkerModal && <WorkersModal onClose={() => setShowWorkerModal(false)} />}
@@ -377,13 +391,34 @@ const DashboardLayout = () => {
             <div style={{ fontSize: '1.25rem', fontWeight:'900', background: 'linear-gradient(to right, #60a5fa, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Smart Guardian</div>
             <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Welcome back, {user?.full_name} 관리자</div>
           </div>
-          <button onClick={() => setShowAppMenu(true)} className="btn-icon" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '10px' }}>
-            <Grid size={24} color="#3b82f6" />
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => setShowMap(!showMap)} 
+              className="btn-icon" 
+              style={{ 
+                background: showMap ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.05)', 
+                borderRadius: '12px', 
+                padding: '10px',
+                border: showMap ? '1px solid rgba(59, 130, 246, 0.4)' : 'none'
+              }}
+            >
+              <MapPin size={24} color={showMap ? "#3b82f6" : "#64748b"} />
+            </button>
+            <button onClick={() => setShowAppMenu(true)} className="btn-icon" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '10px' }}>
+              <Grid size={24} color="#3b82f6" />
+            </button>
+          </div>
       </div>
 
-      {/* Main Map Area - Prominent position */}
-      <div className="area-map-group glass-panel" style={{ height: '400px', margin: '0 1.25rem 1.25rem', padding: 0, overflow: 'hidden', position: 'relative' }}>
+      {/* Main Map Area - Collapsible */}
+      {showMap && (
+        <div className="area-map-group glass-panel" style={{ height: '400px', margin: '0 1.25rem 1.25rem', padding: 0, overflow: 'hidden', position: 'relative', animation: 'slideDown 0.3s ease-out' }}>
+          <style>{`
+            @keyframes slideDown {
+              from { height: 0; opacity: 0; }
+              to { height: 400px; opacity: 1; }
+            }
+          `}</style>
           <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
             
@@ -427,7 +462,8 @@ const DashboardLayout = () => {
 
           {/* Side Panel for Risks */}
           <RiskSidePanel risks={risks} isOpen={showRiskPanel} onClose={() => setShowRiskPanel(false)} />
-      </div>
+        </div>
+      )}
 
       {/* Stats Area (Below map, organized in two columns on mobile if needed) */}
       <div className="area-status" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', padding: '0 1.25rem 1.25rem' }}>
