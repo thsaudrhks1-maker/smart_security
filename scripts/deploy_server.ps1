@@ -66,6 +66,8 @@ $RemoteCommand = "
     git reset --hard origin/main && 
     echo '📦 Backend Dependencies...' &&
     ./venv/bin/pip install -r requirements.txt && 
+    echo '🗄️ Database Migration...' &&
+    ./venv/bin/alembic upgrade head && 
     echo '📦 Frontend Build...' &&
     cd front && 
     npm install && 

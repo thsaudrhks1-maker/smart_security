@@ -7,20 +7,21 @@
 import asyncio
 from datetime import date, datetime
 from sqlalchemy import text
-from passlib.context import CryptContext
+import bcrypt
+
+# 비밀번호 해싱 함수 (bcrypt 사용)
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 from back.database import AsyncSessionLocal
 from back.auth.model import UserModel
 from back.company.model import Company, Site, Worker
-from back.safety.model import Zone
+from back.safety.model import Zone, DailyDangerZone
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.info.model import (
     Notice, DailySafetyInfo, EmergencyAlert, 
     Attendance, SafetyViolation, Weather
 )
-
-# 비밀번호 해싱 설정
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def seed_all_data():
     async with AsyncSessionLocal() as db:
@@ -30,7 +31,7 @@ async def seed_all_data():
         print("   - 기존 데이터 삭제 중...")
         tables = [
             "safety_violations", "attendance", "emergency_alerts", 
-            "daily_safety_info", "notices", "weather",
+            "daily_safety_info", "daily_danger_zones", "notices", "weather",
             "worker_allocations", "daily_work_plans", "work_templates", 
             "workers", "zones", "sites", "companies", "users"
         ]
@@ -120,9 +121,7 @@ async def seed_all_data():
         await db.flush()
 
         # 4. 사용자 및 작업자
-        # 비밀번호 '0000' 해시
-        # hashed_pwd = pwd_context.hash("0000")
-        hashed_pwd = "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
+        hashed_pwd = hash_password("0000")
         
         users = [
             UserModel(id=1, username="admin", full_name="관리자", role="admin", hashed_password=hashed_pwd),
@@ -225,6 +224,35 @@ async def seed_all_data():
         db.add(SafetyViolation(worker_id=1, date=today_str, violation_type="안전고리 미체결", description="고소작업 중 미체결", severity="HIGH"))
         db.add(SafetyViolation(worker_id=1, date=today_str, violation_type="보호구 불량", description="안전화 파손", severity="LOW"))
         db.add(SafetyViolation(worker_id=2, date=today_str, violation_type="흡연", description="지정장소 외 흡연", severity="MEDIUM"))
+        
+        # 7. 일일 변동 위험 (DailyDangerZone)
+        daily_dangers = [
+            # Zone 1 (김철수 작업공간): 싱크홀 & 중장비
+            DailyDangerZone(
+                zone_id=1, date=today_str, risk_type="COLLAPSE", 
+                description="🚨 [방1/긴급] 지반 약화로 인한 싱크홀 경보", 
+                x=15.0, y=22.0, z=0.0
+            ),
+            DailyDangerZone(
+                zone_id=1, date=today_str, risk_type="HEAVY_EQUIPMENT", 
+                description="🚜 [방1/운행] 소형 굴삭기 내부 진입 작업 중", 
+                x=18.0, y=25.0, z=0.0
+            ),
+            # Zone 3 (이영희 작업공간): 화재
+            DailyDangerZone(
+                zone_id=3, date=today_str, risk_type="FIRE", 
+                description="🔥 [방3/화기] 인화성 가스 농도 상승 (환기 필요)", 
+                x=30.0, y=30.0, z=1.5
+            ),
+            # Zone 7 (박민수 작업공간 - 복도): 낙하물
+            DailyDangerZone(
+                zone_id=7, date=today_str, risk_type="FALL", 
+                description="🧱 [복도/상부] 2층 자재 인양 중 낙하물 주의", 
+                x=42.0, y=10.0, z=3.0
+            )
+        ]
+        for dd in daily_dangers:
+            db.add(dd)
         
         # 공지사항
         db.add(Notice(title="시스템 공지", content="서버 점검 안내 - 2월 3일 02:00~04:00 시스템 점검이 진행됩니다.", priority="NORMAL"))

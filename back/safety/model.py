@@ -40,3 +40,22 @@ class SafetyLog(Base):
     created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     plan = relationship("DailyWorkPlan", back_populates="logs")
+
+class DailyDangerZone(Base):
+    """일일 변동 위험 구역 (Daily Active Danger Zone) - 중장비, 화재 등 일시적 위험"""
+    __tablename__ = "daily_danger_zones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    zone_id = Column(Integer, ForeignKey("zones.id"), nullable=False)
+    
+    date = Column(String, nullable=False, index=True, comment="YYYY-MM-DD")
+    
+    risk_type = Column(String, nullable=False, comment="HEAVY_EQUIPMENT(중장비), FIRE(화재), FALL(낙하물), ETC")
+    description = Column(String, nullable=False, comment="위험 상세 (예: 이동식 크레인 작업 중)")
+    
+    # 상세 좌표 (옵션)
+    x = Column(Float, nullable=True)
+    y = Column(Float, nullable=True)
+    z = Column(Float, nullable=True)
+    
+    zone = relationship("Zone")

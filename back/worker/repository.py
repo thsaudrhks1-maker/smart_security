@@ -10,6 +10,7 @@ async def get_daily_work_plan(worker_id: int, date: str) -> dict | None:
     sql = """
         SELECT 
             p.id as plan_id, 
+            p.zone_id,
             p.description, 
             p.calculated_risk_score, 
             p.daily_hazards,
@@ -53,6 +54,10 @@ async def get_active_emergency_alert() -> dict | None:
 async def get_daily_safety_infos(date: str) -> list[dict]:
     sql = "SELECT * FROM daily_safety_info WHERE date = :date"
     return await fetch_all(sql, {"date": date})
+
+async def get_daily_danger_zones(zone_id: int, date: str) -> list[dict]:
+    sql = "SELECT * FROM daily_danger_zones WHERE zone_id = :zone_id AND date = :date"
+    return await fetch_all(sql, {"zone_id": zone_id, "date": date})
 
 async def get_attendance(worker_id: int, date: str) -> dict | None:
     sql = """

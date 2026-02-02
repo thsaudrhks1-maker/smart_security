@@ -98,5 +98,5 @@ async def insert_and_return(query: str, params: dict = None) -> dict | None:
 from back.auth.model import UserModel
 from back.company.model import Site, Company, Worker
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
-from back.safety.model import Zone, SafetyLog
+from back.safety.model import Zone, SafetyLog, DailyDangerZone
 from back.info.model import Notice, DailySafetyInfo, EmergencyAlert, Attendance, SafetyViolation, Weather

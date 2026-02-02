@@ -42,3 +42,15 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 ## 4. 문서 작성 표준
 - **TXT 파일 규칙**: `Project_Docs/**/*.txt` 작성 시 마크다운 문법(`#`, `**`) 사용 금지. 순수 텍스트(`===`, `1.`)로만 작성.
 - **로그 파일명**: `YYYY-MM-DD.txt` 형식 준수.
+
+## 5. DB 마이그레이션 및 배포 프로세스 (Alembic Workflow)
+*DB 스키마 변경 시 아래 절차를 엄수해야 함. `Base.metadata.create_all` 사용 금지.*
+
+1. **로컬 개발 (Migration 생성)**:
+   - 모델 코드를 수정한 후 반드시 로컬에서 마이그레이션 파일 생성.
+   - 명령어: `alembic revision --autogenerate -m "변경내용"`
+   - 생성된 `migrations/versions/*.py` 파일을 Git에 Commit & Push.
+
+2. **서버 배포 (Migration 적용)**:
+   - 배포 스크립트(`deploy_server.ps1`)는 반드시 코드 Pull 이후에 `alembic upgrade head`를 실행해야 함.
+   - 서버에서 `create_all` 등 자동 생성 함수를 호출하지 않도록 주의.

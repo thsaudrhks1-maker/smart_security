@@ -9,7 +9,8 @@ from back.worker.repository import (
     get_daily_safety_infos,
     get_attendance,
     get_safety_violations_count,
-    get_recent_notices
+    get_recent_notices,
+    get_daily_danger_zones # 추가됨
 )
 
 async def get_my_work_today(user_id: int) -> Dict[str, Any] | None:
@@ -26,8 +27,23 @@ async def get_my_work_today(user_id: int) -> Dict[str, Any] | None:
         return None
         
     # 3. 위험 요소 합산
+    # JSON 필드가 자동으로 파싱되었다고 가정 (SQLAlchemy + asyncpg)
     zone_hazards = plan.get("zone_hazards") or []
+    # daily_hazards는 list여야 append 가능. None이면 빈 리스트로 초기화
     daily_hazards = plan.get("daily_hazards") or []
+    if not isinstance(daily_hazards, list):
+        daily_hazards = []
+
+    # [NEW] 일일 변동 위험(DailyDangerZone) 조회 및 추가
+    # 금일 내 작업 구역(zone_id)에 해당하는 일일 위험 요소를 조회
+    if plan.get("zone_id"):
+        danger_zones = await get_daily_danger_zones(plan["zone_id"], today)
+        for dz in danger_zones:
+            # 예: "HEAVY_EQUIPMENT: ⚠️ 이동식 크레인 인양 작업 중 (접근 금지)"
+            # 프론트엔드에서 더 예쁘게 보여주려면 별도 필드로 내려주는 게 좋지만,
+            # 현재 구조상 hazards 리스트에 텍스트로 추가하는 것이 가장 빠름.
+            msg = f"🚧 {dz['risk_type']}: {dz['description']}"
+            daily_hazards.append(msg)
     
     all_hazards = list(set(zone_hazards + daily_hazards))
     
@@ -56,18 +72,36 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
     # 배정된 구역 조회 (잠재적 위험 구역)
     zones = await get_assigned_zones(worker["id"], today)
     
-    return [
-        {
+    # [NEW] 각 구역별 일일 변동 위험 체크
+    # 원래는 Zone 정보만 줬지만, 일일 위험(DailyDangerZone)이 있으면 description 업그레이드
+    result = []
+    for z in zones:
+        danger_zones = await get_daily_danger_zones(z["id"], today)
+        
+        # 기본 description
+        desc = f"{z['level']} - 기본 위험 구역"
+        
+        # 일일 위험이 있으면 모든 위험 요소를 합쳐서 표시
+        if danger_zones:
+            descriptions = []
+            for dz in danger_zones:
+                # [오늘의 위험] 문구 제거, 원본 설명만 사용
+                descriptions.append(dz['description'])
+            
+            # 위험 요소가 여러 개일 경우 줄바꿈으로 연결하여 가독성 확보
+            desc = "\n".join(descriptions)
+            
+        result.append({
             "id": z["id"],
             "name": z["name"],
             "type": z["type"],
             "level": z["level"],
             "lat": z["lat"],
             "lng": z["lng"],
-            "description": f"{z['level']} - 위험 구역"
-        }
-        for z in zones
-    ]
+            "description": desc
+        })
+    
+    return result
 
 
 async def get_dashboard_info(user_id: int) -> Dict[str, Any]:

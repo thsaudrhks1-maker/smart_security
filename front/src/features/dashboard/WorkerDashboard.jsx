@@ -116,6 +116,23 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: '1.3' }}>
                   {myWork.description.length > 15 ? myWork.description.substring(0, 15) + '...' : myWork.description}
                 </div>
+                {/* 일일 위험 요소 뱃지 */}
+                {myWork.daily_hazards && myWork.daily_hazards.length > 0 && (
+                  <div style={{ 
+                    marginTop: '6px', 
+                    fontSize: '0.75rem', 
+                    background: 'rgba(255,100,100,0.3)', 
+                    border: '1px solid rgba(255,255,255,0.4)', 
+                    color: '#ffecec', 
+                    padding: '2px 6px', 
+                    borderRadius: '4px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <AlertTriangle size={12} /> 위험 {myWork.daily_hazards.length}건 주의
+                  </div>
+                )}
                 <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '0.5rem' }}>
                   <MapPin size={12} style={{ display: 'inline' }} /> {myWork.zone_name}
                 </div>
@@ -186,11 +203,11 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             </div>
             {myRisks.length > 0 ? (
               <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>
-                  {myRisks[0].name}
+                <div style={{ fontSize: '1.0rem', fontWeight: '800', lineHeight: '1.4', marginBottom: '6px', wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>
+                  {myRisks[0].description}
                 </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  {myRisks[0].type}
+                <div style={{ fontSize: '0.8rem', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <MapPin size={12} /> {myRisks[0].name}
                 </div>
                 {myRisks.length > 1 && (
                   <div style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.8 }}>
