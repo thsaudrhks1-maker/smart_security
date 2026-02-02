@@ -226,93 +226,117 @@ const SummaryCard = ({ title, count, icon: Icon, color, onClick }) => (
     style={{
       padding: '1.5rem',
       background: 'white',
-      border: '1px solid #e2e8f0',
+      border: '1px solid #f1f5f9',
       borderRadius: '16px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
       cursor: onClick ? 'pointer' : 'default',
-      transition: 'all 0.2s',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      position: 'relative',
+      overflow: 'hidden'
     }}
-    onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'translateY(-3px)')}
+    onMouseEnter={(e) => onClick && (e.currentTarget.style.transform = 'translateY(-5px)')}
     onMouseLeave={(e) => onClick && (e.currentTarget.style.transform = 'translateY(0)')}
   >
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-      <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>{title}</span>
-      <Icon size={20} color={color} />
+    <div style={{ position: 'absolute', right: '-10px', top: '-10px', opacity: 0.1 }}>
+      <Icon size={80} color={color} />
     </div>
-    <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#1e293b' }}>{count}</div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
+      <div style={{ padding: '8px', borderRadius: '8px', background: `${color}15` }}>
+        <Icon size={20} color={color} />
+      </div>
+      <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>{title}</span>
+    </div>
+    <div style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1e293b', paddingLeft: '4px' }}>
+      {count}
+    </div>
   </div>
 );
 
-// 빠른 작업 버튼
+// 빠른 작업 버튼 (세련된 아웃라인 스타일)
 const QuickActionButton = ({ icon: Icon, label, color, onClick }) => (
   <button
     onClick={onClick}
     style={{
-      padding: '1rem',
+      padding: '1.25rem',
       background: 'white',
-      border: `2px solid ${color}`,
+      border: `1px solid ${color}`,
       borderRadius: '12px',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '0.75rem',
+      justifyContent: 'center',
+      gap: '10px',
       fontWeight: '600',
       color: color,
-      transition: 'all 0.2s',
+      transition: 'all 0.2s ease',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+      fontSize: '0.95rem'
     }}
     onMouseEnter={(e) => {
-      e.currentTarget.style.background = color;
-      e.currentTarget.style.color = 'white';
+      e.currentTarget.style.background = `${color}08`; // 아주 연한 배경색
+      e.currentTarget.style.boxShadow = `0 4px 12px ${color}20`;
+      e.currentTarget.style.transform = 'translateY(-2px)';
     }}
     onMouseLeave={(e) => {
       e.currentTarget.style.background = 'white';
-      e.currentTarget.style.color = color;
+      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+      e.currentTarget.style.transform = 'translateY(0)';
     }}
   >
-    <Icon size={20} />
+    <Icon size={22} strokeWidth={2} />
     {label}
   </button>
 );
 
-// 프로젝트 카드
+// 프로젝트 카드 (깔끔한 리스트 스타일)
 const ProjectCard = ({ project, navigate, getStatusBadge }) => (
   <div style={{
     background: 'white',
     padding: '1.5rem',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
-    border: '1px solid #e2e8f0',
+    borderRadius: '16px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+    border: '1px solid #f1f5f9',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     transition: 'all 0.2s',
   }}>
     <div style={{ flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
         <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
           {project.name}
         </h3>
         {getStatusBadge(project.status)}
       </div>
-      <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
-        📍 {project.location_address || '위치 미정'} | 
-        🏢 {project.constructor_company || '-'} | 
-        📅 {project.start_date || '미정'} ~ {project.end_date || '미정'}
-      </p>
+      <div style={{ display: 'flex', gap: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          📍 {project.location_address || '위치 미정'}
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          🏢 {project.constructor_company || '-'}
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          📅 {project.start_date || '미정'} ~ {project.end_date || '미정'}
+        </span>
+      </div>
     </div>
     <div style={{ display: 'flex', gap: '0.5rem' }}>
       <button
         onClick={() => navigate(`/admin/projects/${project.id}`)}
         style={{
-          padding: '0.6rem 1.2rem',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '0.6rem 1.4rem',
+          background: '#4f46e5',
           color: 'white',
           border: 'none',
           borderRadius: '8px',
           fontWeight: '600',
           cursor: 'pointer',
           transition: 'all 0.2s',
+          fontSize: '0.9rem',
+          boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
         }}
+        onMouseEnter={(e) => e.currentTarget.style.background = '#4338ca'}
+        onMouseLeave={(e) => e.currentTarget.style.background = '#4f46e5'}
       >
         상세보기
       </button>
