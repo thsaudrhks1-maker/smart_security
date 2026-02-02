@@ -53,28 +53,66 @@ async def seed_all_data():
             db.add(c)
         await db.flush()
 
-        # 3. 위험 구역 (Zones) - 고정 위험 요소 포함
+        # 3. 위험 구역 (Zones) - 1층 방 6개 + 복도 + 코어
         zones = [
+            # 방 6개
             Zone(
                 id=1, site_id=1, 
-                name="3층 C zone (추락위험)", 
-                type="DANGER", level="HIGH", 
-                lat=37.5, lng=127.0,
-                default_hazards=["추락위험", "강풍주의", "안전난간 미설치"]
+                name="1층 방1 (철근 작업)", 
+                type="INDOOR", level="MEDIUM", 
+                lat=37.5001, lng=127.0001,
+                default_hazards=["낙하물 위험", "철근 적재물", "협착 위험"]
             ),
             Zone(
                 id=2, site_id=1, 
-                name="지하 1층 기계실", 
-                type="SAFE", level="LOW", 
-                lat=37.5, lng=127.0,
-                default_hazards=["밀폐공간", "환기불량", "소음"]
+                name="1층 방2 (미장 작업)", 
+                type="INDOOR", level="LOW", 
+                lat=37.5002, lng=127.0002,
+                default_hazards=["분진", "미끄럼"]
             ),
             Zone(
                 id=3, site_id=1, 
-                name="옥상 슬라브 (강풍주의)", 
-                type="DANGER", level="CRITICAL", 
-                lat=37.5, lng=127.0,
-                default_hazards=["강풍", "추락위험", "미끄럼"]
+                name="1층 방3 (배관실)", 
+                type="INDOOR", level="MEDIUM", 
+                lat=37.5003, lng=127.0003,
+                default_hazards=["밀폐공간", "용접 작업"]
+            ),
+            Zone(
+                id=4, site_id=1, 
+                name="1층 방4 (전기실)", 
+                type="DANGER", level="HIGH", 
+                lat=37.5004, lng=127.0004,
+                default_hazards=["감전 위험", "고압 전류", "화재 위험"]
+            ),
+            Zone(
+                id=5, site_id=1, 
+                name="1층 방5 (자재 보관)", 
+                type="SAFE", level="LOW", 
+                lat=37.5005, lng=127.0005,
+                default_hazards=["적재물 붕괴"]
+            ),
+            Zone(
+                id=6, site_id=1, 
+                name="1층 방6 (도장 작업)", 
+                type="DANGER", level="MEDIUM", 
+                lat=37.5006, lng=127.0006,
+                default_hazards=["유독가스", "환기불량", "화재위험"]
+            ),
+            # 복도
+            Zone(
+                id=7, site_id=1, 
+                name="1층 복도1", 
+                type="INDOOR", level="LOW", 
+                lat=37.5007, lng=127.0007,
+                default_hazards=["미끄럼", "자재 적재"]
+            ),
+            # 코어 (계단실)
+            Zone(
+                id=8, site_id=1, 
+                name="1층 코어 (계단실)", 
+                type="INDOOR", level="MEDIUM", 
+                lat=37.5008, lng=127.0008,
+                default_hazards=["추락위험", "좁은 통로", "조명 불량"]
             )
         ]
         for z in zones:
@@ -107,27 +145,35 @@ async def seed_all_data():
 
         # 5. 작업 템플릿 및 일일 작업 계획 - 일일 위험 요소 포함
         templates = [
-            WorkTemplate(id=1, work_type="기초파일항타", required_ppe=["안전모", "안전화"], checklist_items=["장비 점검", "신호수 배치"]),
-            WorkTemplate(id=2, work_type="배관용접", required_ppe=["용접면", "가죽장갑"], checklist_items=["소화기 비치", "불티 비산방지"]),
+            WorkTemplate(id=1, work_type="철근 조립", required_ppe=["안전모", "안전화", "안전장갑"], checklist_items=["철근 상태 점검", "작업 공간 정리", "낙하물 방지망 설치"]),
+            WorkTemplate(id=2, work_type="배관용접", required_ppe=["용접면", "가죽장갑", "안전화"], checklist_items=["소화기 비치", "불티 비산방지", "환기 확인"]),
+            WorkTemplate(id=3, work_type="자재 운반", required_ppe=["안전모", "안전화"], checklist_items=["통로 확보", "중량 확인"]),
         ]
         for t in templates:
             db.add(t)
         await db.flush()
         
         plans = [
-            # 김철수: 3층 C zone에서 기초파일항타 (고정위험 + 일일위험)
+            # 김철수: 1층 방1에서 철근 조립 (고정위험 + 일일위험)
             DailyWorkPlan(
                 id=1, site_id=1, zone_id=1, template_id=1, 
-                date=today_str, description="파일공사 - 기초파일항타", 
-                calculated_risk_score=85, status="IN_PROGRESS",
-                daily_hazards=["낙하물 위험", "중장비 작업", "소음"]
+                date=today_str, description="철근 배근 및 조립 작업", 
+                calculated_risk_score=75, status="IN_PROGRESS",
+                daily_hazards=["중량물 취급", "날카로운 철근", "고소 작업"]
             ),
-            # 이영희: 지하 1층에서 용접 (고정위험 + 일일위험)
+            # 이영희: 1층 방3에서 배관 용접 (고정위험 + 일일위험)
             DailyWorkPlan(
-                id=2, site_id=1, zone_id=2, template_id=2, 
-                date=today_str, description="기계실 배관 용접", 
-                calculated_risk_score=40, status="PLANNED",
-                daily_hazards=["화재위험", "유독가스", "화상위험"]
+                id=2, site_id=1, zone_id=3, template_id=2, 
+                date=today_str, description="급수 배관 용접 작업", 
+                calculated_risk_score=65, status="PLANNED",
+                daily_hazards=["화재위험", "화상위험", "밀폐공간 질식"]
+            ),
+            # 박민수: 복도에서 자재 운반
+            DailyWorkPlan(
+                id=3, site_id=1, zone_id=7, template_id=3,
+                date=today_str, description="자재 운반 및 정리",
+                calculated_risk_score=30, status="PLANNED",
+                daily_hazards=["미끄럼", "중량물 낙하"]
             )
         ]
         for p in plans:
@@ -135,8 +181,9 @@ async def seed_all_data():
         await db.flush()
         
         allocations = [
-            WorkerAllocation(plan_id=1, worker_id=1, role="반장"), # 김철수 할당
-            WorkerAllocation(plan_id=2, worker_id=2, role="용접공"), # 이영희 할당
+            WorkerAllocation(plan_id=1, worker_id=1, role="반장"),    # 김철수 → 철근 작업
+            WorkerAllocation(plan_id=2, worker_id=2, role="용접공"),  # 이영희 → 배관 용접
+            WorkerAllocation(plan_id=3, worker_id=3, role="운반공"),  # 박민수 → 자재 운반
         ]
         for a in allocations:
             db.add(a)
@@ -146,10 +193,29 @@ async def seed_all_data():
         
         db.add(EmergencyAlert(title="긴급알림", message="강풍 주의! 타워크레인 작업 중지 바람.", severity="HIGH", is_active=True))
         
-        db.add(DailySafetyInfo(
-            date=today_str, title="일일 안전정보", content="금일 낙하물 사고 위험이 높습니다.", 
-            is_read_by_worker="1" # 김철수만 읽음 (13건 열람 효과 연출용)
-        ))
+        # 일일 안전정보 - 작업별로 다르게
+        safety_infos = [
+            DailySafetyInfo(
+                date=today_str, 
+                title="[철근 작업] 중량물 취급 안전수칙", 
+                content="• 철근 운반 시 2인 1조 작업 필수\n• 날카로운 철근 단면에 보호캡 설치\n• 작업 전 안전장갑 착용 상태 확인\n• 철근 적재 높이 1.5m 이하 유지\n• 낙하물 방지를 위한 안전망 설치 확인",
+                is_read_by_worker="1"  # 김철수만 읽음
+            ),
+            DailySafetyInfo(
+                date=today_str, 
+                title="[용접 작업] 화재 예방 및 환기 관리", 
+                content="• 용접 작업 전 소화기 비치 확인 (10m 이내)\n• 밀폐공간 작업 시 환기팬 가동 필수\n• 불티 비산 방지 덮개 설치\n• 인화성 물질 5m 이상 거리 확보\n• 용접면 및 가죽장갑 착용 상태 점검",
+                is_read_by_worker="2"  # 이영희만 읽음
+            ),
+            DailySafetyInfo(
+                date=today_str, 
+                title="[공통] 동절기 안전관리", 
+                content="• 결빙 구간 미끄럼 주의 (복도, 계단)\n• 보온 장구 착용으로 동상 예방\n• 작업 시작 전 준비운동 5분 이상\n• 온열 질환 예방을 위한 수분 섭취\n• 기상악화 시 외부 작업 즉시 중단",
+                is_read_by_worker="3"  # 박민수만 읽음
+            )
+        ]
+        for info in safety_infos:
+            db.add(info)
         
         # 출역 현황
         db.add(Attendance(worker_id=1, date=today_str, check_in_time="06:50", status="PRESENT")) # 김철수
@@ -161,14 +227,20 @@ async def seed_all_data():
         db.add(SafetyViolation(worker_id=2, date=today_str, violation_type="흡연", description="지정장소 외 흡연", severity="MEDIUM"))
         
         # 공지사항
-        db.add(Notice(title="시스템 공지", content="서버 점검 안내", priority="NORMAL"))
-        db.add(Notice(title="동절기 건강관리", content="스트레칭 필수", priority="NORMAL"))
+        db.add(Notice(title="시스템 공지", content="서버 점검 안내 - 2월 3일 02:00~04:00 시스템 점검이 진행됩니다.", priority="NORMAL"))
+        db.add(Notice(title="동절기 건강관리", content="스트레칭 필수 - 작업 전후 스트레칭으로 근골격계 질환을 예방하세요.", priority="NORMAL"))
+
 
         await db.commit()
         print("✅ 통합 데이터 시딩 완료!")
+        print("   - Zone: 1층 방1~6, 복도, 코어 (총 8개)")
         print("   - 사용자: admin, worker1(김철수), worker2(이영희), worker3(박민수)")
         print("   - 암호: 0000")
-        print("   - 작업: 김철수(기초파일항타), 이영희(배관용접)")
+        print("   - 작업:")
+        print("     • 김철수 → 1층 방1: 철근 배근 작업")
+        print("     • 이영희 → 1층 방3: 배관 용접 작업")
+        print("     • 박민수 → 1층 복도: 자재 운반")
+
 
 if __name__ == "__main__":
     asyncio.run(seed_all_data())

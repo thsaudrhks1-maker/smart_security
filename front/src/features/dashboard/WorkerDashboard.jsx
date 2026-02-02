@@ -54,7 +54,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   }
 
   return (
-    <div style={{ padding: '1rem', background: '#f1f5f9', minHeight: '100vh', paddingBottom: '80px' }}>
+    <div style={{ padding: '0.75rem', background: '#f1f5f9', minHeight: '100vh', paddingBottom: '80px' }}>
       
       {/* 헤더 */}
       <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -79,7 +79,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1fr', 
-        gap: '0.75rem', 
+        gap: '0.35rem', 
         gridAutoRows: 'minmax(100px, auto)'
       }}>
         
@@ -218,8 +218,8 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem' }}>일일 안전정보</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-               <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_info?.read_count}</span>
-               <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '2px' }}>열람</span>
+               <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_infos?.length || 0}</span>
+               <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '2px' }}>건</span>
             </div>
             <FileText size={20} style={{ opacity: 0.5 }} />
           </div>
@@ -281,7 +281,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
       <style>{`
         .dashboard-card {
           padding: 1rem;
-          border-radius: 16px;
+          border-radius: 4px;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           cursor: pointer;
           transition: transform 0.2s;
@@ -453,6 +453,82 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           </div>
         ) : (
            <div style={{ textAlign: 'center', color: '#94a3b8' }}>현재 발령된 긴급 알림이 없습니다.</div>
+        )}
+      </SimpleModal>
+
+       {/* 5. 일일 안전정보 모달 */}
+       <SimpleModal
+        isOpen={activeModal === 'safety'}
+        onClose={closeModal}
+        title="📋 금일 안전 정보"
+      >
+        {dashboardInfo?.safety_infos && dashboardInfo.safety_infos.length > 0 ? (
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+             {dashboardInfo.safety_infos.map((info, idx) => (
+               <div key={idx} style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '1rem' }}>
+                 <div style={{ fontWeight: '700', color: '#10b981', marginBottom: '0.75rem', fontSize: '1rem' }}>
+                   {info.title}
+                 </div>
+                 <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+                   {info.content}
+                 </div>
+               </div>
+             ))}
+           </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>등록된 안전 정보가 없습니다.</div>
+        )}
+
+      </SimpleModal>
+
+       {/* 6. 위험지역 상세 모달 */}
+       <SimpleModal
+        isOpen={activeModal === 'risk'}
+        onClose={closeModal}
+        title="⚠️ 위험 지역 목록"
+      >
+        {myRisks && myRisks.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {myRisks.map((risk, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => handleViewLocation(risk)}
+                style={{ 
+                  background: '#fff7ed', 
+                  border: '1px solid #fdba74', 
+                  borderRadius: '8px', 
+                  padding: '1rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: '700', color: '#c2410c', fontSize: '1rem' }}>
+                    {risk.name}
+                  </div>
+                  <span style={{ 
+                    background: risk.level === 'HIGH' ? '#fee2e2' : '#ffedd5',
+                    color: risk.level === 'HIGH' ? '#991b1b' : '#9a3412',
+                    fontSize: '0.7rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontWeight: '600'
+                  }}>
+                    {risk.level}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#431407', marginBottom: '0.5rem' }}>
+                  {risk.description}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#fdba74', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <MapPin size={14} /> 지도에서 위치 보기
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+            현재 지정된 위험 지역이 없습니다.
+          </div>
         )}
       </SimpleModal>
 
