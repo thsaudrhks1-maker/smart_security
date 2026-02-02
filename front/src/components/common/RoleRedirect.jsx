@@ -21,8 +21,10 @@ const RoleRedirect = () => {
     }
 
     // 역할별 리다이렉트
-    if (user.role === 'admin' || user.role === 'manager' || user.role === 'safety_manager') {
+    if (user.role === 'admin') {
       navigate('/admin', { replace: true });
+    } else if (user.role === 'manager' || user.role === 'safety_manager') { // 중간 관리자 (소장, 안전관리자)
+      navigate('/manager', { replace: true });
     } else if (user.role === 'worker') {
       navigate('/worker', { replace: true });
     } else {

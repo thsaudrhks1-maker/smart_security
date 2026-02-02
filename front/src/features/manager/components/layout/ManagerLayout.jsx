@@ -6,7 +6,13 @@ import {
   Users, 
   ClipboardCheck, 
   LogOut, 
-  HardHat 
+  HardHat,
+  FileText,
+  ShieldAlert,
+  MapPin,
+  GraduationCap,
+  Megaphone,
+  Bell
 } from 'lucide-react';
 
 const ManagerLayout = () => {
@@ -16,9 +22,14 @@ const ManagerLayout = () => {
 
   const menu = [
     { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
-    { label: '내 현장 관리', icon: Briefcase, path: '/manager/my-project' },
-    { label: '근로자/업체 승인', icon: Users, path: '/manager/approvals' },
-    { label: '안전 점검(TBM)', icon: ClipboardCheck, path: '/manager/safety' },
+    { label: '근로자 관리', icon: Users, path: '/manager/workers' },
+    { label: '출역 관리', icon: ClipboardCheck, path: '/manager/attendance' },
+    { label: '안전정보 열람현황', icon: FileText, path: '/manager/safety-info' },
+    { label: '위반자 등록/현황', icon: ShieldAlert, path: '/manager/violations' },
+    { label: '근로자 위치확인', icon: MapPin, path: '/manager/location' },
+    { label: '안전교육 현황', icon: GraduationCap, path: '/manager/education' },
+    { label: '현장 공지', icon: Megaphone, path: '/manager/notice' },
+    { label: '긴급 알림', icon: Bell, path: '/manager/emergency' },
   ];
 
   return (

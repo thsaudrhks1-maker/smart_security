@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import RoleRedirect from './components/common/RoleRedirect';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import PagePlaceholder from './components/common/PagePlaceholder';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
@@ -36,8 +37,15 @@ function App() {
           {/* 대시보드 (역할 자동 분기) */}
           <Route path="/dashboard" element={<RoleRedirect />} />
           
-          {/* 관리자 전용 (데스크탑) */}
-          <Route path="/admin/*" element={<AdminLayout />}>
+          {/* 1. 관리자 전용 (데스크탑) - ADMIN only */}
+          <Route 
+            path="/admin/*" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<AdminDashboard />} />
             <Route path="projects" element={<ProjectList />} />
             <Route path="projects/create" element={<CreateProject />} />
@@ -45,14 +53,28 @@ function App() {
             <Route path="companies" element={<CompanyList />} />
           </Route>
           
-          {/* 중간 관리자 (현장 소장) */}
-          <Route path="/manager/*" element={<ManagerLayout />}>
+          {/* 2. 중간 관리자 (현장 소장) - MANAGER & ADMIN */}
+          <Route 
+            path="/manager/*" 
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'safety_manager', 'admin']}>
+                <ManagerLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<ManagerDashboard />} />
             {/* 추후 추가될 하위 라우트들 */}
           </Route>
 
-          {/* 작업자 전용 (모바일) */}
-          <Route path="/worker/*" element={<WorkerLayout />}>
+          {/* 3. 작업자 전용 (모바일) - WORKER only */}
+          <Route 
+            path="/worker/*" 
+            element={
+              <ProtectedRoute allowedRoles={['worker', 'admin']}>
+                <WorkerLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<WorkerDashboard />} />
             <Route path="work" element={<WorkList />} />
             <Route path="safety" element={<SafetyMap />} />
