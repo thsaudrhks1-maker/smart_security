@@ -9,6 +9,7 @@ import asyncio
 # 모듈별 라우터 임포트
 # 모듈별 라우터 임포트
 from back.auth.router import router as auth_router
+from back.project.router import router as project_router
 from back.map.router import router as map_router, simulate_worker_movement
 from back.work.router import router as work_router
 from back.company.router import router as company_router
@@ -36,6 +37,7 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(auth_router)
+app.include_router(project_router)
 app.include_router(map_router)
 app.include_router(work_router)
 app.include_router(company_router)

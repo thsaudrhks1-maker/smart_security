@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Database, Users, Briefcase, MapPin, FileText, TrendingUp, Grid, User } from 'lucide-react';
 import apiClient from '../../api/client';
 import WorkerDashboard from './WorkerDashboard';
+import './AdminDashboard.css'; // 화이트 테마 전용 CSS
 
 /**
  * 관리자 전용 대시보드
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
 
   // 데이터베이스 뷰 모드
   return (
-    <div style={{ padding: '1.5rem', background: '#f8fafc', minHeight: '100vh' }}>
+    <div className="admin-dashboard-white" style={{ padding: '1.5rem' }}>
       {/* 헤더 */}
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>

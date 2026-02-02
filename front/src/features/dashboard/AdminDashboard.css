@@ -1,0 +1,17 @@
+/* AdminDashboard 전용 화이트 테마 (최고 우선순위) */
+.admin-dashboard-white {
+  background: #f8fafc !important;
+  color: #1e293b !important;
+  min-height: 100vh;
+}
+
+.admin-dashboard-white * {
+  color: inherit;
+}
+
+.admin-dashboard-white h1,
+.admin-dashboard-white h2,
+.admin-dashboard-white h3,
+.admin-dashboard-white h4 {
+  color: #1e293b !important;
+}

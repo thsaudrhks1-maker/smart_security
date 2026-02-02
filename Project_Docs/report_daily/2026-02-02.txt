@@ -26,3 +26,71 @@
 
 특이사항
 - 타 서비스(소개띵 등)와의 충돌 없이 독립적인 포트 대역 확보함
+
+==============================================================
+2026-02-02 (월) 오후 작업 - 프로젝트 중심 아키텍처 재설계
+==============================================================
+
+작업 시간: 14:10 ~ 14:33
+
+[Daily Log]
+1. 프로젝트 중심 아키텍처 기획서 작성
+   - 파일: Project_Docs/planning/03_Project_Centric_Architecture.txt
+   - 기존 작업자 중심 → 관리자 프로젝트 생성 → 작업자 사용 흐름으로 재정의
+   - 미니 안전 PMIS 개념 정리 (5억~10억 규모 소형 현장 대상)
+   - 역할별 권한 매트릭스 작성 (소장/안전관리자/작업자)
+
+2. 데이터베이스 스키마 재설계
+   - 신규 테이블 생성: projects (프로젝트 최상위 엔티티)
+     필드: 공사명, 위치(주소/좌표), 발주처, 시공사, 금액, 기간, 담당자, 상태
+   - 기존 테이블 수정: sites, companies, workers에 project_id 외래키 추가
+   - Alembic 마이그레이션 생성 및 적용 완료
+
+3. 백엔드 API 구현
+   - back/project/ 모듈 생성
+     * model.py: Project 엔티티
+     * schema.py: DTO (Create, Update, Response)
+     * repository.py: DB 접근 계층 (Repository Pattern)
+     * router.py: REST API 엔드포인트 6개
+   - API 엔드포인트:
+     POST   /api/projects         - 프로젝트 생성
+     GET    /api/projects         - 전체 프로젝트 목록
+     GET    /api/projects/active  - 진행 중인 프로젝트만
+     GET    /api/projects/:id     - 특정 프로젝트 상세
+     PUT    /api/projects/:id     - 프로젝트 정보 수정
+     DELETE /api/projects/:id     - 프로젝트 삭제
+   - main.py에 프로젝트 라우터 등록 완료
+
+[Process]
+- 현재 단계: 프로젝트 중심 아키텍처 백엔드 기반 완성
+- 핵심 변경사항:
+  * 최상위 엔티티: Site → Project로 변경
+  * 데이터 중심: 작업자(Worker) → 프로젝트(Project)
+  * 권한 흐름: 작업자 사용 → 관리 → 관리자 생성 → 작업자 사용
+  * 모든 Site, Company, Worker가 특정 프로젝트에 귀속됨
+
+- 다음 단계:
+  1. 프론트엔드 프로젝트 관리 UI 구현 (관리자용)
+  2. 작업자 앱 수정 (로그인 시 프로젝트 필터링)
+  3. 일일 위험지역 설정 기능 (안전관리자용)
+
+[Tech Stack]
+- DB 마이그레이션: Alembic (autogenerate)
+- 백엔드 패턴: Repository Pattern (데이터 접근 계층 분리)
+- API 설계: RESTful (Project CRUD)
+
+[기술적 노트]
+- Project 모델은 nullable=True로 설계하여 기존 데이터와 호환성 유지
+- 추후 프로젝트별 권한 제어 구현 시 project_id 필터링 필수
+- 완료 프로젝트는 status='DONE'으로 변경 (Soft Delete 권장)
+
+[참고]
+- ERD 구조:
+  Project (최상위)
+    ├── Sites (현장들)
+    │     └── Zones (구역들)
+    │           └── DailyWorkPlans (일일 작업)
+    ├── Companies (협력사들)
+    │     └── Workers (작업자들)
+    └── WorkTemplates (공정 템플릿)
+

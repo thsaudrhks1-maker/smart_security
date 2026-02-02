@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut 
+  LayoutDashboard, FileText, Users, Briefcase, ShieldAlert, Settings, LogOut, Folder 
 } from 'lucide-react';
 import '../../features/dashboard/Dashboard.css';
 
@@ -72,6 +72,7 @@ const NavSidebar = () => {
       paddingBottom: 'safe-area-inset-bottom' // 아이폰 하단 바 대응
     }}>
       <NavItem icon={LayoutDashboard} path="/dashboard" />
+      <NavItem icon={Folder} path="/projects" />
       <NavItem icon={Briefcase} path="/work" />
       <NavItem icon={ShieldAlert} path="/map" />
       <NavItem icon={LogOut} path="/" />

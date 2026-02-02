@@ -1,0 +1,80 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from back.database import get_db
+from back.project.schema import ProjectCreate, ProjectUpdate, ProjectResponse
+from back.project.repository import ProjectRepository
+from typing import List
+
+router = APIRouter(prefix="/api/projects", tags=["Projects"])
+
+@router.post("/", response_model=ProjectResponse, status_code=201)
+async def create_project(
+    project_data: ProjectCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    프로젝트 생성 (관리자 전용)
+    
+    - 공사명, 위치, 금액, 기간 등 기본 정보 입력
+    - 담당 소장 및 안전관리자 지정
+    """
+    project = await ProjectRepository.create(db, project_data)
+    return project
+
+@router.get("/", response_model=List[ProjectResponse])
+async def get_all_projects(db: AsyncSession = Depends(get_db)):
+    """
+    모든 프로젝트 목록 조회 (최신순)
+    """
+    projects = await ProjectRepository.get_all(db)
+    return projects
+
+@router.get("/active", response_model=List[ProjectResponse])
+async def get_active_projects(db: AsyncSession = Depends(get_db)):
+    """
+    진행 중인 프로젝트만 조회 (status=ACTIVE)
+    """
+    projects = await ProjectRepository.get_active_projects(db)
+    return projects
+
+@router.get("/{project_id}", response_model=ProjectResponse)
+async def get_project(
+    project_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    특정 프로젝트 상세 조회
+    """
+    project = await ProjectRepository.get_by_id(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    return project
+
+@router.put("/{project_id}", response_model=ProjectResponse)
+async def update_project(
+    project_id: int,
+    update_data: ProjectUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    프로젝트 정보 수정 (관리자 전용)
+    """
+    project = await ProjectRepository.update(db, project_id, update_data)
+    if not project:
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    return project
+
+@router.delete("/{project_id}", status_code=204)
+async def delete_project(
+    project_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    프로젝트 삭제 (Soft Delete 권장)
+    
+    실무에서는 status='DELETED'로 변경하는 것이 안전
+    """
+    success = await ProjectRepository.delete(db, project_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    return None

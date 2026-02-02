@@ -8,11 +8,16 @@ class Site(Base):
     __tablename__ = "sites"
 
     id = Column(Integer, primary_key=True, index=True)
+    
+    # 프로젝트 연결 (신규)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, comment="소속 프로젝트 ID")
+    
     name = Column(String, nullable=False, comment="현장명")
     address = Column(String, nullable=True, comment="주소")
     safety_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="안전관리자 User ID")
     
     # 관계
+    project = relationship("Project")
     zones = relationship("Zone", back_populates="site")
     daily_plans = relationship("DailyWorkPlan", back_populates="site")
 
@@ -21,9 +26,15 @@ class Company(Base):
     __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)
+    
+    # 프로젝트 연결 (신규)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, comment="소속 프로젝트 ID")
+    
     name = Column(String, nullable=False, comment="업체명 (예: XX건설)")
     trade_type = Column(String, nullable=True, comment="주 공종 (예: 철근, 설비)")
 
+    # 관계
+    project = relationship("Project")
     workers = relationship("Worker", back_populates="company")
 
 class Worker(Base):
@@ -34,6 +45,9 @@ class Worker(Base):
     
     # 계정 연결 (필수)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, comment="로그인 계정 ID")
+    
+    # 프로젝트 연결 (신규)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, comment="현재 투입된 프로젝트 ID")
     
     name = Column(String, nullable=False, comment="성명")
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
@@ -51,6 +65,7 @@ class Worker(Base):
     created_at = Column(DateTime, default=datetime.now)
 
     # 관계
+    project = relationship("Project")
     company = relationship("Company", back_populates="workers")
     allocations = relationship("WorkerAllocation", back_populates="worker")
 
