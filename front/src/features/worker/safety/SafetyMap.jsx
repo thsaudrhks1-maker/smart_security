@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Circle, SVGOverlay, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import '../dashboard/Dashboard.css';
-import { mapApi } from '../../api/mapApi'; // mapApi 사용
+import '../styles/WorkerDashboard.css';
+import { mapApi } from '../../../api/mapApi'; // mapApi 사용
 
 // --- 아이콘 리소스 설정 ---
 const createIcon = (colorUrl) => new L.Icon({

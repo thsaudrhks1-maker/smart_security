@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAllProjects } from '../../api/projectApi';
+import { getAllProjects } from '../../../api/projectApi';
+import SafetyControlCenter from './SafetyControlCenter';
 import { 
   Briefcase, Plus, MapPin, Users, AlertTriangle, 
   Database, FileText, TrendingUp, Settings 
@@ -9,9 +10,8 @@ import './AdminDashboard.css';
 
 /**
  * 관리자 메인 대시보드 (프로젝트 중심)
- * - 전체 프로젝트 현황 요약
- * - 빠른 작업 버튼
- * - 최근 활동 프로젝트 표시
+ * - 상단: 스마트 안전 관제 센터 (실시간 모니터링)
+ * - 하단: 프로젝트 현황 요약 및 관리
  */
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -64,18 +64,27 @@ const AdminDashboard = () => {
   };
 
   if (loading) {
-    return <div className="admin-dashboard-white" style={{ padding: '2rem', textAlign: 'center' }}>프로젝트 목록을 불러오는 중...</div>;
+    return <div className="admin-dashboard-white" style={{ padding: '2rem', textAlign: 'center' }}>데이터를 불러오는 중...</div>;
   }
 
   return (
-    <div className="admin-dashboard-white" style={{ padding: '1.5rem' }}>
-      {/* 헤더 */}
+    <div className="admin-dashboard-white" style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto' }}>
+      
+      {/* 1. 스마트 안전 관제 센터 (상단 배치) */}
+      <section style={{ marginBottom: '3rem' }}>
+        <SafetyControlCenter />
+      </section>
+
+      {/* 구분선 */}
+      <div style={{ height: '1px', background: '#e2e8f0', margin: '0 0 3rem 0' }}></div>
+
+      {/* 2. 프로젝트 관리 영역 */}
       <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#1e293b', marginBottom: '0.5rem' }}>
-          🏗️ 프로젝트 관리 대시보드
+        <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem' }}>
+          🏗️ 프로젝트 관리
         </h1>
         <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-          전체 프로젝트를 관리하고 현황을 확인하세요
+          진행 중인 모든 건설 현장의 프로젝트를 통합 관리합니다.
         </p>
       </div>
 

@@ -4,9 +4,9 @@ import {
   ArrowLeft, Map, Cloud, Bell, FileText, Shield, Calendar, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
-import SimpleModal from '../../components/common/SimpleModal';
+import apiClient from '../../../api/client';
+import { useAuth } from '../../../context/AuthContext';
+import SimpleModal from '../components/common/SimpleModal';
 
 const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const navigate = useNavigate();

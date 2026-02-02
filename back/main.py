@@ -47,38 +47,7 @@ app.include_router(worker_router)
 app.include_router(admin_router)
 
 # --- Admin / Data Endpoints ---
-@app.get("/admin/db/workers")
-async def get_all_workers_admin(
-    db: AsyncSession = Depends(get_db),
-    # current_user: User = Depends(get_current_active_user) # 권한 체크는 추후 적용
-):
-    """
-    관리자용: 모든 작업자 정보 조회 (엑셀 뷰용)
-    """
-    from sqlalchemy.future import select
-    from back.company.model import Worker
-    from back.auth.model import UserModel
-
-    # Worker와 User 조인
-    query = select(Worker, UserModel).join(UserModel, Worker.user_id == UserModel.id)
-    result = await db.execute(query)
-    rows = result.all()
-
-    data = []
-    for worker, user in rows:
-        data.append({
-            "id": worker.id,
-            "name": worker.name,
-            "username": user.username,
-            "role": user.role,
-            "birth_date": worker.birth_date,
-            "phone_number": user.phone_number,
-            "trade": worker.trade,
-            "address": worker.address,
-            "company_id": worker.company_id,
-            "status": worker.status
-        })
-    return data
+# --- Admin / Data Endpoints deleted (moved to back/admin/router.py) ---
 
 @app.on_event("startup")
 async def startup_event():

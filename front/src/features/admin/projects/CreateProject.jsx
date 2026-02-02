@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { createProject } from '../../api/projectApi';
-import LocationPicker from '../../components/common/LocationPicker';
+import { createProject } from '../../../api/projectApi';
+import LocationPicker from '../components/common/LocationPicker';
 import './CreateProject.css';
 
 const CreateProject = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllProjects, getActiveProjects, deleteProject } from '../../api/projectApi';
+import { getAllProjects, getActiveProjects, deleteProject } from '../../../api/projectApi';
 import './ProjectList.css';
 
 const ProjectList = () => {

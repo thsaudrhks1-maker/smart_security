@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjectById } from '../../api/projectApi';
+import { getProjectById } from '../../../api/projectApi';
 import './ProjectDetail.css';
 
 const ProjectDetail = () => {
