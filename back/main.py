@@ -17,6 +17,7 @@ from back.safety.router import router as safety_router
 from back.dashboard.router import router as dashboard_router
 from back.worker.router import router as worker_router
 from back.admin.router import router as admin_router
+from back.manager.router import router as manager_router # [NEW]
 from back.attendance.router import router as attendance_router # [NEW]
 
 app = FastAPI(title="Smart Safety Guardian API")
@@ -46,6 +47,7 @@ app.include_router(safety_router)
 app.include_router(dashboard_router)
 app.include_router(worker_router)
 app.include_router(admin_router)
+app.include_router(manager_router) # [NEW]
 app.include_router(attendance_router) # [NEW] 앱에 등록
 
 # --- Admin / Data Endpoints ---

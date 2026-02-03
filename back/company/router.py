@@ -60,3 +60,34 @@ async def create_company(company: CompanyCreate, db: AsyncSession = Depends(get_
         raise HTTPException(status_code=500, detail=str(e))
         
     return new_company
+
+# [NEW] 회사 소속 직원 조회 (역할 필터링)
+from pydantic import BaseModel
+class SimpleUserRead(BaseModel):
+    id: int
+    full_name: str
+    role: str
+    position: str | None = None
+
+    class Config:
+        orm_mode = True
+
+@router.get("/company/{company_id}/users", response_model=list[SimpleUserRead])
+async def get_company_users(
+    company_id: int, 
+    role: str = None, 
+    db: AsyncSession = Depends(get_db)
+):
+    """특정 회사의 직원 조회 (Manager/Safety 선택용)"""
+    query = select(User).where(User.company_id == company_id)
+    
+    if role:
+        # role이 여러 개일 경우 콤마로 구분해서 온다고 가정 (예: manager,safety_manager)
+        roles = role.split(',')
+        if len(roles) > 1:
+            query = query.where(User.role.in_(roles))
+        else:
+            query = query.where(User.role == role)
+            
+    result = await db.execute(query)
+    return result.scalars().all()

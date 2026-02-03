@@ -22,8 +22,9 @@ class ProjectRepository:
         partners_text = data.pop("partners", []) # 직접 입력 텍스트
         
         # 기타 비모델 필드 제거
-        data.pop("manager_id", None)
-        data.pop("safety_manager_id", None)
+        # [KEY USER] 현장소장 및 안전관리자 배정
+        manager_id = data.pop("manager_id", None)
+        safety_manager_id = data.pop("safety_manager_id", None)
         
         # 문자열 날짜를 date 객체로 변환 (PostgreSQL/asyncpg 호환)
         if data.get("start_date") and isinstance(data["start_date"], str):
@@ -58,7 +59,32 @@ class ProjectRepository:
             
         if participants:
             db.add_all(participants)
+
+        # 3. 핵심 인력(ProjectMember) 배정
+        from back.auth.model import ProjectMember
+        
+        members = []
+        if manager_id:
+            members.append(ProjectMember(
+                project_id=project.id, 
+                user_id=manager_id, 
+                role_name="현장소장", 
+                status="ACTIVE",
+                joined_at=datetime.now().date()
+            ))
+        
+        if safety_manager_id:
+            members.append(ProjectMember(
+                project_id=project.id, 
+                user_id=safety_manager_id, 
+                role_name="안전관리자", 
+                status="ACTIVE",
+                joined_at=datetime.now().date()
+            ))
             
+        if members:
+            db.add_all(members)
+        
         await db.commit()
         await db.refresh(project)
         return project

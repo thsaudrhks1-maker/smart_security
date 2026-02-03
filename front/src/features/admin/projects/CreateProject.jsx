@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createProject } from '../../../api/projectApi';
-import { getAllCompanies, createCompany } from '../../../api/companyApi'; // API 연동
-import { MapPin, Calendar, Building2, Save, X, Plus } from 'lucide-react';
+import { getAllCompanies, createCompany, getCompanyUsers } from '../../../api/companyApi'; // API 연동
+import { MapPin, Calendar, Building2, Save, X, Plus, UserPlus } from 'lucide-react';
 import LocationPicker from '../components/common/LocationPicker'; // 지도 컴포넌트 추가
 import './CreateProject.css';
 
@@ -24,11 +24,16 @@ const CreateProject = () => {
     end_date: '',
     project_type: '건축',   
     budget_amount: 0,
-    partner_ids: [] // 협력사 ID 목록 추가
+    partner_ids: [], // 협력사 ID 목록 추가
+    manager_id: '', // [NEW] 현장소장
+    safety_manager_id: '' // [NEW] 안전관리자
   });
 
   // 회사 목록 상태
   const [companies, setCompanies] = useState([]);
+  // 관리자 후보 목록 상태
+  const [candidateManagers, setCandidateManagers] = useState([]);
+  const [candidateSafeties, setCandidateSafeties] = useState([]);
   
   // 회사 등록 모달 상태
   const [showCompanyModal, setShowCompanyModal] = useState(false);
@@ -63,11 +68,19 @@ const CreateProject = () => {
   const [partners, setPartners] = useState([]); // 명칭 기반 (기존 호환용)
   const [partnerInput, setPartnerInput] = useState('');
 
-
-
   useEffect(() => {
     loadCompanies();
   }, []);
+
+  // 시공사 선택 시 해당 회사의 관리자/안전관리자 목록 조회
+  useEffect(() => {
+    if (formData.constructor_id) {
+      loadKeyPersonnel(formData.constructor_id);
+    } else {
+      setCandidateManagers([]);
+      setCandidateSafeties([]);
+    }
+  }, [formData.constructor_id]);
 
   const loadCompanies = async () => {
     try {
@@ -75,6 +88,20 @@ const CreateProject = () => {
       setCompanies(data);
     } catch (err) {
       console.error('회사 목록 로드 실패', err);
+    }
+  };
+
+  const loadKeyPersonnel = async (companyId) => {
+    try {
+      // 1. 현장소장 후보 (role=manager)
+      const managers = await getCompanyUsers(companyId, 'manager');
+      setCandidateManagers(managers);
+
+      // 2. 안전관리자 후보 (role=safety_manager)
+      const safeties = await getCompanyUsers(companyId, 'safety_manager');
+      setCandidateSafeties(safeties);
+    } catch (err) {
+      console.error('담당자 목록 로드 실패', err);
     }
   };
 
@@ -121,7 +148,10 @@ const CreateProject = () => {
       const payload = {
         ...formData,
         budget_amount: formData.budget_amount ? parseInt(formData.budget_amount) : 0,
-        partners: partners // 수동 입력 협력사 명칭
+        partners: partners, // 수동 입력 협력사 명칭
+        // 빈 문자열이면 null로 전송
+        manager_id: formData.manager_id ? parseInt(formData.manager_id) : null,
+        safety_manager_id: formData.safety_manager_id ? parseInt(formData.safety_manager_id) : null
       };
 
       await createProject(payload);
@@ -306,6 +336,63 @@ const CreateProject = () => {
             )}
           </div>
         </div>
+
+        {/* [NEW] 현장 담당자 배정 (시공사 선택 시에만 표시) */}
+        {!isDirectConstructor && formData.constructor_id && (
+          <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe' }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#1e40af', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserPlus size={18} /> 현장 핵심 인력 배정 (선택 사항)
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              
+              {/* 현장소장 선택 */}
+              <div className="form-group">
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#1e40af', fontSize: '0.9rem' }}>
+                  현장소장 (Manager)
+                </label>
+                <select
+                  name="manager_id"
+                  value={formData.manager_id}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #93c5fd', fontSize: '0.95rem' }}
+                >
+                  <option value="">(미지정)</option>
+                  {candidateManagers.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.full_name} ({m.username})
+                    </option>
+                  ))}
+                </select>
+                {candidateManagers.length === 0 && (
+                   <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>* 해당 시공사에 등록된 '현장소장(manager)' 역할의 사용자가 없습니다.</p>
+                )}
+              </div>
+
+              {/* 안전관리자 선택 */}
+              <div className="form-group">
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#16a34a', fontSize: '0.9rem' }}>
+                  안전관리자 (Safety Manager)
+                </label>
+                <select
+                  name="safety_manager_id"
+                  value={formData.safety_manager_id}
+                  onChange={handleChange}
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #86efac', fontSize: '0.95rem' }}
+                >
+                  <option value="">(미지정)</option>
+                  {candidateSafeties.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.full_name} ({s.username})
+                    </option>
+                  ))}
+                </select>
+                {candidateSafeties.length === 0 && (
+                   <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>* 해당 시공사에 등록된 '안전관리자(safety_manager)' 역할의 사용자가 없습니다.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 협력사 추가 (리스트) */}
         <div className="form-group" style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '12px' }}>

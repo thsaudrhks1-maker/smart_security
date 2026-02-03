@@ -22,7 +22,7 @@ const ManagerLayout = () => {
 
   const menu = [
     { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
-    { label: '협력사 관리', icon: Briefcase, path: '/manager/partners' },
+    { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
     { label: '근로자 관리', icon: Users, path: '/manager/workers' },
     { label: '출역 관리', icon: ClipboardCheck, path: '/manager/attendance' },
     { label: '안전정보 열람현황', icon: FileText, path: '/manager/safety-info' },
@@ -35,25 +35,31 @@ const ManagerLayout = () => {
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden' }}>
-      {/* 사이드바 (Manager 전용) */}
+      {/* 사이드바 (Manager 전용 - Dark Theme 적용) */}
       <aside style={{ 
         width: '260px', 
         height: '100vh',
-        background: '#fff', 
-        borderRight: '1px solid #e2e8f0', 
+        background: '#1e293b', // Admin과 동일한 Dark Background
+        color: '#ffffff',
         display: 'flex', 
         flexDirection: 'column',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
+        zIndex: 10
       }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9' }}>
-          <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <HardHat size={28} color="#f59e0b" /> {/* 안전모 색상 */}
+        {/* 헤더 */}
+        <div style={{ padding: '24px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
+          <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <HardHat size={28} color="#f59e0b" /> {/* 안전모 아이콘 유지 */}
             Smart Site
           </h1>
-          <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', paddingLeft: '36px' }}>현장 관리자 전용</div>
+          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '6px', paddingLeft: '36px', letterSpacing: '0.05em' }}>
+            PROJECT MANAGER
+          </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '20px 0' }}>
+        {/* 메뉴 영역 */}
+        <nav style={{ flex: 1, padding: '10px 0' }}>
           {menu.map((item) => {
             const isActive = path === item.path;
             const Icon = item.icon;
@@ -66,39 +72,66 @@ const ManagerLayout = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  padding: '12px 24px',
-                  background: isActive ? '#fff7ed' : 'transparent', // 주황색 틴트
-                  color: isActive ? '#c2410c' : '#475569',
+                  padding: '13px 24px',
+                  background: isActive ? '#0f172a' : 'transparent', // 활성화 시 더 어두운 배경
+                  color: isActive ? '#ffffff' : '#94a3b8', // 활성화 시 흰색, 평소 회색
                   border: 'none',
-                  borderRight: isActive ? '3px solid #c2410c' : '3px solid transparent',
-                  fontWeight: isActive ? 'bold' : '500',
+                  borderLeft: isActive ? '3px solid #f59e0b' : '3px solid transparent', // 포인트 컬러: 안전 주황색
+                  fontWeight: isActive ? '600' : '400',
                   cursor: 'pointer',
-                  textAlign: 'left'
+                  textAlign: 'left',
+                  transition: 'all 0.2s',
+                  fontSize: '0.9rem'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#cbd5e1';
+                    e.currentTarget.style.background = '#334155';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.background = 'transparent';
+                  }
                 }}
               >
-                <Icon size={20} />
+                <Icon size={20} color={isActive ? '#f59e0b' : 'currentColor'} />
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9' }}>
+        {/* 하단 로그아웃 */}
+        <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
           <button 
             onClick={() => navigate('/')}
             style={{
               width: '100%',
               padding: '10px',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0',
-              background: 'white',
-              color: '#ef4444',
+              borderRadius: '6px',
+              border: '1px solid #475569',
+              background: '#334155',
+              color: '#f87171',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px'
+              gap: '8px',
+              fontSize: '0.85rem',
+              transition: 'all 0.2s'
+            }}
+             onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ef4444';
+              e.currentTarget.style.color = 'white';
+              e.currentTarget.style.borderColor = '#ef4444';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#334155';
+              e.currentTarget.style.color = '#f87171';
+              e.currentTarget.style.borderColor = '#475569';
             }}
           >
             <LogOut size={16} /> 로그아웃
@@ -107,7 +140,7 @@ const ManagerLayout = () => {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh' }}>
+      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc' }}>
         <Outlet />
       </main>
     </div>

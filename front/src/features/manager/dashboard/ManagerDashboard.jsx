@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getActiveProjects } from '../../../api/projectApi'; // API import
+import { getManagerDashboard } from '../../../api/managerApi';
+import { useAuth } from '../../../context/AuthContext';
 import { 
   Building2, 
   MapPin, 
@@ -12,54 +13,52 @@ import {
 } from 'lucide-react';
 
 const ManagerDashboard = () => {
-  const [project, setProject] = useState(null);
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // 초기 데이터 로딩
   useEffect(() => {
-    const fetchProject = async () => {
+    const loadData = async () => {
       try {
-        const projects = await getActiveProjects();
-        if (projects && projects.length > 0) {
-          // 편의상 첫 번째 진행중인 프로젝트를 내 현장으로 간주
-          setProject(projects[0]);
-        }
+        const data = await getManagerDashboard();
+        setDashboardData(data);
       } catch (error) {
-        console.error("Failed to fetch project info:", error);
+        console.error("Failed to fetch manager dashboard:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProject();
+    loadData();
   }, []);
 
-  // 더미 통계 (아직 API 없음)
-  const stats = {
-    workers: 27, // TODO: 실시간 출역 API 연동 필요
-    todayAttendance: 0,
-    daysLeft: project ? Math.ceil((new Date(project.end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0
-  };
-
+  // 더미 공지 (추후 API 연동 권장)
   const notices = [
     { id: 3, title: '전체 공지사항입니다.', target: '전체', date: '2025-02-16' },
     { id: 2, title: '시스템 점검 안내', target: '현장별', date: '2025-02-15' },
-    { id: 1, title: '서울빌딩 신축공사 현장에서 공지드립니다.', target: '현장별', date: '2025-02-06' },
+    { id: 1, title: '안전 공지사항입니다.', target: '현장별', date: '2025-02-06' },
   ];
 
-  if (loading) return <div>Loading...</div>;
-  
-  // 데이터가 없을 경우
-  const projectInfo = project ? {
-    name: `${project.name} (${project.code || '-'})`,
-    address: '서울시 강남구 테헤란로 (DB 데이터)', // 주소 필드 추가되면 연동
-    period: `${project.start_date} ~ ${project.end_date}`,
-    accidentFree: { current: 10, target: 365 } // 임시
-  } : {
-    name: '진행 중인 프로젝트 없음',
-    address: '-',
-    period: '-',
-    accidentFree: { current: 0, target: 0 }
-  };
+  // 데이터가 없을 경우를 대비한 기본값
+  const defaultStats = { total_workers: 0, today_attendance: 0, safety_accident_free_days: 0 };
+  const project_info = dashboardData?.project_info || { name: '배정된 프로젝트 없음', location: '-', period: '-' };
+  const stats = dashboardData?.stats || defaultStats;
+  const manager_role = dashboardData?.manager_info?.role || '관리자';
+
+  // 날짜 계산 (남은 기간)
+  let daysLeft = 0;
+  let endYear = new Date().getFullYear();
+  let endMonth = new Date().getMonth() + 1;
+
+  if (project_info.period && project_info.period.includes('~')) {
+    const endDate = new Date(project_info.period.split('~')[1].trim());
+    const today = new Date();
+    if (!isNaN(endDate)) {
+        daysLeft = endDate > today ? Math.ceil((endDate - today) / (1000 * 60 * 60 * 24)) : 0;
+        endYear = endDate.getFullYear();
+        endMonth = endDate.getMonth() + 1;
+    }
+  }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto' }}>
@@ -69,7 +68,12 @@ const ManagerDashboard = () => {
         <div style={{ background: '#e2e8f0', padding: '8px', borderRadius: '50%' }}>
           <Building2 size={24} color="#64748b" />
         </div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>Dashboard</h1>
+        <div>
+           <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>Dashboard</h1>
+           <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}>
+             안녕하세요, <span style={{ fontWeight: '700', color: '#334155' }}>{user?.full_name}</span> {manager_role}님. 오늘도 안전한 현장 되세요.
+           </div>
+        </div>
       </div>
 
       {/* 상단 3단 위젯 */}
@@ -82,23 +86,23 @@ const ManagerDashboard = () => {
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <InfoRow label="현장명" value={projectInfo.name} />
-            <InfoRow label="현장위치" value={projectInfo.address} color="#dc2626" />
-            <InfoRow label="공사기간" value={projectInfo.period} color="#16a34a" />
-            <InfoRow label="무사고일수" value={`무사고 ${projectInfo.accidentFree.current}일 / 목표 ${projectInfo.accidentFree.target}일`} color="#16a34a" highlight />
+            <InfoRow label="현장명" value={project_info.name} />
+            <InfoRow label="현장위치" value={project_info.location || '-'} color="#dc2626" />
+            <InfoRow label="공사기간" value={project_info.period} color="#16a34a" />
+            <InfoRow label="무사고일수" value={`무사고 ${stats.safety_accident_free_days || 10}일 / 목표 365일`} color="#16a34a" highlight />
           </div>
         </div>
 
         {/* 2. QR 코드 */}
         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <h3 style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <QrCode size={20} color="#334155" /> QR 코드
+            <QrCode size={20} color="#334155" /> 출근 관리 QR
           </h3>
           <div style={{ border: '8px solid #1e293b', borderRadius: '12px', overflow: 'hidden', padding: '10px', background: 'white' }}>
             <QrCode size={150} color="#000" />
           </div>
           <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', color: '#64748b' }}>
-            [인쇄하기]
+            [QR코드 인쇄하기]
           </button>
         </div>
 
@@ -109,12 +113,12 @@ const ManagerDashboard = () => {
             <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem' }}>운영현황</h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
               <div style={{ flex:1, borderRight: '1px solid rgba(255,255,255,0.3)' }}>
-                <div style={{ fontSize: '2rem', fontWeight: '800' }}>{stats.workers}명</div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>근로자수</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800' }}>{stats.total_workers}명</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>등록 근로자</div>
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize: '2rem', fontWeight: '800' }}>{stats.todayAttendance}명</div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>금일출역</div>
+                <div style={{ fontSize: '2rem', fontWeight: '800' }}>{stats.today_attendance}명</div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>금일 출역</div>
               </div>
             </div>
           </div>
@@ -122,8 +126,8 @@ const ManagerDashboard = () => {
           {/* 남은 기간 */}
           <div style={{ flex: 1, background: '#22c55e', borderRadius: '12px', padding: '1.5rem', color: 'white', boxShadow: '0 4px 6px -1px rgba(34, 197, 94, 0.4)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem' }}>2026년 12월 까지</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>({stats.daysLeft} 일 남음)</div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '0.5rem' }}>{endYear}년 {endMonth}월 까지</h3>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>({daysLeft} 일 남음)</div>
               <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>서비스 이용기간</div>
             </div>
             <Megaphone size={100} color="white" style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.2 }} />
@@ -159,12 +163,6 @@ const ManagerDashboard = () => {
             ))}
           </tbody>
         </table>
-        
-        <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-          <button style={{ padding: '6px 12px', border: '1px solid #cbd5e1', background: 'white', borderRadius: '4px' }}>Previous</button>
-          <button style={{ padding: '6px 12px', border: 'none', background: '#3b82f6', color: 'white', borderRadius: '4px' }}>1</button>
-          <button style={{ padding: '6px 12px', border: '1px solid #cbd5e1', background: 'white', borderRadius: '4px' }}>Next</button>
-        </div>
       </div>
 
     </div>
