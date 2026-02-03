@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from back.database import get_db
-from back.project.schema import ProjectCreate, ProjectUpdate, ProjectResponse
+from back.project.schema import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectMemberResponse, MemberApprovalRequest, ProjectParticipantResponse, ProjectWorkerResponse
 from back.project.repository import ProjectRepository
 from typing import List
 
@@ -79,72 +79,21 @@ async def delete_project(
 
 # --- 협력사(참여자) 관리 API ---
 
-@router.get("/{project_id}/participants")
+@router.get("/{project_id}/participants", response_model=List[ProjectParticipantResponse])
 async def get_project_participants(
     project_id: int, 
     db: AsyncSession = Depends(get_db)
 ):
     """프로젝트 참여 기업 목록 조회"""
-    from back.company.model import Company, ProjectParticipant
-    from sqlalchemy.future import select
+    return await ProjectRepository.get_participants(db, project_id)
 
-    result = await db.execute(
-        select(ProjectParticipant, Company)
-        .join(Company, ProjectParticipant.company_id == Company.id)
-        .where(ProjectParticipant.project_id == project_id)
-    )
-    
-    participants = []
-    for part, comp in result:
-        participants.append({
-            "id": part.id,
-            "project_id": part.project_id,
-            "company_id": comp.id,
-            "company_name": comp.name,
-            "role": part.role,
-            "trade_type": comp.trade_type
-        })
-    return participants
-
-@router.get("/{project_id}/workers")
+@router.get("/{project_id}/workers", response_model=List[ProjectWorkerResponse])
 async def get_project_workers(
     project_id: int,
     db: AsyncSession = Depends(get_db)
 ):
     """프로젝트 참여 업체의 작업자들 조회"""
-    from back.auth.model import User
-    from back.company.model import Company, ProjectParticipant
-    from sqlalchemy.future import select
-
-    # 이 프로젝트에 참여 중인 업체 ID들 가져오기
-    part_query = await db.execute(
-        select(ProjectParticipant.company_id).where(ProjectParticipant.project_id == project_id)
-    )
-    company_ids = part_query.scalars().all()
-
-    if not company_ids:
-        return []
-
-    # 해당 업체들에 소속된 유저 중 role이 WORKER인 사람 조회 (대소문자 무시)
-    from sqlalchemy import func
-    worker_query = await db.execute(
-        select(User, Company.name.label("company_name"))
-        .join(Company, User.company_id == Company.id)
-        .where(User.company_id.in_(company_ids))
-        .where(func.upper(User.role) == "WORKER")
-    )
-
-    workers = []
-    for user, c_name in worker_query:
-        workers.append({
-            "id": user.id,
-            "full_name": user.full_name,
-            "username": user.username,
-            "company_name": c_name,
-            "phone": user.phone,
-            "role_in_system": user.role
-        })
-    return workers
+    return await ProjectRepository.get_workers(db, project_id)
 
 @router.post("/{project_id}/participants")
 async def add_project_participant(
@@ -154,35 +103,30 @@ async def add_project_participant(
     db: AsyncSession = Depends(get_db)
 ):
     """프로젝트에 협력사 추가 (이름으로 검색/생성)"""
-    from back.company.model import Company, ProjectParticipant
-    from sqlalchemy.future import select
+    return await ProjectRepository.add_participant(db, project_id, company_name, role)
 
-    # 1. 회사 조회/생성
-    result = await db.execute(select(Company).where(Company.name == company_name))
-    comp = result.scalars().first()
-    if not comp:
-        comp = Company(name=company_name, trade_type="미지정")
-        db.add(comp)
-        await db.flush()
+# --- 작업자(멤버) 승인 관리 API ---
 
-    # 2. 중복 체크
-    exists = await db.execute(
-        select(ProjectParticipant)
-        .where(
-            ProjectParticipant.project_id == project_id,
-            ProjectParticipant.company_id == comp.id
-        )
-    )
-    if exists.scalars().first():
-        return {"message": "이미 등록된 협력사입니다.", "status": "exists"}
+@router.get("/{project_id}/members", response_model=List[ProjectMemberResponse])
+async def get_project_members(
+    project_id: int,
+    status: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    프로젝트 멤버 조회
+    - status 파라미터로 필터링 가능 (PENDING, ACTIVE, ALL)
+    """
+    return await ProjectRepository.get_members(db, project_id, status)
 
-    # 3. 관계 생성
-    part = ProjectParticipant(
-        project_id=project_id,
-        company_id=comp.id,
-        role=role
-    )
-    db.add(part)
-    await db.commit()
-    
-    return {"message": "협력사가 추가되었습니다.", "status": "success", "company_id": comp.id}
+@router.patch("/{project_id}/members/approval")
+async def approve_project_members(
+    project_id: int,
+    req: MemberApprovalRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    프로젝트 멤버 승인/거절 (관리자 전용)
+    """
+    count = await ProjectRepository.update_member_status(db, project_id, req.user_ids, req.action)
+    return {"message": f"{count}명의 멤버가 {req.action} 처리되었습니다."}

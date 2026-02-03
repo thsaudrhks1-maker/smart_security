@@ -11,6 +11,7 @@ import {
   Megaphone,
   QrCode
 } from 'lucide-react';
+import MemberApprovalWidget from '../components/MemberApprovalWidget';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -32,20 +33,20 @@ const ManagerDashboard = () => {
     loadData();
   }, []);
 
-  // 더미 공지 (추후 API 연동 권장)
+  // 더미 공지
   const notices = [
     { id: 3, title: '전체 공지사항입니다.', target: '전체', date: '2025-02-16' },
     { id: 2, title: '시스템 점검 안내', target: '현장별', date: '2025-02-15' },
     { id: 1, title: '안전 공지사항입니다.', target: '현장별', date: '2025-02-06' },
   ];
 
-  // 데이터가 없을 경우를 대비한 기본값
+  // 기본값 설정
   const defaultStats = { total_workers: 0, today_attendance: 0, safety_accident_free_days: 0 };
   const project_info = dashboardData?.project_info || { name: '배정된 프로젝트 없음', location: '-', period: '-' };
   const stats = dashboardData?.stats || defaultStats;
   const manager_role = dashboardData?.manager_info?.role || '관리자';
 
-  // 날짜 계산 (남은 기간)
+  // 날짜 계산
   let daysLeft = 0;
   let endYear = new Date().getFullYear();
   let endMonth = new Date().getMonth() + 1;
@@ -76,8 +77,8 @@ const ManagerDashboard = () => {
         </div>
       </div>
 
-      {/* 상단 3단 위젯 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+      {/* 대시보드 그리드 (2열) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
         
         {/* 1. 현장 현황 */}
         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
@@ -93,20 +94,7 @@ const ManagerDashboard = () => {
           </div>
         </div>
 
-        {/* 2. QR 코드 */}
-        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h3 style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <QrCode size={20} color="#334155" /> 출근 관리 QR
-          </h3>
-          <div style={{ border: '8px solid #1e293b', borderRadius: '12px', overflow: 'hidden', padding: '10px', background: 'white' }}>
-            <QrCode size={150} color="#000" />
-          </div>
-          <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', color: '#64748b' }}>
-            [QR코드 인쇄하기]
-          </button>
-        </div>
-
-        {/* 3. 운영 현황 */}
+        {/* 2. 운영 현황 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* 근로자/출역 수 */}
           <div style={{ flex: 1, background: '#4ade80', borderRadius: '12px', padding: '1.5rem', color: 'white', boxShadow: '0 4px 6px -1px rgba(74, 222, 128, 0.4)' }}>
@@ -133,6 +121,23 @@ const ManagerDashboard = () => {
             <Megaphone size={100} color="white" style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.2 }} />
           </div>
         </div>
+
+        {/* 3. 승인 대기 인원 위젯 (New) */}
+        <MemberApprovalWidget projectId={project_info.id} />
+
+        {/* 4. QR 코드 */}
+        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <h3 style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <QrCode size={20} color="#334155" /> 출근 관리 QR
+          </h3>
+          <div style={{ border: '8px solid #1e293b', borderRadius: '12px', overflow: 'hidden', padding: '10px', background: 'white' }}>
+            <QrCode size={150} color="#000" />
+          </div>
+          <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', color: '#64748b' }}>
+            [QR코드 인쇄하기]
+          </button>
+        </div>
+
       </div>
 
       {/* 하단 시스템 공지 */}

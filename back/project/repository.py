@@ -196,3 +196,152 @@ class ProjectRepository:
         await db.delete(project)
         await db.commit()
         return True
+
+    # --- 협력사 및 멤버 관리 (Repository Pattern 확장) ---
+
+    @staticmethod
+    async def get_participants(db: AsyncSession, project_id: int):
+        from back.company.model import Company, ProjectParticipant
+        
+        result = await db.execute(
+            select(ProjectParticipant, Company)
+            .join(Company, ProjectParticipant.company_id == Company.id)
+            .where(ProjectParticipant.project_id == project_id)
+        )
+        
+        # Pydantic 호환 dict 변환
+        data = []
+        for part, comp in result:
+            data.append({
+                "id": part.id,
+                "project_id": part.project_id,
+                "company_id": comp.id,
+                "company_name": comp.name,
+                "role": part.role,
+                "trade_type": comp.trade_type
+            })
+        return data
+
+    @staticmethod
+    async def get_workers(db: AsyncSession, project_id: int):
+        from back.company.model import Company, ProjectParticipant
+        from back.auth.model import User
+        from sqlalchemy import func
+
+        # 1. 참여 업체 ID 조회
+        part_query = await db.execute(
+            select(ProjectParticipant.company_id).where(ProjectParticipant.project_id == project_id)
+        )
+        company_ids = part_query.scalars().all()
+
+        if not company_ids:
+            return []
+
+        # 2. 업체 소속 근로자 조회
+        worker_query = await db.execute(
+            select(User, Company.name.label("company_name"))
+            .join(Company, User.company_id == Company.id)
+            .where(User.company_id.in_(company_ids))
+            .where(func.upper(User.role) == "WORKER")
+        )
+
+        data = []
+        for user, c_name in worker_query:
+            data.append({
+                "id": user.id,
+                "full_name": user.full_name,
+                "username": user.username,
+                "company_name": c_name,
+                "phone": user.phone,
+                "role_in_system": user.role
+            })
+        return data
+
+    @staticmethod
+    async def add_participant(db: AsyncSession, project_id: int, company_name: str, role: str):
+        from back.company.model import Company, ProjectParticipant
+        
+        # 회사 조회/생성
+        result = await db.execute(select(Company).where(Company.name == company_name))
+        comp = result.scalars().first()
+        if not comp:
+            comp = Company(name=company_name, trade_type="미지정")
+            db.add(comp)
+            await db.flush()
+            
+        # 중복 체크
+        exists = await db.execute(
+            select(ProjectParticipant)
+            .where(
+                ProjectParticipant.project_id == project_id,
+                ProjectParticipant.company_id == comp.id
+            )
+        )
+        if exists.scalars().first():
+            return {"status": "exists", "message": "이미 등록된 협력사입니다."}
+            
+        # 관계 생성
+        part = ProjectParticipant(project_id=project_id, company_id=comp.id, role=role)
+        db.add(part)
+        await db.commit()
+        return {"status": "success", "message": "협력사가 추가되었습니다.", "company_id": comp.id}
+
+    @staticmethod
+    async def get_members(db: AsyncSession, project_id: int, status: str = None):
+        from back.project.model import ProjectMember
+        from back.auth.model import User
+        from back.company.model import Company
+        
+        query = (
+            select(ProjectMember, User, Company.name)
+            .join(User, ProjectMember.user_id == User.id)
+            .outerjoin(Company, User.company_id == Company.id)
+            .where(ProjectMember.project_id == project_id)
+        )
+        
+        if status and status != "ALL":
+            query = query.where(ProjectMember.status == status)
+            
+        query = query.order_by(ProjectMember.joined_at.desc())
+        
+        result = await db.execute(query)
+        members = []
+        for pm, user, company_name in result:
+            members.append({
+                "id": pm.id,
+                "user_id": user.id,
+                "username": user.username,
+                "full_name": user.full_name,
+                "role_name": pm.role_name,
+                "status": pm.status,
+                "joined_at": pm.joined_at,
+                "company_name": company_name or "미소속"
+            })
+        return members
+
+    @staticmethod
+    async def update_member_status(db: AsyncSession, project_id: int, user_ids: list[int], action: str):
+        from back.project.model import ProjectMember
+        
+        result = await db.execute(
+            select(ProjectMember)
+            .where(ProjectMember.project_id == project_id)
+            .where(ProjectMember.user_id.in_(user_ids))
+        )
+        members = result.scalars().all()
+        
+        if not members:
+            return 0
+            
+        count = 0
+        if action == "APPROVE":
+            for m in members:
+                m.status = "ACTIVE"
+                count += 1
+        elif action == "REJECT":
+            for m in members:
+                await db.delete(m)
+                count += 1
+                
+        await db.commit()
+        return count

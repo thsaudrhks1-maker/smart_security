@@ -60,14 +60,18 @@ class ManagerRepository:
         """
         프로젝트 대시보드 통계 (근로자 수, 금일 출역 수 등)
         """
-        # 1. 총 등록 근로자 수 (해당 프로젝트에 참여 중인 업체의 소속 근로자)
-        # (단순화를 위해 project_participants -> company -> users 로 카운트)
+        # 1. 총 등록 근로자 수 (해당 프로젝트에 멤버로 등록된 근로자, 승인여부 무관하게 전체 인원 파악용 혹은 ACTIVE만? 기획상 '등록 근로자'는 보통 승인된 사람을 의미하지만,
+        # 사용자 요청: "운영현황 등록근로자와 아직 승인 안된 근로자도 나오면 좋고" -> 즉 전체 인원 수? 
+        # 일단은 '승인된(ACTIVE)' 근로자만 카운트하는 것이 일반적이나, 요청에 따라 전체 인원을 보여주거나 분리해서 보여주는게 맞음.
+        # 기존 로직은 project_participants 기반이라 부정확했음. project_members 테이블 기준으로 변경하되, ACTIVE만 카운트.
+        # (만약 대기 인원까지 포함하려면 status 조건을 제거하면 됨)
         sql_total = """
-            SELECT COUNT(u.id) as count
-            FROM users u
-            JOIN companies c ON u.company_id = c.id
-            JOIN project_participants pp ON c.id = pp.company_id
-            WHERE pp.project_id = :project_id AND u.role = 'worker'
+            SELECT COUNT(pm.id) as count
+            FROM project_members pm
+            JOIN users u ON pm.user_id = u.id
+            WHERE pm.project_id = :project_id 
+            AND u.role = 'worker'
+            AND pm.status = 'ACTIVE'
         """
         total_res = await fetch_one(sql_total, {"project_id": project_id})
         total_workers = total_res["count"] if total_res else 0
@@ -115,11 +119,15 @@ class ManagerRepository:
             SELECT 
                 u.id, u.full_name, u.phone, u.job_type,
                 c.name as company_name,
+                pm.status as member_status,
                 (SELECT status FROM attendance a WHERE a.user_id = u.id AND a.date = CURRENT_DATE LIMIT 1) as today_status
             FROM users u
             JOIN companies c ON u.company_id = c.id
-            JOIN project_participants pp ON c.id = pp.company_id
-            WHERE pp.project_id = :project_id AND u.role = 'worker'
-            ORDER BY u.full_name
+            JOIN project_members pm ON u.id = pm.user_id 
+            WHERE pm.project_id = :project_id 
+            AND u.role = 'worker'
+            ORDER BY 
+                CASE WHEN pm.status = 'ACTIVE' THEN 1 ELSE 2 END,
+                u.full_name
         """
         return await fetch_all(sql, {"project_id": project_id})

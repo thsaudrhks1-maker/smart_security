@@ -57,7 +57,8 @@ const WorkerManagement = () => {
               <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>소속 업체</th>
               <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>직종</th>
               <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>연락처</th>
-              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>금일 상태</th>
+              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>승인 상태</th>
+              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>출역 상태</th>
             </tr>
           </thead>
           <tbody>
@@ -81,6 +82,15 @@ const WorkerManagement = () => {
                   </td>
                   <td style={{ padding: '1rem', color: '#64748b' }}>{worker.job_type || '-'}</td>
                   <td style={{ padding: '1rem', color: '#64748b' }}>{worker.phone || '-'}</td>
+                  <td style={{ padding: '1rem', textAlign: 'center' }}>
+                      <span style={{ 
+                          padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600',
+                          background: worker.member_status === 'ACTIVE' ? '#dbeafe' : '#f1f5f9',
+                          color: worker.member_status === 'ACTIVE' ? '#2563eb' : '#64748b'
+                      }}>
+                          {worker.member_status === 'ACTIVE' ? '승인완료' : '대기중'}
+                      </span>
+                  </td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
                     {worker.today_status === 'PRESENT' || worker.today_status === 'LATE' ? (
                       <span style={{ color: '#16a34a', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#dcfce7', padding: '4px 10px', borderRadius: '20px', fontSize: '0.85rem' }}>

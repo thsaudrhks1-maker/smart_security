@@ -63,3 +63,19 @@ export const getProjectWorkers = async (projectId) => {
   const response = await api.get(`/api/projects/${projectId}/workers`);
   return response.data;
 };
+
+// [신규] 멤버(작업자) 상태 조회 및 승인 관리
+export const getProjectMembers = async (projectId, status) => {
+  const params = status ? { status } : {};
+  const response = await api.get(`/api/projects/${projectId}/members`, { params });
+  return response.data;
+};
+
+export const approveProjectMembers = async (projectId, userIds, action = 'APPROVE') => {
+  const response = await api.patch(`/api/projects/${projectId}/members/approval`, {
+    user_ids: userIds,
+    action
+  });
+  return response.data;
+};
+

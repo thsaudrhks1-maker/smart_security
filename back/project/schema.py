@@ -49,3 +49,46 @@ class ProjectResponse(ProjectBase):
     
     class Config:
         from_attributes = True
+
+class ProjectMemberResponse(BaseModel):
+    """프로젝트 멤버 응답"""
+    id: int
+    user_id: int
+    username: str
+    full_name: str
+    role_name: str
+    status: str
+    joined_at: datetime
+    company_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class MemberApprovalRequest(BaseModel):
+    """멤버 승인/거절 요청"""
+    user_ids: list[int]
+    action: str = "APPROVE" # APPROVE | REJECT
+
+class ProjectParticipantResponse(BaseModel):
+    """프로젝트 참여 기업 응답"""
+    id: int
+    project_id: int
+    company_id: int
+    company_name: str
+    role: str
+    trade_type: str
+    
+    class Config:
+        from_attributes = True
+
+class ProjectWorkerResponse(BaseModel):
+    """프로젝트 관련 작업자 응답"""
+    id: int
+    full_name: str
+    username: str
+    company_name: str
+    phone: Optional[str] = None
+    role_in_system: str
+    
+    class Config:
+        from_attributes = True

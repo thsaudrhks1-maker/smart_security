@@ -59,7 +59,8 @@ class WorkerAllocation(Base):
     role = Column(String, nullable=True, comment="당일 역할 (팀장, 작업자)")
 
     plan = relationship("DailyWorkPlan", back_populates="allocations")
-    # worker = relationship("User") # User 모델과 직접 관계는 필요 시 설정. 지금은 FK만 변경.
+    worker = relationship("User") 
+
 
 class Weather(Base):
     """일일 날씨 정보"""

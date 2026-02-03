@@ -23,7 +23,7 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
     query = select(DailyWorkPlan).options(
         selectinload(DailyWorkPlan.zone),
         selectinload(DailyWorkPlan.template),
-        selectinload(DailyWorkPlan.allocations) # .selectinload(WorkerAllocation.worker) -> worker 관계 잠시 끊김
+        selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
     )
     
     if date:
@@ -38,8 +38,8 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
     for p in plans:
         alloc_list = []
         for a in p.allocations:
-            # Worker name 조회 로직 (임시: Unknown 처리. 추후 User JOIN 필요)
-            worker_name_str = "Unknown"
+            # Worker name 조회
+            worker_name_str = a.worker.full_name if a.worker else "Unknown"
             
             alloc_list.append(WorkerAllocationRead(
                 id=a.id, 
