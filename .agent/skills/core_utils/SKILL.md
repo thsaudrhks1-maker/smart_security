@@ -76,3 +76,22 @@ from back.utils.common import (
     save_json_safe
 )
 ```
+
+## 4. 날짜 및 시간 처리 표준 (Date/Time Handling)
+
+*DB 엔진(asyncpg) 및 모델 설계와 일치하도록 객체 단위로 처리합니다.*
+
+### 원칙
+- **순수 날짜 (Pure Dates)**: `date` 객체를 사용 (예: 작업일, 생일, 공사기간).
+- **정확한 시각 (Timestamps)**: `datetime` 객체를 사용 (예: 출퇴근 시각, 로그 타임스탬프).
+- **전달 방식**: 리포지토리(Repository)에 날짜를 넘길 때는 **절대 문자열(`str`)로 변환하지 말고 객체 그대로** 넘깁니다.
+
+### 사용 예시 (`back.utils.date_utils` 활용)
+- ✅ `today = date_utils.get_today()` -> 그대로 DB 쿼리에 파라미터로 사용 가능.
+- ✅ `now = date_utils.get_now()` -> 출근 시각(`check_in_time`)으로 사용 가능.
+- ✅ API로 전달받은 `"2026-02-03"` 문자열은 서비스/라우터 레이어에서 `date_utils.ensure_date(val)`를 통해 먼저 객체로 변환한 뒤 리포지토리에 넘깁니다.
+
+### 금지 패턴
+- ❌ `sql_params = {"date": str(date.today())}` (문자열 변환 금지!)
+- ❌ `sql_params = {"date": "2026-02-03"}` (하드코딩된 문자열 금지!)
+

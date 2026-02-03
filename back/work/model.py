@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Float, JSON, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Text, Float, JSON, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from back.database import Base
@@ -26,7 +26,7 @@ class DailyWorkPlan(Base):
     zone_id = Column(Integer, ForeignKey("zones.id"), nullable=False)
     template_id = Column(Integer, ForeignKey("work_templates.id"), nullable=False)
     
-    date = Column(String, nullable=False, comment="YYYY-MM-DD")
+    date = Column(Date, nullable=False, comment="날짜 (Date 타입)")
     
     # 작업 상세 및 위험도
     description = Column(String, nullable=True, comment="작업 내용 요약")
@@ -60,3 +60,13 @@ class WorkerAllocation(Base):
 
     plan = relationship("DailyWorkPlan", back_populates="allocations")
     # worker = relationship("User") # User 모델과 직접 관계는 필요 시 설정. 지금은 FK만 변경.
+
+class Weather(Base):
+    """일일 날씨 정보"""
+    __tablename__ = "weather"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, unique=True, nullable=False, comment="날짜 (Date 타입)")
+    temperature = Column(Float, nullable=True)
+    condition = Column(String, nullable=True, comment="CLEAR, CLOUDY, RAIN, SNOW")
+

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from back.database import Base
@@ -19,26 +19,9 @@ class User(Base):
     job_type = Column(String, nullable=True, comment="직종 (예: 전기, 배관, 용접)")
     title = Column(String, nullable=True, comment="직급/직책 (예: 소장, 반장, 팀원)")
     phone = Column(String, nullable=True, comment="연락처")
-    birth_date = Column(String, nullable=True, comment="생년월일 (YYMMDD)")
+    birth_date = Column(Date, nullable=True, comment="생년월일 (Date 타입)")
     
     # 관계
     company = relationship("Company", back_populates="users")
     project_members = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
     attendances = relationship("Attendance", back_populates="user", cascade="all, delete-orphan")
-
-from sqlalchemy import select
-
-class AuthRepository:
-    def __init__(self, db):
-        self.db = db
-
-    async def get_user_by_username(self, username: str):
-        result = await self.db.execute(select(User).where(User.username == username))
-        return result.scalars().first()
-    
-    # 프로토타입용: 사용자 생성 (테스트용)
-    async def create_user(self, user: User):
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        return user

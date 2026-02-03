@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Float, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Text, Float, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from back.database import Base
@@ -48,7 +48,7 @@ class DailyDangerZone(Base):
     id = Column(Integer, primary_key=True, index=True)
     zone_id = Column(Integer, ForeignKey("zones.id"), nullable=False)
     
-    date = Column(String, nullable=False, index=True, comment="YYYY-MM-DD")
+    date = Column(Date, nullable=False, index=True, comment="날짜 (Date 타입)")
     
     risk_type = Column(String, nullable=False, comment="HEAVY_EQUIPMENT(중장비), FIRE(화재), FALL(낙하물), ETC")
     description = Column(String, nullable=False, comment="위험 상세 (예: 이동식 크레인 작업 중)")

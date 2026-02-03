@@ -49,7 +49,7 @@ async def get_daily_work_plan(worker_id: int, date: str) -> dict | None:
         JOIN work_templates t ON p.template_id = t.id
         WHERE a.worker_id = :worker_id AND p.date = :date
     """
-    return await fetch_one(sql, {"worker_id": worker_id, "date": date})
+    return await fetch_one(sql, {"worker_id": worker_id, "date": str(date)})
 
 async def get_assigned_zones(worker_id: int, date: str) -> list[dict]:
     sql = """
@@ -59,11 +59,11 @@ async def get_assigned_zones(worker_id: int, date: str) -> list[dict]:
         JOIN worker_allocations a ON p.id = a.plan_id
         WHERE a.worker_id = :worker_id AND p.date = :date
     """
-    return await fetch_all(sql, {"worker_id": worker_id, "date": date})
+    return await fetch_all(sql, {"worker_id": worker_id, "date": str(date)})
 
 async def get_weather_by_date(date: str) -> dict | None:
     sql = "SELECT * FROM weather WHERE date = :date"
-    return await fetch_one(sql, {"date": date})
+    return await fetch_one(sql, {"date": str(date)})
 
 async def get_active_emergency_alert() -> dict | None:
     sql = """
@@ -76,18 +76,18 @@ async def get_active_emergency_alert() -> dict | None:
 
 async def get_daily_safety_infos(date: str) -> list[dict]:
     sql = "SELECT * FROM daily_safety_info WHERE date = :date"
-    return await fetch_all(sql, {"date": date})
+    return await fetch_all(sql, {"date": str(date)})
 
 async def get_daily_danger_zones(zone_id: int, date: str) -> list[dict]:
     sql = "SELECT * FROM daily_danger_zones WHERE zone_id = :zone_id AND date = :date"
-    return await fetch_all(sql, {"zone_id": zone_id, "date": date})
+    return await fetch_all(sql, {"zone_id": zone_id, "date": str(date)})
 
 async def get_attendance(user_id: int, date: str) -> dict | None:
     sql = """
         SELECT * FROM attendance 
         WHERE user_id = :user_id AND date = :date
     """
-    return await fetch_one(sql, {"user_id": user_id, "date": date})
+    return await fetch_one(sql, {"user_id": user_id, "date": str(date)})
 
 async def get_safety_violations_count(worker_id: int) -> int:
     sql = """

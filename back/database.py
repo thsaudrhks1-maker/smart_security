@@ -99,7 +99,7 @@ from back.auth.model import User
 from back.project.model import Project, ProjectMember
 from back.company.model import Company, Site, ProjectParticipant
 from back.safety.model import Zone, DailyDangerZone, SafetyLog
-from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
+from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation, Weather
 from back.board.model import Notice
 from back.attendance.model import Attendance
 
