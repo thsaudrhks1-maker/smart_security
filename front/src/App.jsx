@@ -20,6 +20,7 @@ import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import PartnerManagement from './features/manager/partners/PartnerManagement';
 import WorkerManagement from './features/manager/workers/WorkerManagement'; // [NEW]
 import CompanyManagement from './features/manager/companies/CompanyManagement'; // [NEW]
+import DailyPlanManagement from './features/manager/work/DailyPlanManagement'; // [NEW]
 
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
@@ -66,6 +67,7 @@ function App() {
             }
           >
             <Route index element={<ManagerDashboard />} />
+            <Route path="work" element={<DailyPlanManagement />} />
             <Route path="partners" element={<PartnerManagement />} />
             <Route path="workers" element={<WorkerManagement />} />
             <Route path="companies" element={<CompanyManagement />} />

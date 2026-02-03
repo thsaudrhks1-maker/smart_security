@@ -28,5 +28,12 @@ export const workApi = {
   getAllocations: async (planId) => {
     const response = await apiClient.get(`/work/plans/${planId}/allocations`);
     return response.data;
+  },
+
+  // 내 작업 조회
+  getMyTodayWork: async (date) => {
+    const params = date ? { date } : {};
+    const response = await apiClient.get('/work/my-plans', { params });
+    return response.data;
   }
 };

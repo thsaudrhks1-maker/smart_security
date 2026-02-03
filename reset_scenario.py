@@ -5,12 +5,11 @@ from sqlalchemy import text
 import bcrypt
 from back.database import engine, Base, AsyncSessionLocal
 from back.auth.model import User
-from back.company.model import Company, ProjectParticipant
+from back.company.model import Company, ProjectParticipant, Site
 from back.project.model import Project, ProjectMember
 from back.attendance.model import Attendance, AttendanceStatus
-from back.work.model import Weather, WorkTemplate
+from back.work.model import Weather, WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.safety.model import Zone
-from back.company.model import Company, ProjectParticipant, Site
 
 async def reset_and_seed():
     print("🚀 [Step 1] 데이터베이스 초기화 중...")

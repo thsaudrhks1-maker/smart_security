@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from back.database import get_db
+from back.auth.router import get_current_user
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
 from back.safety.model import Zone
@@ -41,6 +42,69 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
             # Worker name 조회
             worker_name_str = a.worker.full_name if a.worker else "Unknown"
             
+            alloc_list.append(WorkerAllocationRead(
+                id=a.id, 
+                worker_id=a.worker_id, 
+                role=a.role,
+                worker_name=worker_name_str
+            ))
+            
+        response.append(DailyWorkPlanRead(
+            id=p.id,
+            site_id=p.site_id,
+            zone_id=p.zone_id,
+            template_id=p.template_id,
+            date=p.date,
+            description=p.description,
+            equipment_flags=p.equipment_flags,
+            status=p.status,
+            calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
+            created_at=p.created_at,
+            zone_name=p.zone.name if p.zone else "Unknown",
+            work_type=p.template.work_type if p.template else "Unknown",
+            required_ppe=p.template.required_ppe if p.template else [],
+            checklist_items=p.template.checklist_items if p.template else [],
+            allocations=alloc_list
+        ))
+    return response
+    
+@router.get("/work/my-plans", response_model=list[DailyWorkPlanRead])
+async def get_my_today_plans(
+    date: str = None, 
+    current_user = Depends(get_current_user), # User 타입 힌트 생략 (순환 참조 방지)
+    db: AsyncSession = Depends(get_db)
+):
+    if not date:
+        from datetime import date as dt_date
+        date = dt_date.today().isoformat()
+        
+    # Query: My Allocations -> Plans
+    # (Select DailyWorkPlan where id IN (select plan_id from allocations where worker_id = :me) AND date = :date)
+    
+    # 조인으로 한 번에 가져오기
+    query = (
+        select(DailyWorkPlan)
+        .join(WorkerAllocation, DailyWorkPlan.id == WorkerAllocation.plan_id)
+        .where(
+            WorkerAllocation.worker_id == current_user.id,
+            DailyWorkPlan.date == date
+        )
+        .options(
+            selectinload(DailyWorkPlan.zone),
+            selectinload(DailyWorkPlan.template),
+            selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
+        )
+    )
+    
+    result = await db.execute(query)
+    plans = result.scalars().all()
+
+    # Response Mapping (Duplicate logic... should refactor later)
+    response = []
+    for p in plans:
+        alloc_list = []
+        for a in p.allocations:
+            worker_name_str = a.worker.full_name if a.worker else "Unknown"
             alloc_list.append(WorkerAllocationRead(
                 id=a.id, 
                 worker_id=a.worker_id, 

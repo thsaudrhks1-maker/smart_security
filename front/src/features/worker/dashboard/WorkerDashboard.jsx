@@ -8,32 +8,37 @@ import apiClient from '../../../api/client';
 import { useAuth } from '../../../context/AuthContext';
 import SimpleModal from '../components/common/SimpleModal';
 import AttendanceCard from '../components/dashboard/AttendanceCard';
+import { workApi } from '../../../api/workApi';
 
 const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
   // 데이터 상태
-  const [myWork, setMyWork] = useState(null);
+  const [myPlans, setMyPlans] = useState([]); // Array of plans
   const [myRisks, setMyRisks] = useState([]);
   const [dashboardInfo, setDashboardInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // 모달 상태
-  const [activeModal, setActiveModal] = useState(null); // 'work', 'risk', 'notice' ...
+  const [activeModal, setActiveModal] = useState(null); 
 
   useEffect(() => {
     const loadWorkerData = async () => {
       try {
-        const [workRes, riskRes, dashboardRes] = await Promise.all([
-          apiClient.get('/worker/my-work/today'),
-          apiClient.get('/worker/my-risks/today'),
-          apiClient.get('/worker/dashboard-info')
+        const [plansRes, dashboardRes] = await Promise.all([
+          workApi.getMyTodayWork(), // Fetch real plans
+          apiClient.get('/worker/dashboard-info') 
         ]);
 
-        setMyWork(workRes.data);
-        setMyRisks(riskRes.data);
+        // 기존 API가 없다면 빈 배열 처리 (에러 방지)
+        setMyPlans(plansRes || []);
+        
+        // Dashboard Info
         setDashboardInfo(dashboardRes.data);
+        // Risks can be derived from plans or separate. Let's keep empty if API missing.
+        setMyRisks([]); 
+        
         setLoading(false);
       } catch (err) {
         console.error('데이터 로드 실패:', err);
@@ -42,6 +47,9 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
     };
     loadWorkerData();
   }, []);
+
+  // Main Work to Display (First one)
+  const mainPlan = myPlans.length > 0 ? myPlans[0] : null;
 
   const handleViewLocation = (risk) => {
     navigate('/map', { state: { focusZone: risk } });
@@ -107,7 +115,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Briefcase size={18} /> 금일 나의 작업
             </div>
-            {myWork ? (
+            {mainPlan ? (
               <>
                 <div style={{ 
                   background: 'rgba(255,255,255,0.2)', 
@@ -117,34 +125,39 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
                   fontSize: '0.75rem', 
                   marginBottom: '0.5rem' 
                 }}>
-                  {myWork.work_type}
+                  {mainPlan.work_type}
                 </div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: '1.3' }}>
-                  {myWork.description.length > 15 ? myWork.description.substring(0, 15) + '...' : myWork.description}
+                  {mainPlan.description && mainPlan.description.length > 15 ? mainPlan.description.substring(0, 15) + '...' : mainPlan.description}
                 </div>
-                {/* 일일 위험 요소 뱃지 */}
-                {myWork.daily_hazards && myWork.daily_hazards.length > 0 && (
+                {/* 위험도 표시 (High/Medium) */}
+                {mainPlan.calculated_risk_score >= 50 && (
                   <div style={{ 
                     marginTop: '6px', 
                     fontSize: '0.75rem', 
-                    background: 'rgba(255,100,100,0.3)', 
+                    background: mainPlan.calculated_risk_score >= 80 ? 'rgba(255,50,50,0.4)' : 'rgba(255,165,0,0.4)', 
                     border: '1px solid rgba(255,255,255,0.4)', 
-                    color: '#ffecec', 
+                    color: '#fff', 
                     padding: '2px 6px', 
                     borderRadius: '4px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px'
                   }}>
-                    <AlertTriangle size={12} /> 위험 {myWork.daily_hazards.length}건 주의
+                    <AlertTriangle size={12} /> 위험도 {mainPlan.calculated_risk_score}
                   </div>
                 )}
                 <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '0.5rem' }}>
-                  <MapPin size={12} style={{ display: 'inline' }} /> {myWork.zone_name}
+                  <MapPin size={12} style={{ display: 'inline' }} /> {mainPlan.zone_name}
                 </div>
+                {myPlans.length > 1 && (
+                    <div style={{ fontSize: '0.75rem', marginTop: '6px', opacity: 0.8 }}>
+                        + 외 {myPlans.length - 1}건
+                    </div>
+                )}
               </>
             ) : (
-              <div style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '1rem' }}>작업 없음</div>
+              <div style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '1rem' }}>배정된 작업이 없습니다.</div>
             )}
           </div>
           <div style={{ alignSelf: 'flex-end' }}>
@@ -281,13 +294,13 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
         </div>
 
         {/* [하단] 안전위반 / 무재해 */}
-         <div style={{ background: '#8b5cf6', color: 'white', textAlign: 'center' }} className="dashboard-card">
+         <div key="violation" style={{ background: '#8b5cf6', color: 'white', textAlign: 'center' }} className="dashboard-card">
             <div style={{ fontSize: '0.7rem' }}>안전위반</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_violations_count}건</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_violations_count || 0}건</div>
          </div>
-         <div style={{ background: '#6366f1', color: 'white', textAlign: 'center' }} className="dashboard-card">
+         <div key="accident-free" style={{ background: '#6366f1', color: 'white', textAlign: 'center' }} className="dashboard-card">
             <div style={{ fontSize: '0.7rem' }}>무재해</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.incident_free_days}일</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.incident_free_days || 0}일</div>
          </div>
 
       </div>
@@ -309,38 +322,38 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           50% { opacity: 0.5; }
         }
       `}</style>
-
+      
       {/* ============== 모달 구현 ============== */}
       
       {/* 1. 작업 상세 모달 */}
-      <SimpleModal 
-        isOpen={activeModal === 'work'} 
+      <SimpleModal
+        isOpen={activeModal === 'work'}
         onClose={closeModal}
         title="📋 금일 작업 상세"
       >
-        {myWork ? (
+        {mainPlan ? (
           <div>
             <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
               <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px' }}>작업명</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{myWork.description}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{mainPlan.description}</div>
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.8rem' }}>작업 유형</div>
-                <div style={{ fontWeight: '600' }}>{myWork.work_type}</div>
+                <div style={{ fontWeight: '600' }}>{mainPlan.work_type}</div>
               </div>
               <div>
                 <div style={{ color: '#64748b', fontSize: '0.8rem' }}>작업 구역</div>
-                <div style={{ fontWeight: '600' }}>{myWork.zone_name}</div>
+                <div style={{ fontWeight: '600' }}>{mainPlan.zone_name}</div>
               </div>
             </div>
 
-            {myWork.required_ppe && (
+            {mainPlan.required_ppe && mainPlan.required_ppe.length > 0 && (
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: '#3b82f6' }}>🛡️ 필수 보호구</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {myWork.required_ppe.map((item, i) => (
+                  {mainPlan.required_ppe.map((item, i) => (
                     <span key={i} style={{ background: '#eff6ff', color: '#3b82f6', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', border: '1px solid #bfdbfe' }}>
                       {item}
                     </span>
@@ -349,11 +362,11 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
               </div>
             )}
              
-            {myWork.checklist_items && (
+            {mainPlan.checklist_items && mainPlan.checklist_items.length > 0 && (
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: '#10b981' }}>✅ 안전 점검 리스트</div>
                 <ul style={{ paddingLeft: '20px', margin: 0 }}>
-                  {myWork.checklist_items.map((item, i) => (
+                  {mainPlan.checklist_items.map((item, i) => (
                     <li key={i} style={{ marginBottom: '4px', fontSize: '0.9rem', color: '#334155' }}>{item}</li>
                   ))}
                 </ul>
@@ -361,14 +374,15 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             )}
 
             {/* 위험 요소 표시 */}
-            {myWork.hazards && myWork.hazards.length > 0 && (
+            {/* Note: daily_hazards vs hazards. Schema says daily_hazards. */}
+            {mainPlan.daily_hazards && mainPlan.daily_hazards.length > 0 && (
               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '1rem' }}>
                 <div style={{ fontWeight: '700', marginBottom: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <AlertTriangle size={18} />
                   ⚠️ 주의: 위험 요소
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {myWork.hazards.map((hazard, i) => (
+                  {mainPlan.daily_hazards.map((hazard, i) => (
                     <span key={i} style={{ 
                       background: '#fee2e2', 
                       color: '#991b1b', 

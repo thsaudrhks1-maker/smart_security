@@ -5,6 +5,7 @@ import {
   Briefcase, 
   Users, 
   ClipboardCheck, 
+  ClipboardList, // NEW
   LogOut, 
   HardHat,
   FileText,
@@ -22,6 +23,7 @@ const ManagerLayout = () => {
 
   const menu = [
     { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
+    { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' }, // NEW
     { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
     { label: '근로자 관리', icon: Users, path: '/manager/workers' },
     { label: '출역 관리', icon: ClipboardCheck, path: '/manager/attendance' },
