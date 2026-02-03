@@ -54,9 +54,9 @@ class WorkerAllocation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     plan_id = Column(Integer, ForeignKey("daily_work_plans.id"), nullable=False)
-    worker_id = Column(Integer, ForeignKey("workers.id"), nullable=False)
+    worker_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="작업자(User) ID")
     
     role = Column(String, nullable=True, comment="당일 역할 (팀장, 작업자)")
 
     plan = relationship("DailyWorkPlan", back_populates="allocations")
-    worker = relationship("Worker", back_populates="allocations")
+    # worker = relationship("User") # User 모델과 직접 관계는 필요 시 설정. 지금은 FK만 변경.

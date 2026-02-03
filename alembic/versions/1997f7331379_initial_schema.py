@@ -1,8 +1,8 @@
-"""Add phone_number to users
+"""Initial Schema
 
-Revision ID: eeafd2b1395e
-Revises: a9b98f1cc83f
-Create Date: 2026-02-02 13:10:01.357179
+Revision ID: 1997f7331379
+Revises: 
+Create Date: 2026-02-03 09:14:13.987466
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'eeafd2b1395e'
-down_revision: Union[str, Sequence[str], None] = 'a9b98f1cc83f'
+revision: str = '1997f7331379'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

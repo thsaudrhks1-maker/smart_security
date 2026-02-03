@@ -10,8 +10,8 @@ from typing import List
 
 from back.database import get_db
 from back.auth.dependencies import get_current_user, require_admin
-from back.auth.model import UserModel
-from back.company.model import Worker, Site, Company
+from back.auth.model import User
+from back.company.model import Site, Company
 from back.work.model import DailyWorkPlan
 from back.safety.model import Zone
 
@@ -20,33 +20,34 @@ router = APIRouter(prefix="/admin/db", tags=["admin-db"])
 
 @router.get("/workers")
 async def get_all_workers(
-    current_user: UserModel = Depends(require_admin),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    전체 작업자 데이터 조회
+    전체 작업자 데이터 조회 (User 테이블에서 role='worker')
     """
     result = await db.execute(
-        select(Worker, Company)
-        .outerjoin(Company, Worker.company_id == Company.id)
+        select(User, Company)
+        .outerjoin(Company, User.company_id == Company.id)
+        .where(User.role == "worker")
     )
     workers = result.all()
     
     return [
         {
-            "id": worker.id,
-            "name": worker.name,
-            "trade": worker.trade,
+            "id": user.id,
+            "name": user.full_name,
+            "trade": user.job_type if user.job_type else "-",
             "company": company.name if company else "-",
-            "status": worker.status
+            "status": "OFF_SITE" # 임시
         }
-        for worker, company in workers
+        for user, company in workers
     ]
 
 
 @router.get("/sites")
 async def get_all_sites(
-    current_user: UserModel = Depends(require_admin),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -68,7 +69,7 @@ async def get_all_sites(
 
 @router.get("/plans")
 async def get_all_plans(
-    current_user: UserModel = Depends(require_admin),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -94,7 +95,7 @@ async def get_all_plans(
 
 @router.get("/zones")
 async def get_all_zones(
-    current_user: UserModel = Depends(require_admin),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -118,7 +119,7 @@ async def get_all_zones(
 
 @router.get("/companies")
 async def get_all_companies(
-    current_user: UserModel = Depends(require_admin),
+    current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db)
 ):
     """

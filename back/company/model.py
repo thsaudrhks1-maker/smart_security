@@ -19,8 +19,9 @@ class Site(Base):
     # 관계
     project = relationship("Project")
     
-    # 3.4 Zone (위험구역) 등은 별도 파일로 분리되거나 여기서 관리
-    # zones = relationship("Zone", back_populates="site") # 추후 Zone 모델 정의시 주석 해제
+    # 역참조
+    zones = relationship("Zone", back_populates="site")
+    daily_plans = relationship("DailyWorkPlan", back_populates="site")
 
 class Company(Base):
     """협력사 정보 (Master Data)"""
@@ -33,7 +34,7 @@ class Company(Base):
 
     # 관계
     participations = relationship("ProjectParticipant", back_populates="company")
-    users = relationship("User", back_populates="company") # User와 통합 (Worker 삭제)
+    users = relationship("User", back_populates="company")  # UserModel -> User 변경
 
 class ProjectParticipant(Base):
     """프로젝트 참여 기업 및 역할 (N:M 해소)"""

@@ -14,4 +14,4 @@ class Notice(Base):
     is_important = Column(Boolean, default=False, comment="중요 공지 여부")
     created_at = Column(DateTime, default=datetime.now)
 
-    author = relationship("UserModel")
+    author = relationship("User")

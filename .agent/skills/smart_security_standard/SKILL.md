@@ -43,7 +43,17 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 - **TXT 파일 규칙**: `Project_Docs/**/*.txt` 작성 시 마크다운 문법(`#`, `**`) 사용 금지. 순수 텍스트(`===`, `1.`)로만 작성.
 - **로그 파일명**: `YYYY-MM-DD.txt` 형식 준수.
 
-## 5. DB 마이그레이션 및 배포 프로세스 (Alembic Workflow)
+## 5. 데이터베이스 및 마이그레이션
+- **ORM**: SQLAlchemy (Async)
+- **Migration**: Alembic
+- **Reset Rule**:
+  - 개발 중 DB 초기화(`reset_db.py`) 시, 다음 **테스트 계정 3종을 반드시 자동 생성**한다.
+  - 비밀번호는 모두 `0000`으로 통일한다.
+    - ID: `a` / Role: `admin` (시스템 관리자)
+    - ID: `m` / Role: `manager` (현장 소장)
+    - ID: `w` / Role: `worker` (작업자)
+
+## 6. DB 마이그레이션 및 배포 프로세스 (Alembic Workflow)
 *DB 스키마 변경 시 아래 절차를 엄수해야 함. `Base.metadata.create_all` 사용 금지.*
 
 1. **로컬 개발 (Migration 생성)**:

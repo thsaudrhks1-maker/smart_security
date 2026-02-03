@@ -1,8 +1,10 @@
-from sqlalchemy import Column, String, Integer
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from back.database import Base
 
 # DB 모델 정의 (User)
-class UserModel(Base):
+class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -30,11 +32,11 @@ class AuthRepository:
         self.db = db
 
     async def get_user_by_username(self, username: str):
-        result = await self.db.execute(select(UserModel).where(UserModel.username == username))
+        result = await self.db.execute(select(User).where(User.username == username))
         return result.scalars().first()
     
     # 프로토타입용: 사용자 생성 (테스트용)
-    async def create_user(self, user: UserModel):
+    async def create_user(self, user: User):
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)

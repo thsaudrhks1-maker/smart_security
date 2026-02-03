@@ -26,7 +26,7 @@ class DailySafetyInfo(Base):
     date = Column(String, nullable=False)  # YYYY-MM-DD
     title = Column(String, nullable=False)
     content = Column(String)
-    is_read_by_worker = Column(String)  # worker_id 목록 (JSON 또는 쉼표 구분)
+    is_read_by_worker = Column(String)  # user_id 목록 (JSON 또는 쉼표 구분)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -47,7 +47,7 @@ class Attendance(Base):
     __tablename__ = "attendance"
     
     id = Column(Integer, primary_key=True, index=True)
-    worker_id = Column(Integer, ForeignKey("workers.id"), nullable=False)
+    worker_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="작업자(User) ID")
     date = Column(String, nullable=False)  # YYYY-MM-DD
     check_in_time = Column(String)  # HH:MM
     check_out_time = Column(String)  # HH:MM
@@ -59,7 +59,7 @@ class SafetyViolation(Base):
     __tablename__ = "safety_violations"
     
     id = Column(Integer, primary_key=True, index=True)
-    worker_id = Column(Integer, ForeignKey("workers.id"), nullable=False)
+    worker_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="위반자(User) ID")
     date = Column(String, nullable=False)
     violation_type = Column(String, nullable=False)  # 안전모 미착용, 안전대 미착용 등
     description = Column(String)

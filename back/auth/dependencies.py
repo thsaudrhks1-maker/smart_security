@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from back.database import get_db
-from back.auth.model import UserModel
+from back.auth.model import User
 from back.auth.service import AuthService
 
 security = HTTPBearer()
@@ -16,7 +16,7 @@ security = HTTPBearer()
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db)
-) -> UserModel:
+) -> User:
     """
     현재 로그인한 사용자 조회 (JWT 기반)
     """
@@ -34,7 +34,7 @@ async def get_current_user(
     
     # 사용자 조회
     result = await db.execute(
-        select(UserModel).filter(UserModel.username == username)
+        select(User).filter(User.username == username)
     )
     user = result.scalar_one_or_none()
     
@@ -48,8 +48,8 @@ async def get_current_user(
 
 
 async def require_admin(
-    current_user: UserModel = Depends(get_current_user)
-) -> UserModel:
+    current_user: User = Depends(get_current_user)
+) -> User:
     """
     관리자 권한 필요
     """
@@ -60,4 +60,3 @@ async def require_admin(
         )
     
     return current_user
-

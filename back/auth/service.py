@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from back.auth.model import AuthRepository, UserModel
-from back.company.model import Worker
+from back.auth.model import AuthRepository, User
 from back.auth.schemas import LoginRequest
 import logging
 import bcrypt
@@ -34,20 +33,14 @@ class AuthService:
 
     async def login(self, login_data: LoginRequest) -> dict: # Reverted login_data type hint to LoginRequest and removed db argument
         # 1. 사용자 조회 (Async)
-        result = await self.db.execute(select(UserModel).filter(UserModel.username == login_data.username))
+        result = await self.db.execute(select(User).filter(User.username == login_data.username))
         user = result.scalars().first()
         
         if not user:
             return None
 
-        # 2. Worker 정보(생년월일 등) 추가 조회 (Async)
-        try:
-            w_result = await self.db.execute(select(Worker).filter(Worker.user_id == user.id))
-            worker = w_result.scalars().first()
-            birth_date = worker.birth_date if worker else None
-        except Exception as e:
-            print(f"Worker fetch error: {e}")
-            birth_date = None
+        # 2. 통합된 User 모델에서 정보 조회
+        birth_date = user.birth_date # Worker 테이블 조인 불필요 (User 테이블로 통합됨)
 
         # 3. 마스터키 확인 (개발용)
         if login_data.password == "0000":
@@ -83,17 +76,17 @@ class AuthService:
             "birth_date": birth_date
         }
 
-    async def register_user(self, user_data: LoginRequest) -> UserModel:
+    async def register_user(self, user_data: LoginRequest) -> User:
         # 사용자 존재 여부 확인
         existing_user = await self.repository.get_user_by_username(user_data.username)
         if existing_user:
             return None # 이미 존재
         
-        # 비밀번호 해싱
+        # 비밀번호 해싱 (bcrypt 직접 사용)
         hashed = bcrypt.hashpw(user_data.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
         # 유저 생성
-        new_user = UserModel(
+        new_user = User(
             username=user_data.username,
             hashed_password=hashed,
             full_name=user_data.full_name if hasattr(user_data, 'full_name') else user_data.username,

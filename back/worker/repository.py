@@ -1,8 +1,9 @@
 from back.database import fetch_one, fetch_all
 
 async def get_worker_by_user_id(user_id: int) -> dict | None:
+    # Worker 테이블 삭제됨 -> User 테이블 사용
     sql = """
-        SELECT * FROM workers WHERE user_id = :user_id
+        SELECT * FROM users WHERE id = :user_id
     """
     return await fetch_one(sql, {"user_id": user_id})
 

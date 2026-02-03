@@ -7,7 +7,7 @@ from back.database import get_db
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
 from back.safety.model import Zone
-from back.company.model import Worker
+# from back.company.model import Worker # 삭제
 
 router = APIRouter(tags=["work"])
 
@@ -23,7 +23,7 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
     query = select(DailyWorkPlan).options(
         selectinload(DailyWorkPlan.zone),
         selectinload(DailyWorkPlan.template),
-        selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
+        selectinload(DailyWorkPlan.allocations) # .selectinload(WorkerAllocation.worker) -> worker 관계 잠시 끊김
     )
     
     if date:
@@ -34,18 +34,18 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
     result = await db.execute(query)
     plans = result.scalars().all()
     
-    # Transform for schema (populating names manually if needed, or rely on ORM loaded objects if schema allows)
-    # Pydantic's orm_mode handles nested object access, but we flatten some fields in schema.
-    # Let's map it manually or update schema to use nested objects. Re-mapping for simplicity here.
     response = []
     for p in plans:
         alloc_list = []
         for a in p.allocations:
+            # Worker name 조회 로직 (임시: Unknown 처리. 추후 User JOIN 필요)
+            worker_name_str = "Unknown"
+            
             alloc_list.append(WorkerAllocationRead(
                 id=a.id, 
                 worker_id=a.worker_id, 
                 role=a.role,
-                worker_name=a.worker.name if a.worker else "Unknown"
+                worker_name=worker_name_str
             ))
             
         response.append(DailyWorkPlanRead(
@@ -118,13 +118,6 @@ async def create_work_plan(plan: DailyWorkPlanCreate, db: AsyncSession = Depends
         
     await db.commit()
     await db.refresh(db_plan)
-    
-    # Reload for response
-    # (Simplified: just return basic info or re-query. For prototype, re-querying is safer to match schema)
-    # But since we just added it, we can construct response.
-    # ...Actually, lazily just returning what we have + queried template/zone
-    
-    alloc_response = [] # We won't re-query everything right now for speed
     
     return DailyWorkPlanRead(
         id=db_plan.id,
