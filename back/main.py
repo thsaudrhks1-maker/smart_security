@@ -28,15 +28,19 @@ app = FastAPI(title="Smart Safety Guardian API")
 origins = [
     "http://localhost:3500",
     "http://127.0.0.1:3500",
-    "http://localhost:5173", # Vite Default
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://168.107.52.201:3500", # Network IP 예시
     "http://localhost:3000",
+    "http://localhost:8500",
 ]
+# 추가로 와일드카드 느낌의 루프백/로컬 전체 허용 (안전한 개발 환경용)
+allow_origin_regex = r"http://(localhost|127\.0\.0\.1|168\.107\.52\.\d+):[0-9]+"
+
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=allow_origin_regex, # 정규식 기반 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

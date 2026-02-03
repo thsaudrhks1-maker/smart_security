@@ -1,29 +1,31 @@
 from back.database import fetch_one, fetch_all
 
 async def get_worker_with_info(user_id: int) -> dict | None:
-    # 1. 사용자의 회사명과 소속 회사가 참여 중인 최신 프로젝트명을 가져옴
-    # project_members에 직접 등록된 건이 있으면 최우선, 없으면 소속 회사 참여 현장 매칭
-    # 1. 사용자의 회사명과 소속 회사가 참여 중인 최신 프로젝트 정보를 가져옴
-    # project_members에 직접 등록된 건이 있으면 최우선, 없으면 소속 회사 참여 현장 매칭
+    # 1. 사용자의 회사 정보는 무조건 가져옴
+    # 2. 회사가 참여 중인 프로젝트 정보를 가져옴
+    # 3. 그 프로젝트에 사용자가 정식 멤버(pm.id 존재)인지 확인하여 승인 여부 판단
     sql = """
         SELECT 
-            u.*, 
+            u.id, u.username, u.full_name, u.role, u.phone,
             c.name as company_name,
-            COALESCE(p1.name, p2.name) as project_name,
-            COALESCE(p1.id, p2.id) as project_id
+            p.name as project_name,
+            p.id as project_id,
+            CASE WHEN pm.id IS NOT NULL THEN true ELSE false END as is_approved
         FROM users u
         LEFT JOIN companies c ON u.company_id = c.id
-        -- 1. 개인 직접 투입 (ProjectMember)
-        LEFT JOIN project_members pm ON u.id = pm.user_id AND pm.status = 'ACTIVE'
-        LEFT JOIN projects p1 ON pm.project_id = p1.id
-        -- 2. 업체 투입 (ProjectParticipant)
+        -- 업체가 참여 중인 프로젝트 확인
         LEFT JOIN project_participants pp ON u.company_id = pp.company_id
-        LEFT JOIN projects p2 ON pp.project_id = p2.id
+        LEFT JOIN projects p ON pp.project_id = p.id
+        -- 해당 프로젝트에 사용자가 직접 등록되었는지(승인) 확인
+        LEFT JOIN project_members pm ON u.id = pm.user_id AND pm.project_id = p.id AND pm.status = 'ACTIVE'
         WHERE u.id = :user_id
-        ORDER BY p1.created_at DESC NULLS LAST, p2.created_at DESC
+        ORDER BY is_approved DESC, p.created_at DESC
         LIMIT 1
     """
     return await fetch_one(sql, {"user_id": user_id})
+
+
+
 
 async def get_worker_by_user_id(user_id: int) -> dict | None:
     sql = "SELECT * FROM users WHERE id = :user_id"
@@ -49,7 +51,7 @@ async def get_daily_work_plan(worker_id: int, date: str) -> dict | None:
         JOIN work_templates t ON p.template_id = t.id
         WHERE a.worker_id = :worker_id AND p.date = :date
     """
-    return await fetch_one(sql, {"worker_id": worker_id, "date": str(date)})
+    return await fetch_one(sql, {"worker_id": worker_id, "date": date})
 
 async def get_assigned_zones(worker_id: int, date: str) -> list[dict]:
     sql = """
@@ -59,11 +61,11 @@ async def get_assigned_zones(worker_id: int, date: str) -> list[dict]:
         JOIN worker_allocations a ON p.id = a.plan_id
         WHERE a.worker_id = :worker_id AND p.date = :date
     """
-    return await fetch_all(sql, {"worker_id": worker_id, "date": str(date)})
+    return await fetch_all(sql, {"worker_id": worker_id, "date": date})
 
 async def get_weather_by_date(date: str) -> dict | None:
     sql = "SELECT * FROM weather WHERE date = :date"
-    return await fetch_one(sql, {"date": str(date)})
+    return await fetch_one(sql, {"date": date})
 
 async def get_active_emergency_alert() -> dict | None:
     sql = """
@@ -76,18 +78,18 @@ async def get_active_emergency_alert() -> dict | None:
 
 async def get_daily_safety_infos(date: str) -> list[dict]:
     sql = "SELECT * FROM daily_safety_info WHERE date = :date"
-    return await fetch_all(sql, {"date": str(date)})
+    return await fetch_all(sql, {"date": date})
 
 async def get_daily_danger_zones(zone_id: int, date: str) -> list[dict]:
     sql = "SELECT * FROM daily_danger_zones WHERE zone_id = :zone_id AND date = :date"
-    return await fetch_all(sql, {"zone_id": zone_id, "date": str(date)})
+    return await fetch_all(sql, {"zone_id": zone_id, "date": date})
 
 async def get_attendance(user_id: int, date: str) -> dict | None:
     sql = """
         SELECT * FROM attendance 
         WHERE user_id = :user_id AND date = :date
     """
-    return await fetch_one(sql, {"user_id": user_id, "date": str(date)})
+    return await fetch_one(sql, {"user_id": user_id, "date": date})
 
 async def get_safety_violations_count(worker_id: int) -> int:
     sql = """

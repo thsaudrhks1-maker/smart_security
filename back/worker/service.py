@@ -124,73 +124,108 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
     worker_detail = await get_worker_with_info(user_id)
     if worker_detail:
         result["user_info"]["company_name"] = worker_detail.get("company_name") or "미지정"
-        result["user_info"]["project_name"] = worker_detail.get("project_name") or "미배정"
-        result["user_info"]["project_id"] = worker_detail.get("project_id") # [NEW] 출근 요청용 ID
-
+        
+        # [기획 반영] 승인 여부에 따른 프로젝트 명칭 처리
+        raw_p_name = worker_detail.get("project_name")
+        is_approved = worker_detail.get("is_approved", False)
+        
+        if raw_p_name:
+            if is_approved:
+                result["user_info"]["project_name"] = raw_p_name
+            else:
+                result["user_info"]["project_name"] = f"{raw_p_name} (현장 승인 대기 중)"
+        else:
+            result["user_info"]["project_name"] = "참여 중인 현장 없음"
+            
+        result["user_info"]["full_name"] = worker_detail.get("full_name")
+        result["user_info"]["project_id"] = worker_detail.get("project_id")
+    
     # 기존 worker 변수 (ID 참조용)
-    worker = worker_detail # 재사용
+    worker = worker_detail
+
     
     today = date_utils.get_today()
     
-    # 2. 날씨
-    weather = await get_weather_by_date(today)
-    if weather:
-        result["weather"] = {
-            "temperature": weather["temperature"],
-            "condition": weather["condition"]
-        }
-        
-    # 3. 긴급알림
-    alert = await get_active_emergency_alert()
-    if alert:
-        result["emergency_alert"] = {
-            "title": alert["title"],
-            "message": alert["message"],
-            "severity": alert["severity"]
-        }
-        
-    # 4. 안전정보 (작업자별 필터링)
-    if worker:
-        infos = await get_daily_safety_infos(today)
-        my_infos = []
-        worker_id_str = str(worker["id"])
-        for info in infos:
-            target_workers = info.get("is_read_by_worker") or ""
-            if worker_id_str in target_workers:
-                my_infos.append({
-                    "id": info["id"],
-                    "title": info["title"],
-                    "content": info["content"],
-                    "date": info["date"]
-                })
-        result["safety_infos"] = my_infos
-
-    # 5. 출역 현황
-    if worker:
-        att = await get_attendance(worker["id"], today)
-        if att:
-            result["attendance"] = {
-                "check_in_time": att["check_in_time"],
-                "check_out_time": att["check_out_time"],
-                "status": att["status"]
+    # 2. 날씨 (Safe Call)
+    try:
+        weather = await get_weather_by_date(today)
+        if weather:
+            result["weather"] = {
+                "temperature": weather["temperature"],
+                "condition": weather["condition"]
             }
-        else:
-            result["attendance"] = {"status": "ABSENT"}
-
-    # 6. 안전위반 건수
-    if worker:
-        result["safety_violations_count"] = await get_safety_violations_count(worker["id"])
+    except Exception as e:
+        print(f"⚠️ Weather Info Error: {e}")
         
-    # 7. 공지사항
-    notices = await get_recent_notices(3)
-    result["notices"] = [
-        {
-            "id": n["id"],
-            "title": n["title"],
-            "content": n["content"],
-            "priority": n["priority"]
-        }
-        for n in notices
-    ]
+    # 3. 긴급알림 (Safe Call - 테이블 누락 대응)
+    try:
+        alert = await get_active_emergency_alert()
+        if alert:
+            result["emergency_alert"] = {
+                "title": alert["title"],
+                "message": alert["message"],
+                "severity": alert["severity"]
+            }
+    except Exception as e:
+        print(f"⚠️ Emergency Alert Table Error: {e}")
+        
+    # 4. 안전정보 (Safe Call)
+    try:
+        if worker:
+            infos = await get_daily_safety_infos(today)
+            my_infos = []
+            worker_id_str = str(worker["id"])
+            for info in infos:
+                target_workers = info.get("is_read_by_worker") or ""
+                if worker_id_str in target_workers:
+                    my_infos.append({
+                        "id": info["id"],
+                        "title": info["title"],
+                        "content": info["content"],
+                        "date": info["date"]
+                    })
+            result["safety_infos"] = my_infos
+    except Exception as e:
+        print(f"⚠️ Safety Info Error: {e}")
+
+
+    # 5. 출역 현황 (Safe Call)
+    try:
+        if worker:
+            att = await get_attendance(worker["id"], today)
+            if att:
+                result["attendance"] = {
+                    "check_in_time": att["check_in_time"],
+                    "check_out_time": att["check_out_time"],
+                    "status": att["status"]
+                }
+            else:
+                result["attendance"] = {"status": "ABSENT"}
+    except Exception as e:
+        print(f"⚠️ Attendance Info Error: {e}")
+
+    # 6. 안전위반 건수 (Safe Call)
+    try:
+        if worker:
+            result["safety_violations_count"] = await get_safety_violations_count(worker["id"])
+    except Exception as e:
+        print(f"⚠️ Safety Violations Count Error: {e}")
+        result["safety_violations_count"] = 0
+        
+    # 7. 공지사항 (Safe Call)
+    try:
+        notices = await get_recent_notices(3)
+        result["notices"] = [
+            {
+                "id": n["id"],
+                "title": n["title"],
+                "content": n["content"],
+                "priority": n["priority"]
+            }
+            for n in notices
+        ]
+    except Exception as e:
+        print(f"⚠️ Notices Info Error: {e}")
+
     
     return result

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Text, Float, JSON
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Text, Float, JSON, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from back.database import Base
@@ -59,3 +59,30 @@ class DailyDangerZone(Base):
     z = Column(Float, nullable=True)
     
     zone = relationship("Zone")
+
+class EmergencyAlert(Base):
+    """긴급 알림 (지진, 화재 등)"""
+    __tablename__ = "emergency_alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    severity = Column(String, default="HIGH") # HIGH, MEDIUM, LOW
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.now)
+
+class SafetyViolation(Base):
+    """안전 위반 기록"""
+    __tablename__ = "safety_violations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    worker_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    violation_type = Column(String, nullable=False) # 예: 보호구 미착용, 무단 현장 이탈 등
+    description = Column(Text, nullable=True)
+    severity = Column(String, default="LOW") # LOW, MEDIUM, HIGH
+    fine_amount = Column(Integer, default=0) # 벌금(필요시)
+    created_at = Column(DateTime, default=datetime.now)
+
+    worker = relationship("User")
+
+

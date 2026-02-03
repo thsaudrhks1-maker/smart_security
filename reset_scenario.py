@@ -21,7 +21,7 @@ async def reset_and_seed():
             "attendance", "project_members", "project_participants", 
             "worker_allocations", "daily_work_plans", "safety_logs", 
             "daily_danger_zones", "zones", "sites", "projects", 
-            "users", "companies", "notices", "weather"
+            "users", "companies", "notices", "weather", "emergency_alerts", "safety_violations"
         ]
         for table in tables:
             await conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
@@ -95,10 +95,13 @@ async def reset_and_seed():
         print("🔗 [Step 5] 프로젝트 멤버 & 협력사 배정 중...")
         pm_manager = ProjectMember(project_id=project.id, user_id=manager.id, role_name="현장소장", status="ACTIVE")
         pm_safety = ProjectMember(project_id=project.id, user_id=safety.id, role_name="안전팀장", status="ACTIVE")
+        pm_worker1 = ProjectMember(project_id=project.id, user_id=worker.id, role_name="전기공", status="ACTIVE")
+        pm_worker2 = ProjectMember(project_id=project.id, user_id=worker2.id, role_name="전기보조", status="ACTIVE")
         pp_elec = ProjectParticipant(project_id=project.id, company_id=sub_corp.id, role="PARTNER")
         
-        db.add_all([pm_manager, pm_safety, pp_elec])
+        db.add_all([pm_manager, pm_safety, pm_worker1, pm_worker2, pp_elec])
         await db.commit()
+
 
         print("✅ [Step 6] 작업자 출퇴근 기록 생성 (Worker1: 출근)")
         att = Attendance(
