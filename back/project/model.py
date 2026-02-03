@@ -9,6 +9,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, comment="프로젝트명 (예: 강남 아파트 신축)")
     code = Column(String, unique=True, index=True, nullable=True, comment="프로젝트 코드 (P2024-001)")
+    description = Column(String, nullable=True, comment="프로젝트 설명/개요")
     
     # 위치 정보
     location_name = Column(String, nullable=True, comment="현장 위치명 (강남구 역삼동)")

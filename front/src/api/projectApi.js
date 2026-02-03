@@ -39,3 +39,21 @@ export const updateProject = async (projectId, updateData) => {
 export const deleteProject = async (projectId) => {
   await api.delete(`/api/projects/${projectId}`);
 };
+
+/**
+ * [신규] 협력사(참여자) 관리 API
+ */
+
+// 협력사 목록 조회
+export const getProjectParticipants = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/participants`);
+  return response.data;
+};
+
+// 협력사 추가
+export const addProjectParticipant = async (projectId, companyName, role = 'PARTNER') => {
+  const response = await api.post(`/api/projects/${projectId}/participants`, null, {
+    params: { company_name: companyName, role }
+  });
+  return response.data;
+};

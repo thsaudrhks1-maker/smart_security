@@ -47,11 +47,13 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 - **ORM**: SQLAlchemy (Async)
 - **Migration**: Alembic
 - **Reset Rule**:
-  - 개발 중 DB 초기화(`reset_db.py`) 시, 다음 **테스트 계정 3종을 반드시 자동 생성**한다.
-  - 비밀번호는 모두 `0000`으로 통일한다.
-    - ID: `a` / Role: `admin` (시스템 관리자)
-    - ID: `m` / Role: `manager` (현장 소장)
-    - ID: `w` / Role: `worker` (작업자)
+  - 개발 중 DB 초기화(`reset_db.py`) 시, **테스트 가능한 Full Seed Data**를 자동 생성한다.
+  - **필수 생성 목록**:
+    1. **Users**: Admin(`a`), Manager(`m`), Worker(`w`) (PW: `0000`)
+    2. **Company**: 원청사(General), 협력사(Specialty) 최소 각 1개
+    3. **Project**: 진행 중인 프로젝트 1개 (User와 매핑 완료된 상태)
+    4. **Site & Zone**: 현장 및 위험구역(Zone) 데이터
+    5. **Work Info**: 작업 템플릿, 금일 작업 계획 등 기본 데이터
 
 ## 6. DB 마이그레이션 및 배포 프로세스 (Alembic Workflow)
 *DB 스키마 변경 시 아래 절차를 엄수해야 함. `Base.metadata.create_all` 사용 금지.*

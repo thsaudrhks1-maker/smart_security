@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getActiveProjects } from '../../../api/projectApi'; // API import
 import { 
   Building2, 
   MapPin, 
@@ -11,18 +12,32 @@ import {
 } from 'lucide-react';
 
 const ManagerDashboard = () => {
-  // 더미 데이터 (추후 API 연동)
-  const projectInfo = {
-    name: '서울빌딩 신축공사 (P6C0501)',
-    address: '가산디지털1로 205-28',
-    period: '2025-01-01 ~ 2026-12-31',
-    accidentFree: { current: 100, target: 300 }
-  };
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // 초기 데이터 로딩
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const projects = await getActiveProjects();
+        if (projects && projects.length > 0) {
+          // 편의상 첫 번째 진행중인 프로젝트를 내 현장으로 간주
+          setProject(projects[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch project info:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProject();
+  }, []);
+
+  // 더미 통계 (아직 API 없음)
   const stats = {
-    workers: 27,
+    workers: 27, // TODO: 실시간 출역 API 연동 필요
     todayAttendance: 0,
-    daysLeft: 232
+    daysLeft: project ? Math.ceil((new Date(project.end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0
   };
 
   const notices = [
@@ -30,6 +45,21 @@ const ManagerDashboard = () => {
     { id: 2, title: '시스템 점검 안내', target: '현장별', date: '2025-02-15' },
     { id: 1, title: '서울빌딩 신축공사 현장에서 공지드립니다.', target: '현장별', date: '2025-02-06' },
   ];
+
+  if (loading) return <div>Loading...</div>;
+  
+  // 데이터가 없을 경우
+  const projectInfo = project ? {
+    name: `${project.name} (${project.code || '-'})`,
+    address: '서울시 강남구 테헤란로 (DB 데이터)', // 주소 필드 추가되면 연동
+    period: `${project.start_date} ~ ${project.end_date}`,
+    accidentFree: { current: 10, target: 365 } // 임시
+  } : {
+    name: '진행 중인 프로젝트 없음',
+    address: '-',
+    period: '-',
+    accidentFree: { current: 0, target: 0 }
+  };
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1600px', margin: '0 auto' }}>

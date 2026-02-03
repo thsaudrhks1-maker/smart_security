@@ -17,6 +17,7 @@ import CompanyList from './features/admin/companies/CompanyList';
 // 중간 관리자 (현장 소장)
 import ManagerLayout from './features/manager/components/layout/ManagerLayout';
 import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
+import PartnerManagement from './features/manager/partners/PartnerManagement';
 
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
@@ -63,7 +64,7 @@ function App() {
             }
           >
             <Route index element={<ManagerDashboard />} />
-            {/* 추후 추가될 하위 라우트들 */}
+            <Route path="partners" element={<PartnerManagement />} />
           </Route>
 
           {/* 3. 작업자 전용 (모바일) - WORKER only */}
