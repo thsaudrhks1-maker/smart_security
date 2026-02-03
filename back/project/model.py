@@ -1,56 +1,61 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Date, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 from back.database import Base
 
 class Project(Base):
-    """
-    프로젝트 (공사 프로젝트 최상위 엔티티)
-    
-    역할:
-    - 5억~10억 규모 건설 프로젝트 기본 정보 관리
-    - 모든 현장(Site), 협력사(Company), 작업자(Worker)의 최상위 컨테이너
-    
-    생성자: 소장/관리자
-    사용자: 안전관리자, 작업자 (본인이 속한 프로젝트만 접근)
-    """
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
-    
-    # 프로젝트 기본 정보
-    name = Column(String, nullable=False, comment="공사명 (예: OO아파트 신축공사)")
+    name = Column(String, index=True, comment="프로젝트명 (예: 강남 아파트 신축)")
+    code = Column(String, unique=True, index=True, nullable=True, comment="프로젝트 코드 (P2024-001)")
     
     # 위치 정보
-    location_address = Column(String, nullable=True, comment="공사 주소")
-    location_lat = Column(Float, nullable=True, comment="위도 (지도용)")
-    location_lng = Column(Float, nullable=True, comment="경도 (지도용)")
+    location_name = Column(String, nullable=True, comment="현장 위치명 (강남구 역삼동)")
+    location_lat = Column(Float, nullable=True, comment="위도")
+    location_lng = Column(Float, nullable=True, comment="경도")
+    location_address = Column(String, nullable=True, comment="상세 주소")
+
+    # 기간 및 상태
+    start_date = Column(Date, nullable=True, comment="착공일")
+    end_date = Column(Date, nullable=True, comment="준공예정일")
+    status = Column(String, default="PLANNED", comment="상태 (PLANNED, ACTIVE, PAUSED, DONE)")
     
-    # 발주/시공사 정보
-    client_company = Column(String, nullable=True, comment="발주처 (예: OO건설)")
-    constructor_company = Column(String, nullable=True, comment="시공사 (예: XX종합건설)")
+    # 규모 및 유형
+    project_type = Column(String, nullable=True, comment="공사 유형 (건축, 토목, 플랜트)")
+    budget_amount = Column(Integer, nullable=True, comment="도급액 (원)")
     
-    # 공사 상세
-    project_type = Column(String, nullable=True, comment="공사 유형 (신축/리모델링/토목 등)")
-    budget_amount = Column(Integer, nullable=True, comment="공사 금액 (원)")
+    # 주요 업체 (텍스트로도 관리하고, 실제 관계는 ProjectParticipant로 관리)
+    client_company = Column(String, nullable=True, comment="발주처명 (표시용)")
+    constructor_company = Column(String, nullable=True, comment="시공사명 (표시용)")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # 관계 (New)
+    # 1. 참여 멤버 (관리자, 작업자 모두 포함)
+    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     
-    # 공사 기간
-    start_date = Column(String, nullable=True, comment="착공일 (YYYY-MM-DD)")
-    end_date = Column(String, nullable=True, comment="준공 예정일 (YYYY-MM-DD)")
-    
-    # 담당자 (FK)
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="담당 소장 User ID")
-    safety_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="안전관리자 User ID")
-    
-    # 프로젝트 상태
-    status = Column(String, default="PLANNED", comment="PLANNED(계획)/ACTIVE(진행 중)/DONE(완료)")
-    
-    created_at = Column(DateTime, default=datetime.now)
-    
-    # 관계 (Relationships)
-    sites = relationship("Site", back_populates="project")
-    # companies = relationship("Company", back_populates="project") <- N:M으로 대체됨
-    workers = relationship("Worker", back_populates="project")
-    
-    # [신규] 참여 회사 (N:M)
+    # 2. 참여 회사 (N:M)
     participations = relationship("ProjectParticipant", back_populates="project", cascade="all, delete-orphan")
+
+
+# [신규] 통합 프로젝트 멤버 테이블 (User <-> Project N:M)
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # 현장 내 역할 (System Role과 다름)
+    # 예: 현장소장, 안전팀장, 공사과장, 전기반장, 용접공
+    role_name = Column(String, nullable=False, comment="현장 직책")
+    
+    # 상태
+    status = Column(String, default="PENDING", comment="상태 (PENDING:승인대기, ACTIVE:근무중, LEAVE:퇴사)")
+    joined_at = Column(DateTime(timezone=True), server_default=func.now(), comment="투입일")
+    
+    # 관계
+    project = relationship("Project", back_populates="members")
+    user = relationship("User", back_populates="project_members")

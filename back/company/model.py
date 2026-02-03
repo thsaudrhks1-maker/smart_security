@@ -1,15 +1,15 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from sqlalchemy.sql import func
 from back.database import Base
 
 class Site(Base):
-    """3.2 Site: 현장 정보"""
+    """3.2 Site: 현장 정보 (물리적 구역)"""
     __tablename__ = "sites"
 
     id = Column(Integer, primary_key=True, index=True)
     
-    # 프로젝트 연결 (신규)
+    # 프로젝트 연결
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, comment="소속 프로젝트 ID")
     
     name = Column(String, nullable=False, comment="현장명")
@@ -18,22 +18,9 @@ class Site(Base):
     
     # 관계
     project = relationship("Project")
-    zones = relationship("Zone", back_populates="site")
-    daily_plans = relationship("DailyWorkPlan", back_populates="site")
-
-# [신규] 중간 테이블: 프로젝트-회사 참여 관계
-class ProjectParticipant(Base):
-    """프로젝트 참여 기업 및 역할 (N:M 해소)"""
-    __tablename__ = "project_participants"
-
-    id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, comment="프로젝트 ID")
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, comment="회사 ID")
-    role = Column(String, nullable=False, comment="역할 (CLIENT, CONSTRUCTOR, PARTNER)")
-
-    # 관계
-    project = relationship("Project")
-    company = relationship("Company", back_populates="participations")
+    
+    # 3.4 Zone (위험구역) 등은 별도 파일로 분리되거나 여기서 관리
+    # zones = relationship("Zone", back_populates="site") # 추후 Zone 모델 정의시 주석 해제
 
 class Company(Base):
     """협력사 정보 (Master Data)"""
@@ -46,37 +33,17 @@ class Company(Base):
 
     # 관계
     participations = relationship("ProjectParticipant", back_populates="company")
-    workers = relationship("Worker", back_populates="company")
+    users = relationship("User", back_populates="company") # User와 통합 (Worker 삭제)
 
-class Worker(Base):
-    """3.1 Worker: 작업자 정보"""
-    __tablename__ = "workers"
+class ProjectParticipant(Base):
+    """프로젝트 참여 기업 및 역할 (N:M 해소)"""
+    __tablename__ = "project_participants"
 
     id = Column(Integer, primary_key=True, index=True)
-    
-    # 계정 연결 (필수)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, comment="로그인 계정 ID")
-    
-    # 프로젝트 연결 (신규)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True, comment="현재 투입된 프로젝트 ID")
-    
-    name = Column(String, nullable=False, comment="성명")
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    
-    trade = Column(String, nullable=False, comment="직종 (예: 용접공, 신호수)")
-    qualification_tags = Column(String, nullable=True, comment="자격 태그 (콤마로 구분, 예: '고소작업,지게차')")
-    
-    # 신규 추가 필드 (상세 정보)
-    # phone_number 이동 -> users 테이블로
-    birth_date = Column(String, nullable=True, comment="생년월일 (YYYY-MM-DD)")
-    address = Column(String, nullable=True, comment="거주지 (간략 주소)")
-
-    status = Column(String, default="OFF_SITE", comment="상태: ON_SITE, OFF_SITE, RESTRICTED")
-    
-    created_at = Column(DateTime, default=datetime.now)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, comment="프로젝트 ID")
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, comment="회사 ID")
+    role = Column(String, nullable=False, comment="역할 (CLIENT, CONSTRUCTOR, PARTNER)")
 
     # 관계
     project = relationship("Project")
-    company = relationship("Company", back_populates="workers")
-    allocations = relationship("WorkerAllocation", back_populates="worker")
-
+    company = relationship("Company", back_populates="participations")
