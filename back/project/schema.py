@@ -44,6 +44,8 @@ class ProjectResponse(ProjectBase):
     
     # 추가: 참여 업체 목록 (Role: CLIENT, CONSTRUCTOR, PARTNER)
     participants: Optional[list[dict]] = []
+    # 추가: 주요 담당자 (현장소장, 안전관리자)
+    key_members: Optional[list[dict]] = []
     
     class Config:
         from_attributes = True
