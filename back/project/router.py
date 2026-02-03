@@ -60,6 +60,19 @@ async def create_project(
             )
             db.add(constructor_part)
             
+        # 3. 협력사(PARTNER) 등록
+        if project_data.partners:
+            for p_name in project_data.partners:
+                partner = await get_or_create_company(p_name)
+                # 중복 방지 (혹시 시공사와 같거나 중복 입력된 경우)
+                # (간단하게 구현: flush된 session 내에서 체크는 복잡하므로 일단 그냥 insert 시도 or 파이썬 레벨에서 필터링)
+                partner_part = ProjectParticipant(
+                    project_id=project.id,
+                    company_id=partner.id,
+                    role="PARTNER"
+                )
+                db.add(partner_part)
+            
         await db.commit()
         
     except Exception as e:

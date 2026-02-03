@@ -13,11 +13,13 @@ const CreateProject = () => {
   const [formData, setFormData] = useState({
     name: '',
     location_address: '',
-    client_company: '',     // 발주처 (이름)
-    constructor_company: '', // 시공사 (이름)
+    location_lat: null, // 위도 추가
+    location_lng: null, // 경도 추가
+    client_company: '',     
+    constructor_company: '', 
     start_date: '',
     end_date: '',
-    project_type: '건축',   // 기본값
+    project_type: '건축',   
     budget_amount: 0
   });
 
@@ -32,6 +34,32 @@ const CreateProject = () => {
   // 직접 입력 모드 (Select에서 '직접 입력' 선택 시)
   const [isDirectClient, setIsDirectClient] = useState(false);
   const [isDirectConstructor, setIsDirectConstructor] = useState(false);
+
+  // 지도 관련 로직 (클릭 시 좌표 갱신)
+  const handleMapClick = (lat, lng) => {
+    setFormData(prev => ({
+      ...prev,
+      location_lat: lat,
+      location_lng: lng
+    }));
+  };
+
+  // 협력사 목록 관리
+  const [partners, setPartners] = useState([]);
+  const [partnerInput, setPartnerInput] = useState('');
+
+  const handleAddPartner = () => {
+    if (partnerInput.trim() && !partners.includes(partnerInput.trim())) {
+      setPartners([...partners, partnerInput.trim()]);
+      setPartnerInput('');
+    }
+  };
+
+  const handleRemovePartner = (index) => {
+    setPartners(partners.filter((_, i) => i !== index));
+  };
+
+
 
   useEffect(() => {
     loadCompanies();
@@ -89,7 +117,8 @@ const CreateProject = () => {
       // 숫자 변환 등 전처리
       const payload = {
         ...formData,
-        budget_amount: formData.budget_amount ? parseInt(formData.budget_amount) : 0
+        budget_amount: formData.budget_amount ? parseInt(formData.budget_amount) : 0,
+        partners: partners // 협력사 목록 포함
       };
 
       await createProject(payload);
@@ -104,13 +133,27 @@ const CreateProject = () => {
   };
 
   return (
-    <div className="create-project-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem' }}>새 프로젝트 생성</h1>
-        <p style={{ color: '#64748b' }}>새로운 현장을 개설하고 기본 정보를 설정합니다.</p>
-      </div>
+    <div className="create-project-scroll-container" style={{ 
+      height: '100vh', 
+      overflowY: 'auto', 
+      padding: '2rem',
+      msOverflowStyle: 'none',  /* IE and Edge */
+      scrollbarWidth: 'none'    /* Firefox */
+    }}>
+      {/* Chrome, Safari, Opera에서 스크롤바 숨기기 */}
+      <style>{`
+        .create-project-scroll-container::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
 
-      <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem' }}>새 프로젝트 생성</h1>
+          <p style={{ color: '#64748b' }}>새로운 현장을 개설하고 기본 정보를 설정합니다.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', marginBottom: '5rem' }}>
         
         {/* 1. 기본 정보 */}
         <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display:'flex', alignItems:'center', gap:'8px' }}>
@@ -257,6 +300,49 @@ const CreateProject = () => {
           </div>
         </div>
 
+        {/* 협력사 추가 (리스트) */}
+        <div className="form-group" style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '12px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
+            협력사 (Partners) <span style={{fontWeight:'normal', fontSize:'0.9rem', color:'#94a3b8'}}>- 선택 사항</span>
+          </label>
+          
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+            <input 
+              type="text" 
+              placeholder="협력사명 입력 (예: 번개전기, 튼튼설비...)" 
+              value={partnerInput}
+              onChange={(e) => setPartnerInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddPartner())}
+              style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+            />
+            <button 
+              type="button" 
+              onClick={handleAddPartner}
+              style={{ padding: '0 1.5rem', background: '#3b82f6', color:'white', border:'none', borderRadius:'8px', fontWeight:'600', cursor:'pointer' }}
+            >
+              추가
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {partners.map((p, idx) => (
+              <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: '#334155' }}>
+                {p}
+                <button 
+                  type="button" 
+                  onClick={() => handleRemovePartner(idx)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            {partners.length === 0 && (
+              <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>아직 추가된 협력사가 없습니다.</span>
+            )}
+          </div>
+        </div>
+
         {/* 3. 위치 및 기간 */}
         <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', marginTop: '2rem', display:'flex', alignItems:'center', gap:'8px' }}>
           <MapPin size={20} /> 위치 및 기간
@@ -269,8 +355,45 @@ const CreateProject = () => {
             value={formData.location_address}
             onChange={handleChange}
             placeholder="예: 서울시 강남구 역삼동 123-45"
-            style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
+            style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem', marginBottom: '0.5rem' }}
           />
+
+          {/* 지도 클릭 좌표 설정 UI */}
+          <div 
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const x = e.clientX - rect.left;
+              const y = e.clientY - rect.top;
+              // 임시 시뮬레이션 좌표
+              const baseLat = 37.5665;
+              const baseLng = 126.9780;
+              const newLat = (baseLat + (y - 100) * 0.0001).toFixed(6);
+              const newLng = (baseLng + (x - 150) * 0.0001).toFixed(6);
+              handleMapClick(newLat, newLng);
+            }}
+            style={{ 
+              width: '100%', height: '180px', background: '#f1f5f9', borderRadius: '8px', 
+              border: '2px dashed #cbd5e1', display: 'flex', flexDirection: 'column', 
+              alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', position: 'relative' 
+            }}
+          >
+            {formData.location_lat ? (
+              <>
+                <MapPin size={32} color="#ef4444" fill="#ef444433" />
+                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#334155', fontWeight: 'bold' }}>
+                  좌표가 설정되었습니다: {formData.location_lat}, {formData.location_lng}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>지도를 다시 클릭하면 좌표가 변경됩니다.</div>
+              </>
+            ) : (
+              <>
+                <MapPin size={32} color="#94a3b8" />
+                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#64748b' }}>
+                  이곳을 클릭하여 현장 좌표(위경도)를 설정하세요
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
           <div className="form-group">
@@ -380,7 +503,8 @@ const CreateProject = () => {
         </div>
       )}
 
-    </div>
+      </div> {/* maxWidth 컨테이너 닫기 */}
+    </div> /* scroll 컨테이너 닫기 */
   );
 };
 

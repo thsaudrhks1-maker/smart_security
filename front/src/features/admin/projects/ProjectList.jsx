@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllProjects, getActiveProjects, deleteProject } from '../../../api/projectApi';
 import './ProjectList.css';
 
 const ProjectList = () => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [filter, setFilter] = useState('all'); // 'all' or 'active'
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ const ProjectList = () => {
               진행 중
             </button>
           </div>
-          <button className="btn-create" onClick={() => window.location.href = '/projects/create'}>
+          <button className="btn-create" onClick={() => navigate('/admin/projects/create')}>
             + 새 프로젝트 생성
           </button>
         </div>
@@ -88,7 +90,7 @@ const ProjectList = () => {
       {projects.length === 0 ? (
         <div className="empty-state">
           <p>등록된 프로젝트가 없습니다.</p>
-          <button onClick={() => window.location.href = '/projects/create'}>
+          <button onClick={() => navigate('/admin/projects/create')}>
             첫 프로젝트 만들기
           </button>
         </div>
@@ -138,13 +140,13 @@ const ProjectList = () => {
               <div className="card-footer">
                 <button
                   className="btn-detail"
-                  onClick={() => window.location.href = `/projects/${project.id}`}
+                  onClick={() => navigate(`/admin/projects/${project.id}`)}
                 >
                   상세보기
                 </button>
                 <button
                   className="btn-edit"
-                  onClick={() => window.location.href = `/projects/${project.id}/edit`}
+                  onClick={() => navigate(`/admin/projects/${project.id}/edit`)}
                 >
                   수정
                 </button>

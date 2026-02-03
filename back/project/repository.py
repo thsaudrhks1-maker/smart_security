@@ -10,7 +10,21 @@ class ProjectRepository:
     @staticmethod
     async def create(db: AsyncSession, project_data: ProjectCreate) -> Project:
         """프로젝트 생성"""
-        project = Project(**project_data.dict())
+        from datetime import datetime
+        data = project_data.dict()
+        
+        # 모델 필드가 아닌 값 제거
+        data.pop("partners", None)
+        data.pop("manager_id", None)
+        data.pop("safety_manager_id", None)
+        
+        # 문자열 날짜를 date 객체로 변환 (asyncpg 호환성)
+        if data.get("start_date") and isinstance(data["start_date"], str):
+            data["start_date"] = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+        if data.get("end_date") and isinstance(data["end_date"], str):
+            data["end_date"] = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+        
+        project = Project(**data)
         db.add(project)
         await db.commit()
         await db.refresh(project)

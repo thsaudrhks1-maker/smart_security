@@ -26,7 +26,7 @@ class ProjectBase(BaseModel):
 
 class ProjectCreate(ProjectBase):
     """프로젝트 생성 요청"""
-    pass
+    partners: Optional[list[str]] = [] # 협력사 이름 목록
 
 class ProjectUpdate(ProjectBase):
     """프로젝트 수정 요청 (부분 수정 가능)"""

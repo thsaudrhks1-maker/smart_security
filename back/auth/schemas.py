@@ -11,7 +11,14 @@ class UserCreate(BaseModel):
     username: str
     password: str
     full_name: Optional[str] = None
-    role: Optional[str] = "worker" # 기본값 worker
+    role: Optional[str] = "worker"
+    
+    # [신규] 상세 정보
+    company_id: Optional[int] = None
+    job_type: Optional[str] = None # 직종 (전기, 설비...)
+    title: Optional[str] = None    # 직위 (반장, 소장...)
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
 
 # 토큰 응답 DTO
 class Token(BaseModel):

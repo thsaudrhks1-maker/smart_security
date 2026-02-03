@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from back.auth.model import AuthRepository, User
-from back.auth.schemas import LoginRequest
+from back.auth.schemas import LoginRequest, UserCreate
 import logging
 import bcrypt
 
@@ -76,7 +76,7 @@ class AuthService:
             "birth_date": birth_date
         }
 
-    async def register_user(self, user_data: LoginRequest) -> User:
+    async def register_user(self, user_data: UserCreate) -> User:
         # 사용자 존재 여부 확인
         existing_user = await self.repository.get_user_by_username(user_data.username)
         if existing_user:
@@ -89,7 +89,14 @@ class AuthService:
         new_user = User(
             username=user_data.username,
             hashed_password=hashed,
-            full_name=user_data.full_name if hasattr(user_data, 'full_name') else user_data.username,
-            role=user_data.role if hasattr(user_data, 'role') else "worker"
+            full_name=user_data.full_name or user_data.username,
+            role=user_data.role or "worker",
+            
+            # [신규] 상세 정보 매핑
+            company_id=user_data.company_id,
+            job_type=user_data.job_type,
+            title=user_data.title,
+            phone=user_data.phone,
+            birth_date=user_data.birth_date
         )
         return await self.repository.create_user(new_user)
