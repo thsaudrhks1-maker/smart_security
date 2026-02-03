@@ -1,4 +1,4 @@
-from datetime import date
+from back.utils import date_utils
 from back.manager.repository import ManagerRepository
 
 class ManagerService:
@@ -17,7 +17,7 @@ class ManagerService:
             }
             
         pid = project["project_id"]
-        today = str(date.today())
+        today = date_utils.get_today()
         
         # 2. 통계 조회
         stats = await ManagerRepository.get_project_stats(pid, today)

@@ -23,10 +23,14 @@ from back.attendance.router import router as attendance_router # [NEW]
 app = FastAPI(title="Smart Safety Guardian API")
 
 # CORS 설정 (프론트엔드 포트 허용)
+# allow_credentials=True일 때는 allow_origins에 '*'를 사용할 수 없음
 origins = [
     "http://localhost:3500",
     "http://127.0.0.1:3500",
-    "http://168.107.52.201:3500",
+    "http://localhost:5173", # Vite Default
+    "http://127.0.0.1:5173",
+    "http://168.107.52.201:3500", # Network IP 예시
+    "http://localhost:3000",
 ]
 
 app.add_middleware(

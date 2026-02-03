@@ -66,3 +66,17 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 2. **서버 배포 (Migration 적용)**:
    - 배포 스크립트(`deploy_server.ps1`)는 반드시 코드 Pull 이후에 `alembic upgrade head`를 실행해야 함.
    - 서버에서 `create_all` 등 자동 생성 함수를 호출하지 않도록 주의.
+
+## 7. 날짜 및 시간 처리 표준 (Date/Time Handling)
+*PostgreSQL(asyncpg)의 Strict Type Checking으로 인한 에러를 방지하기 위함.*
+
+- **원칙**: DB 쿼리 파라미터로 날짜를 넘길 때는 반드시 **Python `date` 객체**를 사용해야 한다. 문자열(`str`) 금지.
+- **유틸리티 사용**: `back.utils.date_utils`를 사용하여 날짜를 생성 및 변환한다.
+  - `get_today()`: 오늘 날짜 (`date` 객체)
+  - `ensure_date(val)`: 입력값을 안전하게 `date` 객체로 변환
+- **금지 패턴**:
+  - ❌ `today = str(date.today())`
+  - ❌ `fetch_one(..., {"date": "2024-01-01"})`
+- **권장 패턴**:
+  - ✅ `today = date_utils.get_today()`
+  - ✅ `fetch_one(..., {"date": today})`

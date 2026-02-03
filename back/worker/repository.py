@@ -9,27 +9,18 @@ async def get_worker_with_info(user_id: int) -> dict | None:
         SELECT 
             u.*, 
             c.name as company_name,
-            COALESCE(
-                (SELECT p.name FROM projects p 
-                 JOIN project_members pm ON p.id = pm.project_id 
-                 WHERE pm.user_id = u.id AND pm.status = 'ACTIVE' LIMIT 1),
-                (SELECT p.name FROM projects p 
-                 JOIN project_participants pp ON p.id = pp.project_id 
-                 WHERE pp.company_id = u.company_id 
-                 ORDER BY p.created_at DESC LIMIT 1)
-            ) as project_name,
-            COALESCE(
-                (SELECT p.id FROM projects p 
-                 JOIN project_members pm ON p.id = pm.project_id 
-                 WHERE pm.user_id = u.id AND pm.status = 'ACTIVE' LIMIT 1),
-                (SELECT p.id FROM projects p 
-                 JOIN project_participants pp ON p.id = pp.project_id 
-                 WHERE pp.company_id = u.company_id 
-                 ORDER BY p.created_at DESC LIMIT 1)
-            ) as project_id
+            COALESCE(p1.name, p2.name) as project_name,
+            COALESCE(p1.id, p2.id) as project_id
         FROM users u
         LEFT JOIN companies c ON u.company_id = c.id
+        -- 1. 개인 직접 투입 (ProjectMember)
+        LEFT JOIN project_members pm ON u.id = pm.user_id AND pm.status = 'ACTIVE'
+        LEFT JOIN projects p1 ON pm.project_id = p1.id
+        -- 2. 업체 투입 (ProjectParticipant)
+        LEFT JOIN project_participants pp ON u.company_id = pp.company_id
+        LEFT JOIN projects p2 ON pp.project_id = p2.id
         WHERE u.id = :user_id
+        ORDER BY p1.created_at DESC NULLS LAST, p2.created_at DESC
         LIMIT 1
     """
     return await fetch_one(sql, {"user_id": user_id})

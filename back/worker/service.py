@@ -1,4 +1,4 @@
-from datetime import date
+from back.utils import date_utils
 from typing import Dict, List, Any
 from back.worker.repository import (
     get_worker_by_user_id,
@@ -20,7 +20,7 @@ async def get_my_work_today(user_id: int) -> Dict[str, Any] | None:
     if not worker:
         return None
     
-    today = str(date.today())
+    today = date_utils.get_today()
     
     # 2. 작업 계획 조회
     plan = await get_daily_work_plan(worker["id"], today)
@@ -68,7 +68,7 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
     if not worker:
         return []
         
-    today = str(date.today())
+    today = date_utils.get_today()
     
     # 배정된 구역 조회 (잠재적 위험 구역)
     zones = await get_assigned_zones(worker["id"], today)
@@ -130,7 +130,7 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
     # 기존 worker 변수 (ID 참조용)
     worker = worker_detail # 재사용
     
-    today = str(date.today())
+    today = date_utils.get_today()
     
     # 2. 날씨
     weather = await get_weather_by_date(today)

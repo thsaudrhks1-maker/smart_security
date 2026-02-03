@@ -115,13 +115,18 @@ class ProjectRepository:
     
     @staticmethod
     async def get_by_id(db: AsyncSession, project_id: int) -> Project | None:
-        """특정 프로젝트 상세 조회 (참여 업체 포함)"""
+        """특정 프로젝트 상세 조회 (참여 업체 및 담당자 포함)"""
         from sqlalchemy.orm import selectinload
         from back.company.model import ProjectParticipant
+        from back.project.model import ProjectMember # Import ProjectMember
+        from back.auth.model import User
         
         result = await db.execute(
             select(Project)
-            .options(selectinload(Project.participations).selectinload(ProjectParticipant.company))
+            .options(
+                selectinload(Project.participations).selectinload(ProjectParticipant.company),
+                selectinload(Project.members).selectinload(ProjectMember.user) # Load members with user info
+            )
             .where(Project.id == project_id)
         )
         project = result.scalars().first()
@@ -132,6 +137,14 @@ class ProjectRepository:
                     "company_name": part.company.name,
                     "role": part.role
                 } for part in project.participations
+            ]
+            project.key_members = [
+                {
+                    "user_id": m.user_id,
+                    "role_name": m.role_name,
+                    "name": m.user.full_name if m.user else "Unknown",
+                    "phone": m.user.phone if m.user else ""
+                } for m in project.members
             ]
         return project
     

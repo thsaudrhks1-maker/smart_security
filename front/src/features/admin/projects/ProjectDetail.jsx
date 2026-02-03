@@ -246,6 +246,21 @@ const ProjectDetail = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* [NEW] 주요 담당자 (Manager/Safety) */}
+                  {project.key_members && project.key_members.length > 0 && (
+                     <div className="info-row" style={{ marginTop: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                      <span className="label" style={{ marginBottom: '0.5rem', display: 'block' }}>현장 핵심 인력</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {project.key_members.map((member, idx) => (
+                           <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                             <span style={{ color: '#64748b' }}>{member.role_name}</span>
+                             <span style={{ fontWeight: '600', color: '#334155' }}>{member.name}</span>
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                   <div className="info-card" style={{ gridColumn: 'span 2' }}>
