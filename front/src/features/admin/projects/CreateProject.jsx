@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createProject } from '../../../api/projectApi';
 import { getAllCompanies, createCompany } from '../../../api/companyApi'; // API 연동
 import { MapPin, Calendar, Building2, Save, X, Plus } from 'lucide-react';
+import LocationPicker from '../components/common/LocationPicker'; // 지도 컴포넌트 추가
 import './CreateProject.css';
 
 const CreateProject = () => {
@@ -16,11 +17,14 @@ const CreateProject = () => {
     location_lat: null, // 위도 추가
     location_lng: null, // 경도 추가
     client_company: '',     
+    client_id: null, // 발주처 ID 추가
     constructor_company: '', 
+    constructor_id: null, // 시공사 ID 추가
     start_date: '',
     end_date: '',
     project_type: '건축',   
-    budget_amount: 0
+    budget_amount: 0,
+    partner_ids: [] // 협력사 ID 목록 추가
   });
 
   // 회사 목록 상태
@@ -44,20 +48,20 @@ const CreateProject = () => {
     }));
   };
 
-  // 협력사 목록 관리
-  const [partners, setPartners] = useState([]);
+  // 협력사(Partner) ID 토글 관리
+  const handleTogglePartnerId = (companyId) => {
+    setFormData(prev => {
+      const exists = prev.partner_ids.includes(companyId);
+      if (exists) {
+        return { ...prev, partner_ids: prev.partner_ids.filter(id => id !== companyId) };
+      } else {
+        return { ...prev, partner_ids: [...prev.partner_ids, companyId] };
+      }
+    });
+  };
+
+  const [partners, setPartners] = useState([]); // 명칭 기반 (기존 호환용)
   const [partnerInput, setPartnerInput] = useState('');
-
-  const handleAddPartner = () => {
-    if (partnerInput.trim() && !partners.includes(partnerInput.trim())) {
-      setPartners([...partners, partnerInput.trim()]);
-      setPartnerInput('');
-    }
-  };
-
-  const handleRemovePartner = (index) => {
-    setPartners(partners.filter((_, i) => i !== index));
-  };
 
 
 
@@ -114,11 +118,10 @@ const CreateProject = () => {
 
     setLoading(true);
     try {
-      // 숫자 변환 등 전처리
       const payload = {
         ...formData,
         budget_amount: formData.budget_amount ? parseInt(formData.budget_amount) : 0,
-        partners: partners // 협력사 목록 포함
+        partners: partners // 수동 입력 협력사 명칭
       };
 
       await createProject(payload);
@@ -217,24 +220,26 @@ const CreateProject = () => {
             {!isDirectClient ? (
               <select
                 name="client_company"
-                value={formData.client_company}
+                value={formData.client_id || ''}
                 onChange={(e) => {
-                  if (e.target.value === '__DIRECT__') {
+                  const val = e.target.value;
+                  if (val === '__DIRECT__') {
                     setIsDirectClient(true);
-                    setFormData({ ...formData, client_company: '' });
+                    setFormData({ ...formData, client_company: '', client_id: null });
                   } else {
-                    handleChange(e);
+                    const selected = companies.find(c => c.id === parseInt(val));
+                    setFormData({ ...formData, client_company: selected?.name || '', client_id: selected?.id || null });
                   }
                 }}
                 style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
               >
                 <option value="">선택하세요</option>
                 {companies.filter(c => c.type === 'GENERAL').map(c => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
                 <optgroup label="기타 업체">
                   {companies.filter(c => c.type !== 'GENERAL').map(c => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </optgroup>
                 <option value="__DIRECT__">+ 직접 입력</option>
@@ -266,20 +271,22 @@ const CreateProject = () => {
             {!isDirectConstructor ? (
               <select
                 name="constructor_company"
-                value={formData.constructor_company}
+                value={formData.constructor_id || ''}
                 onChange={(e) => {
-                  if (e.target.value === '__DIRECT__') {
+                  const val = e.target.value;
+                  if (val === '__DIRECT__') {
                     setIsDirectConstructor(true);
-                    setFormData({ ...formData, constructor_company: '' });
+                    setFormData({ ...formData, constructor_company: '', constructor_id: null });
                   } else {
-                    handleChange(e);
+                    const selected = companies.find(c => c.id === parseInt(val));
+                    setFormData({ ...formData, constructor_company: selected?.name || '', constructor_id: selected?.id || null });
                   }
                 }}
                 style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
               >
                 <option value="">선택하세요</option>
                 {companies.map(c => (
-                  <option key={c.id} value={c.name}>{c.name} {c.type === 'GENERAL' ? '(원청)' : '(협력)'}</option>
+                  <option key={c.id} value={c.id}>{c.name} {c.type === 'GENERAL' ? '(원청)' : '(협력)'}</option>
                 ))}
                 <option value="__DIRECT__">+ 직접 입력</option>
               </select>
@@ -303,43 +310,71 @@ const CreateProject = () => {
         {/* 협력사 추가 (리스트) */}
         <div className="form-group" style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '12px' }}>
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>
-            협력사 (Partners) <span style={{fontWeight:'normal', fontSize:'0.9rem', color:'#94a3b8'}}>- 선택 사항</span>
+            협력사 (Partners) <span style={{fontWeight:'normal', fontSize:'0.9rem', color:'#94a3b8'}}>- DB 목록에서 선택 또는 직접 입력</span>
           </label>
           
+          {/* DB 등록된 협력사 목록 (토글형) */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '1.5rem', maxHeight: '120px', overflowY: 'auto', padding: '10px', background: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            {companies.filter(c => c.type === 'SPECIALTY').map(c => {
+              const isActive = formData.partner_ids.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleTogglePartnerId(c.id)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    border: isActive ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                    background: isActive ? '#eff6ff' : 'white',
+                    color: isActive ? '#3b82f6' : '#64748b',
+                    fontWeight: isActive ? '700' : '500'
+                  }}
+                >
+                  {isActive ? '✓ ' : '+ '}{c.name}
+                </button>
+              );
+            })}
+            {companies.filter(c => c.type === 'SPECIALTY').length === 0 && (
+              <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>등록된 협력사가 없습니다.</span>
+            )}
+          </div>
+
           <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
             <input 
               type="text" 
-              placeholder="협력사명 입력 (예: 번개전기, 튼튼설비...)" 
+              placeholder="명단에 없는 업체 직접 입력 (Enter)" 
               value={partnerInput}
               onChange={(e) => setPartnerInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddPartner())}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (partnerInput.trim() && !partners.includes(partnerInput.trim())) {
+                    setPartners([...partners, partnerInput.trim()]);
+                    setPartnerInput('');
+                  }
+                }
+              }}
               style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
             />
-            <button 
-              type="button" 
-              onClick={handleAddPartner}
-              style={{ padding: '0 1.5rem', background: '#3b82f6', color:'white', border:'none', borderRadius:'8px', fontWeight:'600', cursor:'pointer' }}
-            >
-              추가
-            </button>
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {partners.map((p, idx) => (
-              <div key={idx} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: '#334155' }}>
-                {p}
+              <div key={idx} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', color: '#334155' }}>
+                {p} (직접입력)
                 <button 
                   type="button" 
-                  onClick={() => handleRemovePartner(idx)}
+                  onClick={() => setPartners(partners.filter((_, i) => i !== idx))}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8' }}
                 >
                   <X size={14} />
                 </button>
               </div>
             ))}
-            {partners.length === 0 && (
-              <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>아직 추가된 협력사가 없습니다.</span>
-            )}
           </div>
         </div>
 
@@ -359,40 +394,13 @@ const CreateProject = () => {
           />
 
           {/* 지도 클릭 좌표 설정 UI */}
-          <div 
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const x = e.clientX - rect.left;
-              const y = e.clientY - rect.top;
-              // 임시 시뮬레이션 좌표
-              const baseLat = 37.5665;
-              const baseLng = 126.9780;
-              const newLat = (baseLat + (y - 100) * 0.0001).toFixed(6);
-              const newLng = (baseLng + (x - 150) * 0.0001).toFixed(6);
-              handleMapClick(newLat, newLng);
-            }}
-            style={{ 
-              width: '100%', height: '180px', background: '#f1f5f9', borderRadius: '8px', 
-              border: '2px dashed #cbd5e1', display: 'flex', flexDirection: 'column', 
-              alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', position: 'relative' 
-            }}
-          >
-            {formData.location_lat ? (
-              <>
-                <MapPin size={32} color="#ef4444" fill="#ef444433" />
-                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#334155', fontWeight: 'bold' }}>
-                  좌표가 설정되었습니다: {formData.location_lat}, {formData.location_lng}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>지도를 다시 클릭하면 좌표가 변경됩니다.</div>
-              </>
-            ) : (
-              <>
-                <MapPin size={32} color="#94a3b8" />
-                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#64748b' }}>
-                  이곳을 클릭하여 현장 좌표(위경도)를 설정하세요
-                </div>
-              </>
-            )}
+          {/* 실제 지도 라이브러리 연동 (LocationPicker) */}
+          <div style={{ marginTop: '1rem' }}>
+            <LocationPicker 
+              onLocationSelect={handleMapClick} 
+              initialLat={formData.location_lat}
+              initialLng={formData.location_lng}
+            />
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>

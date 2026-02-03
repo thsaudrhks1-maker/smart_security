@@ -135,6 +135,15 @@ const ProjectList = () => {
                   <span className="label">🔧 공사 유형</span>
                   <span className="value">{project.project_type || '-'}</span>
                 </div>
+
+                <div className="info-row">
+                  <span className="label">🤝 참여 업체</span>
+                  <span className="value">
+                    {project.participants?.length > 0 
+                      ? `${project.participants.filter(p => p.role === 'PARTNER').length}개 협력사 참여 중`
+                      : '등록된 협력사 없음'}
+                  </span>
+                </div>
               </div>
 
               <div className="card-footer">

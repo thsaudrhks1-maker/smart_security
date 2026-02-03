@@ -1,10 +1,30 @@
 from back.database import fetch_one, fetch_all
 
-async def get_worker_by_user_id(user_id: int) -> dict | None:
-    # Worker 테이블 삭제됨 -> User 테이블 사용
+async def get_worker_with_info(user_id: int) -> dict | None:
+    # 1. 사용자의 회사명과 소속 회사가 참여 중인 최신 프로젝트명을 가져옴
+    # project_members에 직접 등록된 건이 있으면 최우선, 없으면 소속 회사 참여 현장 매칭
     sql = """
-        SELECT * FROM users WHERE id = :user_id
+        SELECT 
+            u.*, 
+            c.name as company_name,
+            COALESCE(
+                (SELECT p.name FROM projects p 
+                 JOIN project_members pm ON p.id = pm.project_id 
+                 WHERE pm.user_id = u.id AND pm.status = 'ACTIVE' LIMIT 1),
+                (SELECT p.name FROM projects p 
+                 JOIN project_participants pp ON p.id = pp.project_id 
+                 WHERE pp.company_id = u.company_id 
+                 ORDER BY p.created_at DESC LIMIT 1)
+            ) as project_name
+        FROM users u
+        LEFT JOIN companies c ON u.company_id = c.id
+        WHERE u.id = :user_id
+        LIMIT 1
     """
+    return await fetch_one(sql, {"user_id": user_id})
+
+async def get_worker_by_user_id(user_id: int) -> dict | None:
+    sql = "SELECT * FROM users WHERE id = :user_id"
     return await fetch_one(sql, {"user_id": user_id})
 
 async def get_daily_work_plan(worker_id: int, date: str) -> dict | None:

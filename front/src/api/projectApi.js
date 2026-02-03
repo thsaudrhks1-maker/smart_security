@@ -57,3 +57,9 @@ export const addProjectParticipant = async (projectId, companyName, role = 'PART
   });
   return response.data;
 };
+
+// 프로젝트 참여 작업자 조회
+export const getProjectWorkers = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/workers`);
+  return response.data;
+};

@@ -2,6 +2,7 @@ from datetime import date
 from typing import Dict, List, Any
 from back.worker.repository import (
     get_worker_by_user_id,
+    get_worker_with_info, # 추가
     get_daily_work_plan,
     get_assigned_zones,
     get_weather_by_date,
@@ -106,6 +107,10 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
 
 async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
     result = {
+        "user_info": {
+            "company_name": "미지정",
+            "project_name": "미배정"
+        },
         "weather": None,
         "emergency_alert": None,
         "safety_infos": [],
@@ -115,8 +120,14 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
         "incident_free_days": 25 # 하드코딩 유지
     }
 
-    # 1. 작업자 조회
-    worker = await get_worker_by_user_id(user_id)
+    # 1. 작업자 상세 조회 (회사, 프로젝트 포함)
+    worker_detail = await get_worker_with_info(user_id)
+    if worker_detail:
+        result["user_info"]["company_name"] = worker_detail.get("company_name") or "미지정"
+        result["user_info"]["project_name"] = worker_detail.get("project_name") or "미배정"
+
+    # 기존 worker 변수 (ID 참조용)
+    worker = worker_detail # 재사용
     
     today = str(date.today())
     

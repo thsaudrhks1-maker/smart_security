@@ -14,72 +14,9 @@ async def create_project(
 ):
     """
     프로젝트 생성 (관리자 전용)
-    - 입력된 발주처/시공사가 Company 테이블에 없으면 자동 등록 (role 구분)
+    - ProjectRepository에서 프로젝트 및 참여 업체(ProjectParticipant)를 한 번에 생성함
     """
-    # 프로젝트 생성 (ProjectRepository에서 commit 수행됨)
     project = await ProjectRepository.create(db, project_data)
-    
-    # [관계 설정] Project - Company (N:M)
-    from sqlalchemy.future import select
-    from back.company.model import Company, ProjectParticipant
-
-    # 헬퍼: 회사 조회 또는 생성
-    async def get_or_create_company(name: str):
-        # 이미 세션에 추가된 객체 확인 (flush 전)
-        for obj in db.new:
-            if isinstance(obj, Company) and obj.name == name:
-                return obj
-                
-        result = await db.execute(select(Company).where(Company.name == name))
-        comp = result.scalars().first()
-        if not comp:
-            comp = Company(name=name) # 순수 회사 정보
-            db.add(comp)
-            await db.flush() # ID 생성을 위해 flush
-        return comp
-
-    try:
-        # 1. 발주처(CLIENT) 등록
-        if project_data.client_company:
-            client = await get_or_create_company(project_data.client_company)
-            # 참여 관계 생성
-            client_part = ProjectParticipant(
-                project_id=project.id,
-                company_id=client.id,
-                role="CLIENT"
-            )
-            db.add(client_part)
-
-        # 2. 시공사(CONSTRUCTOR) 등록
-        if project_data.constructor_company:
-            constructor = await get_or_create_company(project_data.constructor_company)
-            constructor_part = ProjectParticipant(
-                project_id=project.id,
-                company_id=constructor.id,
-                role="CONSTRUCTOR"
-            )
-            db.add(constructor_part)
-            
-        # 3. 협력사(PARTNER) 등록
-        if project_data.partners:
-            for p_name in project_data.partners:
-                partner = await get_or_create_company(p_name)
-                # 중복 방지 (혹시 시공사와 같거나 중복 입력된 경우)
-                # (간단하게 구현: flush된 session 내에서 체크는 복잡하므로 일단 그냥 insert 시도 or 파이썬 레벨에서 필터링)
-                partner_part = ProjectParticipant(
-                    project_id=project.id,
-                    company_id=partner.id,
-                    role="PARTNER"
-                )
-                db.add(partner_part)
-            
-        await db.commit()
-        
-    except Exception as e:
-        print(f"회사 관계 설정 중 오류 발생: {e}")
-        # 프로젝트는 이미 생성되었으므로 롤백하지 않음 (비즈니스 정책에 따라 다름)
-        # 필요하다면 프로젝트 삭제 로직 추가 가능
-    
     return project
 
 @router.get("/", response_model=List[ProjectResponse])
@@ -168,6 +105,46 @@ async def get_project_participants(
             "trade_type": comp.trade_type
         })
     return participants
+
+@router.get("/{project_id}/workers")
+async def get_project_workers(
+    project_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """프로젝트 참여 업체의 작업자들 조회"""
+    from back.auth.model import User
+    from back.company.model import Company, ProjectParticipant
+    from sqlalchemy.future import select
+
+    # 이 프로젝트에 참여 중인 업체 ID들 가져오기
+    part_query = await db.execute(
+        select(ProjectParticipant.company_id).where(ProjectParticipant.project_id == project_id)
+    )
+    company_ids = part_query.scalars().all()
+
+    if not company_ids:
+        return []
+
+    # 해당 업체들에 소속된 유저 중 role이 WORKER인 사람 조회 (대소문자 무시)
+    from sqlalchemy import func
+    worker_query = await db.execute(
+        select(User, Company.name.label("company_name"))
+        .join(Company, User.company_id == Company.id)
+        .where(User.company_id.in_(company_ids))
+        .where(func.upper(User.role) == "WORKER")
+    )
+
+    workers = []
+    for user, c_name in worker_query:
+        workers.append({
+            "id": user.id,
+            "full_name": user.full_name,
+            "username": user.username,
+            "company_name": c_name,
+            "phone": user.phone,
+            "role_in_system": user.role
+        })
+    return workers
 
 @router.post("/{project_id}/participants")
 async def add_project_participant(

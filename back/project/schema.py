@@ -26,7 +26,10 @@ class ProjectBase(BaseModel):
 
 class ProjectCreate(ProjectBase):
     """프로젝트 생성 요청"""
-    partners: Optional[list[str]] = [] # 협력사 이름 목록
+    partners: Optional[list[str]] = [] # 협력사 이름 목록 (직접 입력용)
+    partner_ids: Optional[list[int]] = [] # 협력사 ID 목록 (DB 연동용)
+    client_id: Optional[int] = None # 발주처 회사 ID
+    constructor_id: Optional[int] = None # 시공사 회사 ID
 
 class ProjectUpdate(ProjectBase):
     """프로젝트 수정 요청 (부분 수정 가능)"""
@@ -38,6 +41,9 @@ class ProjectResponse(ProjectBase):
     created_at: datetime
     start_date: Optional[date] = None # str 뿐만 아니라 date 객체도 허용 (Pydantic이 자동 변환)
     end_date: Optional[date] = None
+    
+    # 추가: 참여 업체 목록 (Role: CLIENT, CONSTRUCTOR, PARTNER)
+    participants: Optional[list[dict]] = []
     
     class Config:
         from_attributes = True

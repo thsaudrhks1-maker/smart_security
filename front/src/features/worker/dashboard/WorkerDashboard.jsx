@@ -62,6 +62,11 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <HardHat size={22} fill="#3b82f6" color='white' style={{ background: '#3b82f6', borderRadius: '50%', padding: '2px' }} />
             {user?.full_name}님
+            {dashboardInfo?.user_info && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '12px', marginLeft: '4px' }}>
+                {dashboardInfo.user_info.company_name} | {dashboardInfo.user_info.project_name}
+              </span>
+            )}
           </h1>
           <div style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '2rem' }}>
              오늘도 안전한 하루 되세요!

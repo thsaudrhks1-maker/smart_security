@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjectById } from '../../../api/projectApi';
+import { getProjectById, getProjectWorkers } from '../../../api/projectApi';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -18,6 +18,7 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
+  const [workers, setWorkers] = useState([]); // 작업자 목록 상태 추가
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -28,12 +29,15 @@ const ProjectDetail = () => {
   const loadProject = async () => {
     try {
       setLoading(true);
-      const data = await getProjectById(id);
-      setProject(data);
+      const [projectData, workersData] = await Promise.all([
+        getProjectById(id),
+        getProjectWorkers(id)
+      ]);
+      setProject(projectData);
+      setWorkers(workersData);
     } catch (error) {
-      console.error('프로젝트 조회 실패:', error);
-      alert('프로젝트를 찾을 수 없습니다.');
-      navigate('/projects');
+      console.error('프로젝트 데이터 로드 실패:', error);
+      alert('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -94,6 +98,11 @@ const ProjectDetail = () => {
           <div className="project-meta">
             <span>📍 {project.location_address || '위치 미정'}</span>
             <span>🏢 {project.constructor_company || '-'}</span>
+            {project.participants?.filter(p => p.role === 'PARTNER').length > 0 && (
+              <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                🤝 {Array.from(new Set(project.participants.filter(p => p.role === 'PARTNER').map(p => p.company_name))).join(', ')}
+              </span>
+            )}
             <span>📅 {project.start_date || '미정'} ~ {project.end_date || '미정'}</span>
           </div>
         </div>
@@ -225,6 +234,18 @@ const ProjectDetail = () => {
                     <span className="label">시공사</span>
                     <span className="value">{project.constructor_company || '-'}</span>
                   </div>
+                  {project.participants?.filter(p => p.role === 'PARTNER').length > 0 && (
+                    <div className="info-row" style={{ marginTop: '0.5rem' }}>
+                      <span className="label">주요 협력사</span>
+                      <div className="value-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                        {project.participants.filter(p => p.role === 'PARTNER').map((p, i) => (
+                          <span key={i} style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
+                            {p.company_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                   <div className="info-card" style={{ gridColumn: 'span 2' }}>
@@ -266,18 +287,80 @@ const ProjectDetail = () => {
           )}
 
           {activeTab === 'companies' && (
-            <div className="placeholder-content">
-              <h3>🏢 협력사 관리</h3>
-              <p>이 프로젝트에 투입된 협력사를 관리합니다.</p>
-              <button className="btn-action">+ 협력사 추가</button>
+            <div className="companies-tab-content">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3>🏢 참여 업체 관리</h3>
+                <button className="btn-action" onClick={() => navigate(`/projects/${id}/edit`)}>+ 업체 추가/수정</button>
+              </div>
+              
+              <div className="participant-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                {project.participants && project.participants.length > 0 ? (
+                  // 중복 제거 필터링 (동일 업체ID + 동일 역할인 경우 중복 렌더링 방지)
+                  project.participants.filter((v, i, a) => a.findIndex(t => (t.company_id === v.company_id && t.role === v.role)) === i).map((part, idx) => (
+                    <div key={idx} style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: '700', 
+                          padding: '2px 8px', 
+                          borderRadius: '4px',
+                          background: part.role === 'CLIENT' ? '#eff6ff' : part.role === 'CONSTRUCTOR' ? '#ecfdf5' : '#f8fafc',
+                          color: part.role === 'CLIENT' ? '#3b82f6' : part.role === 'CONSTRUCTOR' ? '#10b981' : '#64748b',
+                          border: `1px solid ${part.role === 'CLIENT' ? '#bfdbfe' : part.role === 'CONSTRUCTOR' ? '#a7f3d0' : '#e2e8f0'}`
+                        }}>
+                          {part.role === 'CLIENT' ? '발주처' : part.role === 'CONSTRUCTOR' ? '원청(시공)' : '협력사'}
+                        </span>
+                      </div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>{part.company_name}</h4>
+                      <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
+                        등록일: {new Date(project.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ gridColumn: 'span 3', padding: '3rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#94a3b8' }}>
+                    등록된 참여 업체 정보가 없습니다.
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {activeTab === 'workers' && (
-            <div className="placeholder-content">
-              <h3>👷 작업자 관리</h3>
-              <p>이 프로젝트에 투입된 작업자를 관리합니다.</p>
-              <button className="btn-action">+ 작업자 추가</button>
+            <div className="workers-tab-content">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3>👷 참여 작업자 현황</h3>
+                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>참여 업체에 소속된 작업자 명단입니다.</p>
+              </div>
+              
+              <div className="worker-list" style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                    <tr>
+                      <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '0.85rem', color: '#64748b' }}>이름</th>
+                      <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '0.85rem', color: '#64748b' }}>소속 업체</th>
+                      <th style={{ padding: '12px 20px', textAlign: 'left', fontSize: '0.85rem', color: '#64748b' }}>연락처</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workers.length > 0 ? workers.map((worker) => (
+                      <tr key={worker.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 20px', fontWeight: '700', color: '#1e293b' }}>{worker.full_name}</td>
+                        <td style={{ padding: '12px 20px' }}>
+                          <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontSize: '0.9rem', color: '#334155', fontWeight: '600' }}>
+                            {worker.company_name}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 20px', color: '#334155', fontWeight: '500' }}>{worker.phone || '-'}</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan="3" style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>이 프로젝트에 투입된 작업자가 아직 없습니다.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
