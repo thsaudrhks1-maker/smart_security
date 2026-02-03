@@ -34,14 +34,16 @@ const ManagerLayout = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden' }}>
       {/* 사이드바 (Manager 전용) */}
       <aside style={{ 
         width: '260px', 
+        height: '100vh',
         background: '#fff', 
         borderRight: '1px solid #e2e8f0', 
         display: 'flex', 
-        flexDirection: 'column' 
+        flexDirection: 'column',
+        overflowY: 'auto'
       }}>
         <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9' }}>
           <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
@@ -105,7 +107,7 @@ const ManagerLayout = () => {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <main style={{ flex: 1, padding: '0', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh' }}>
         <Outlet />
       </main>
     </div>

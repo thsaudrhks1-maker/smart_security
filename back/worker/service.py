@@ -125,6 +125,7 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
     if worker_detail:
         result["user_info"]["company_name"] = worker_detail.get("company_name") or "미지정"
         result["user_info"]["project_name"] = worker_detail.get("project_name") or "미배정"
+        result["user_info"]["project_id"] = worker_detail.get("project_id") # [NEW] 출근 요청용 ID
 
     # 기존 worker 변수 (ID 참조용)
     worker = worker_detail # 재사용

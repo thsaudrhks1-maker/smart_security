@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/client';
 import { useAuth } from '../../../context/AuthContext';
 import SimpleModal from '../components/common/SimpleModal';
+import AttendanceCard from '../components/dashboard/AttendanceCard';
 
 const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const navigate = useNavigate();
@@ -247,19 +248,10 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           </div>
         </div>
 
-        {/* [우측 4] 출역현황 (노란색) */}
-        <div 
-           style={{ background: '#f59e0b', color: 'white' }} 
-           className="dashboard-card"
-        >
-          <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem' }}>출역현황</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Clock size={16} />
-            <div style={{ fontSize: '1.1rem', fontWeight: '800' }}>
-              {dashboardInfo?.attendance?.check_in_time || '-'}
-            </div>
-          </div>
-        </div>
+        {/* [우측 4] 출역현황 (노란색) - 기능 연동 */}
+        <AttendanceCard 
+          projectInfo={dashboardInfo?.user_info} 
+        />
 
         {/* [하단 전체] 공지사항 (회색) */}
         <div 

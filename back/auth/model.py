@@ -24,6 +24,7 @@ class User(Base):
     # 관계
     company = relationship("Company", back_populates="users")
     project_members = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
+    attendances = relationship("Attendance", back_populates="user", cascade="all, delete-orphan")
 
 from sqlalchemy import select
 

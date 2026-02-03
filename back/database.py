@@ -97,7 +97,10 @@ async def insert_and_return(query: str, params: dict = None) -> dict | None:
 # 이 파일(back.database)만 임포트해도 Base.metadata에 모든 테이블이 등록됨
 from back.auth.model import User
 from back.project.model import Project, ProjectMember
-from back.company.model import Site, Company
+from back.company.model import Company, Site, ProjectParticipant
+from back.safety.model import Zone, DailyDangerZone, SafetyLog
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
-from back.safety.model import Zone, SafetyLog, DailyDangerZone
-from back.info.model import Notice, DailySafetyInfo, EmergencyAlert, Attendance, SafetyViolation, Weather
+from back.board.model import Notice
+from back.attendance.model import Attendance
+
+# (옵션) 과거 info 모델 임포트 삭제됨 (모듈 분리 완료)

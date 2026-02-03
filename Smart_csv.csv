@@ -1,0 +1,264 @@
+﻿Smart 안전 지킴이 테이블 명세서,,,,,,,,,
+,,,,,,,,,
+,순번,컬럼명,설명,,,,,,
+,1,check_list,체크리스트관리,,,,,,
+,2,commute_list,출역관리,,,,,,
+,3,contents_category,컨텐츠 카테고리,,,,,,
+,4,contents_list,컨텐츠관리,,,,,,
+,5,customer,고객사 테이블,,,,,,
+,6,danger_area,위험지역 관리,,,,,,
+,7,field_list,현장 리스트,,,,,,
+,8,field_operate_info,현장관리자 운영설정,,,,,,
+,9,foreigner_contents,외국인 컨텐츠 관리,,,,,,
+,10,language,언어관리,,,,,,
+,11,notice,공지사항,,,,,,
+,12,safety_admin,안전관리자 정보,,,,,,
+,13,safety_edu_history,안전교육(정보) 열람현황,,,,,,
+,14,safety_education,안전교육관리,,,,,,
+,15,space_division,공간구획,,,,,,
+,16,type_list,유형관리,,,,,,
+,17,user_list,근로자 테이블,,,,,,
+,18,user_location_history,근로자 위치 이력 테이블,,,,,,
+,19,violation_list,위반자 현황,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,check_list,,,,,,
+,테이블 설명,,체크리스트 관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,title,varchar,varchar(400),,YES,,NULL,제목(항목)
+,3,contents,text,text,,YES,,NULL,상세내용
+,4,construction_no,bigint,bigint(11),,YES,,NULL,공종(construction.no)
+,5,lang,int,int(5),,pπ,,NULL,언어(language.no)
+,6,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,commute_list,,,,,,
+,테이블 설명,,출역관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,user_no,bigint,bigint(11),,YES,,NULL,근로자번호(user_list.no)
+,3,const_type,int,int(11),,YES,,NULL,공종분류(type_list.no)
+,4,company,varchar,varchar(100),,YES,,NULL,소속업체명
+,5,office_time,datetime,datetime,,YES,,NULL,출근시간(H:i)
+,6,house_time,datetime,datetime,,YES,,NULL,퇴근시간(H:i)
+,7,office_date,date,date,,YES,,NULL,기록일(y-m-d)
+,8,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,contents_category,,,,,,
+,테이블 설명,,컨텐츠 카테고리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,category_name,varchar,varchar(50),,YES,,NULL,카테고리명
+,3,parent_no,bigint,bigint(11),,YES,,NULL,부모카테고리번호(contents_category.no)
+,4,sort_no,int,int(3),,YES,,NULL,정렬순서
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,contents_list,,,,,,
+,테이블 설명,,컨텐츠관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,type,varchar,varchar(10),,YES,,NULL,"등록유형(text, url)"
+,3,lang,int,int(11),,YES,,NULL,언어(language.no)
+,4,title,varchar,varchar(255),,YES,,NULL,제목
+,5,contents,text,text,,YES,,NULL,내용
+,6,confirm_box,varchar,varchar(2),,YES,,NULL,"열람확인 체크박스사용(Y,N)"
+,7,url,varchar,varchar(400),,YES,,NULL,URL
+,8,category_str,varchar,varchar(400),,YES,,NULL,"카테고리(구분자:,, category.no)"
+,9,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,customer,,,,,,
+,테이블 설명,,고객사 테이블,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,int,int(11),PRI,NO,auto_increment,NULL,일련번호
+,2,custom_name,varchar,varchar(255),,YES,,NULL,고객사명
+,3,custom_code,varchar,varchar(10),,YES,,NULL,고객사코드
+,4,custom_name_code,varchar,varchar(15),,YES,,NULL,사업자등록번호
+,5,custom_ceo_name,varchar,varchar(20),,YES,,NULL,대표자명
+,6,custom_phone,varchar,varchar(20),,YES,,NULL,연락처
+,7,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,danger_area,,,,,,
+,테이블 설명,,위험지역 관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,field_no,bigint,bigint(11),,YES,,NULL,현장번호(field_list_no)
+,3,division_no,bigint,bigint(11),,YES,,NULL,구획번호(space_division.no)
+,4,lat,float,"float(4,1)",,YES,,NULL,위도
+,5,lng,float,"float(4,1)",,YES,,NULL,경도
+,6,danger_radius,varchar,varchar(20),,YES,,NULL,위험반경
+,7,danger_contents,text,text,,YES,,NULL,주의사항
+,8,attach_path,varchar,varchar(255),,YES,,NULL,첨부파일경로
+,9,attach_file,varchar,varchar(255),,YES,,NULL,첨부파일명(서버저장용)
+,10,attach_ori_name,varchar,varchar(255),,YES,,NULL,원본파일명
+,11,attach_size,bigint,bigint(11),,YES,,NULL,첨부파일 크기
+,12,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,field_list,,,,,,
+,테이블 설명,,현장 리스트,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,
+,2,field_name,varchar,varchar(255),,YES,,NULL,현장명
+,3,customer_no,bigint,bigint(11),,YES,,NULL,고객사(customer.no)
+,4,field_code,varchar,varchar(7),,YES,,NULL,현장코드
+,5,cons_type,bigint,bigint(11),,YES,,NULL,공사유형
+,6,cons_start,date,date,,YES,,NULL,공사기간(시작)
+,7,cons_end,date,date,,YES,,NULL,공사기간(완료)
+,8,field_location,varchar,varchar(255),,YES,,NULL,현장위치
+,9,field_lat,float,"float(4,1)",,YES,,NULL,위도
+,10,field_lon,float,"float(4,1)",,YES,,NULL,경도
+,11,field_phone,varchar,varchar(20),,YES,,NULL,현장 대표전화
+,12,field_photo,varchar,varchar(255),,YES,,NULL,현장사진
+,13,web_camera,varchar,varchar(7),,YES,,NULL,"웹카메라(web,ios,android,off)"
+,14,web_camera_url,varchar,varchar(400),,YES,,NULL,웹카메라url
+,15,qrcode,varchar,varchar(3),,YES,,NULL,"QR코드(on, off)"
+,16,field_state,char,char(1),,YES,,NULL,"서비스상태(Y:사용,N:중지,H:대기)"
+,17,field_start,varchar,varchar(6),,YES,,NULL,이용기간(시작)
+,18,field_end,varchar,varchar(6),,YES,,NULL,이용기간(완료)
+,19,admin_id,varchar,varchar(20),,YES,,NULL,관리자 아이디
+,20,admin_pw,varchar,varchar(50),,YES,,NULL,관리자 비밀번호
+,21,admin_name,varchar,varchar(20),,YES,,NULL,관리자 이름
+,22,admin_email,varchar,varchar(50),,YES,,NULL,관리자 이메일
+,23,admin_phone,varchar,varchar(20),,YES,,NULL,관리자 일반전화번호
+,24,admin_cellphone,varchar,varchar(20),,YES,,NULL,관리자 휴대전화
+,25,reg_date,datetime,datetime,,YES,,NULL,현장 등록시간
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,field_operate_info,,,,,,
+,테이블 설명,,현장관리자 운영설정,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,field_no,bigint,bigint(11),PRI,NO,,NULL,현장번호(field_list.no)
+,2,injury_goal,int,int(5),,YES,,NULL,무재해목표일수
+,3,injury_date,date,date,,YES,,NULL,무재해 기준일(yyyy-mm-dd)
+,4,injury_achieve_date,int,int(5),,YES,,NULL,무재해달성일수
+,5,app_danger_area,int,int(3),,YES,,NULL,위험지역추적주기(단위:분)
+,6,app_long_stay,int,int(3),,YES,,NULL,오래머무름 추적주기(단위:시)
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,foreigner_contents,,,,,,
+,테이블 설명,,외국인 컨텐츠 관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,title,varchar,varchar(400),,YES,,NULL,제목(항목)
+,3,contents,text,text,,YES,,NULL,상세내용
+,4,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,language,,,,,,
+,테이블 설명,,언어관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,int,int(5),PRI,NO,auto_increment,NULL,일련번호
+,2,lang_kor,varchar,varchar(20),,YES,,NULL,언어명(한국어)
+,3,lang_eng,varchar,varchar(20),,YES,,NULL,언어명(영어)
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,notice,,,,,,
+,테이블 설명,,공지사항,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,type,varchar,varchar(10),,YES,,NULL,"등록유형(all:전체공지,field:현장별공지)"
+,3,field_no,varchar,varchar(400),,YES,,NULL,"현장선택(field_list.no, 구분자'|')"
+,4,title,varchar,varchar(255),,YES,,NULL,제목
+,5,contents,text,text,,YES,,NULL,내용
+,6,attach_path,varchar,varchar(255),,YES,,NULL,첨부파일 경로
+,7,attach_file,varchar,varchar(255),,YES,,NULL,첨부파일명(서버저장용)
+,8,attach_ori_name,varchar,varchar(255),,YES,,NULL,원본파일명
+,9,attach_size,bigint,bigint(11),,YES,,NULL,첨부파일사이즈
+,10,reg_date,datetime,datetime,,YES,,NULL,등록일
+,11,user_id,varchar,varchar(20),,YES,,NULL,등록자
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,safety_admin,,,,,,
+,테이블 설명,,안전관리자 정보,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,field_no,bigint,bigint(11),,YES,,NULL,현장번호(field_list.no)
+,3,admin_id,varchar,varchar(20),,YES,,NULL,관리자 아이디
+,4,admin_name,varchar,varchar(20),,YES,,NULL,관리자 이름
+,5,admin_email,varchar,varchar(255),,YES,,NULL,관리자 이메일
+,6,admin_cell_phone,varchar,varchar(15),,YES,,NULL,관리자 휴대폰
+,7,admin_phone,varchar,varchar(20),,YES,,NULL,관리자 연락처
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,safety_edu_history,,,,,,
+,테이블 설명,,안전교육(정보) 열람현황,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,user_no,bigint,bigint(11),,YES,,NULL,근로자번호(user_list.no)
+,3,edu_no,bigint,bigint(11),,YES,,NULL,안전교육번호(safety_education.no)
+,4,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,safety_education,,,,,,
+,테이블 설명,,안전교육관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,title,varchar,varchar(400),,YES,,NULL,제목
+,3,contents,text,text,,YES,,NULL,내용
+,4,type,varchar,varchar(10),,YES,,NULL,"등록유형(D:직접등록,URL:URL등록,V:동영상)"
+,5,lang,int,int(5),,YES,,NULL,언어(language.no)
+,6,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,space_division,,,,,,
+,테이블 설명,,공간구획,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,field_no,bigint,bigint(11),,YES,,NULL,현장번호(field_list.no)
+,3,depth_1,varchar,varchar(100),,YES,,NULL,구획명
+,4,depth_2,varchar,varchar(100),,YES,,NULL,구획명
+,5,depth_3,varchar,varchar(100),,YES,,NULL,구획명
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,type_list,,,,,,
+,테이블 설명,,유형관리,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,type_name,varchar,varchar(20),,YES,,NULL,항목명
+,3,parent_no,bigint,bigint(11),,YES,,NULL,부모항목번호(type_list.no)
+,4,sort_no,int,int(3),,YES,,NULL,항목별 정렬순서
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,user_list,,,,,,
+,테이블 설명,,근로자 테이블,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),PRI,NO,auto_increment,NULL,일련번호
+,2,user_name,varchar,varchar(50),,YES,,NULL,근로자 이름
+,3,user_id,varchar,varchar(5),,YES,,NULL,근로자 아이디
+,4,user_pw,varchar,varchar(255),,YES,,NULL,근로자 비밀번호
+,5,company_name,varchar,varchar(255),,YES,,NULL,업체명
+,6,field_no,bigint,bigint(11),,YES,,NULL,소속 현장 코드(field_list.no)
+,7,birthday,date,date,,YES,,NULL,생년월일(yyyymmdd)
+,8,user_phone,varchar,varchar(15),,YES,,NULL,휴대폰번호
+,9,user_state,char,char(1),,YES,,NULL,"상태(1-사용,2-중지)"
+,10,reg_date,datetime,datetime,,YES,,NULL,등록일
+,11,const_type,int,int(11),,YES,,NULL,공종분류(type_list.no)
+,,,,,,,,,
+,,,,,,,,,
+,테이블 명,,user_location_history,,,,,,
+,테이블 설명,,근로자 위치 이력 테이블,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),,YES,,NULL,일련번호
+,2,division_no,bigint,bigint(11),,YES,,NULL,공간구획번호(space_division.no)
+,3,user_no,bigint,bigint(11),,YES,,NULL,근로자번호(user_list.no)
+,4,reg_date,datetime,datetime,,YES,,NULL,등록일
+,,,,,,,,,
+,p,,,,,,,,
+,테이블 명,,violation_list,,,,,,
+,테이블 설명,,위반자 현황,,,,,,
+,순번,컬럼명,데이타 유형,데이타 길이,PK,NULL 여부,자동생성,기본값,설명
+,1,no,bigint,bigint(11),,YES,,NULL,일련번호
+,2,user_no,bigint,bigint(11),,YES,,NULL,근로자번호(user_list.no)
+,3,violation_date,varchar,varchar(20),,YES,,NULL,위반일시(yyyy-mm-dd hh:ii)
+,4,violation_title,varchar,varchar(255),,YES,,NULL,위반유형
+,5,violation_contents,text,text,,YES,,NULL,위반내용
+,6,attach_path,varchar,varchar(255),,YES,,NULL,첨부파일경로
+,7,attach_file,varchar,varchar(255),,YES,,NULL,첨부파일명(서버저장용)
+,8,attach_ori_name,varchar,varchar(255),,YES,,NULL,원본파일명
+,9,attach_size,bigint,bigint(11),,YES,,NULL,첨부파일사이즈
+,10,reg_date,datetime,datetime,,YES,,NULL,등록일
+,11,register_no,bigint,bigint(11),,YES,,NULL,등록자번호(user_list.no)

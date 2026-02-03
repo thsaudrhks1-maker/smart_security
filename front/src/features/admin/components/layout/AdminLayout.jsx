@@ -10,12 +10,14 @@ import NavSidebar from '../common/NavSidebar';
  */
 const AdminLayout = () => {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#f1f5f9', overflow: 'hidden' }}>
       {/* 1. 좌측 사이드바 */}
-      <NavSidebar />
+      <div style={{ height: '100vh', overflowY: 'auto' }}>
+        <NavSidebar />
+      </div>
 
       {/* 2. 메인 콘텐츠 영역 */}
-      <main style={{ flex: 1, minWidth: 0 }}>
+      <main style={{ flex: 1, height: '100vh', overflowY: 'auto', minWidth: 0 }}>
         <Outlet />
       </main>
     </div>

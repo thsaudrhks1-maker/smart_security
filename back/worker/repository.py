@@ -3,6 +3,8 @@ from back.database import fetch_one, fetch_all
 async def get_worker_with_info(user_id: int) -> dict | None:
     # 1. 사용자의 회사명과 소속 회사가 참여 중인 최신 프로젝트명을 가져옴
     # project_members에 직접 등록된 건이 있으면 최우선, 없으면 소속 회사 참여 현장 매칭
+    # 1. 사용자의 회사명과 소속 회사가 참여 중인 최신 프로젝트 정보를 가져옴
+    # project_members에 직접 등록된 건이 있으면 최우선, 없으면 소속 회사 참여 현장 매칭
     sql = """
         SELECT 
             u.*, 
@@ -15,7 +17,16 @@ async def get_worker_with_info(user_id: int) -> dict | None:
                  JOIN project_participants pp ON p.id = pp.project_id 
                  WHERE pp.company_id = u.company_id 
                  ORDER BY p.created_at DESC LIMIT 1)
-            ) as project_name
+            ) as project_name,
+            COALESCE(
+                (SELECT p.id FROM projects p 
+                 JOIN project_members pm ON p.id = pm.project_id 
+                 WHERE pm.user_id = u.id AND pm.status = 'ACTIVE' LIMIT 1),
+                (SELECT p.id FROM projects p 
+                 JOIN project_participants pp ON p.id = pp.project_id 
+                 WHERE pp.company_id = u.company_id 
+                 ORDER BY p.created_at DESC LIMIT 1)
+            ) as project_id
         FROM users u
         LEFT JOIN companies c ON u.company_id = c.id
         WHERE u.id = :user_id
@@ -80,12 +91,12 @@ async def get_daily_danger_zones(zone_id: int, date: str) -> list[dict]:
     sql = "SELECT * FROM daily_danger_zones WHERE zone_id = :zone_id AND date = :date"
     return await fetch_all(sql, {"zone_id": zone_id, "date": date})
 
-async def get_attendance(worker_id: int, date: str) -> dict | None:
+async def get_attendance(user_id: int, date: str) -> dict | None:
     sql = """
         SELECT * FROM attendance 
-        WHERE worker_id = :worker_id AND date = :date
+        WHERE user_id = :user_id AND date = :date
     """
-    return await fetch_one(sql, {"worker_id": worker_id, "date": date})
+    return await fetch_one(sql, {"user_id": user_id, "date": date})
 
 async def get_safety_violations_count(worker_id: int) -> int:
     sql = """
