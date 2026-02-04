@@ -3,7 +3,7 @@ from back.auth.dependencies import get_current_user
 from back.auth.model import User
 from back.manager.service import ManagerService
 
-router = APIRouter(prefix="/api/manager", tags=["Manager"])
+router = APIRouter(prefix="/manager", tags=["Manager"])
 
 @router.get("/dashboard")
 async def get_manager_dashboard(current_user: User = Depends(get_current_user)):

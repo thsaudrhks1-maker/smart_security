@@ -5,7 +5,7 @@ const client = axios.create({
   // 환경변수(.env)에 설정된 주소를 그대로 사용합니다.
   // 로컬에서는 http://localhost:8010, 서버에서는 https://... 이 적용됩니다.
   // 현재 브라우저의 호스트(IP)를 감지하여 백엔드 주소 결정
-  baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8500`,
+  baseURL: (import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8500`) + '/api',
   withCredentials: true, // 쿠키 기반 인증 활성화
   headers: {
     'Content-Type': 'application/json',

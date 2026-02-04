@@ -7,7 +7,7 @@ import uuid
 import asyncio
 import random
 
-router = APIRouter(tags=["map"])
+router = APIRouter(prefix="/map", tags=["map"])
 
 # --- In-Memory Data Store ---
 class RiskZone(BaseModel):
@@ -51,7 +51,8 @@ class ConnectionManager:
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
         for connection in self.active_connections:
@@ -76,12 +77,7 @@ async def simulate_worker_movement():
             # Check Risk Zones
             status = "SAFE"
             for risk in risks_db:
-                # Simple distance check (approximate)
-                # 1 deg lat approx 111km. 0.0001 deg approx 11m.
                 dist = ((worker.lat - risk.lat)**2 + (worker.lng - risk.lng)**2)**0.5
-                # radius unit? Assuming radius in meters and map in lat/lng is tricky without conversion.
-                # Heuristic: 0.0001 deg ~ 10m.
-                # If radius is 20m, threshold is 0.0002
                 threshold = risk.radius * 0.00001 
                 if dist < threshold:
                     status = "DANGER"
@@ -96,31 +92,25 @@ async def simulate_worker_movement():
         
         await asyncio.sleep(1)
 
-# Start simulation on module load (Not ideal but works for simple script. 
-# Better to start on startup event in main.py, but we'll trigger it via endpoint or handle in main)
-# We will expose a start endpoint or leave it to main.py to run logic. 
-# Actually, websocket endpoint can run a loop if it's the only one, but we have multiple clients.
-# We will use startup event in main.py to run this background task.
-
 # --- API Endpoints ---
 
-@router.get("/map/risks", response_model=List[RiskZone])
+@router.get("/risks", response_model=List[RiskZone])
 def get_risks():
     return risks_db
 
-@router.post("/map/risks", response_model=RiskZone)
+@router.post("/risks", response_model=RiskZone)
 def add_risk(risk: RiskZone):
     risk.id = len(risks_db) + 1
     risks_db.append(risk)
     return risk
 
-@router.delete("/map/risks/{risk_id}")
+@router.delete("/risks/{risk_id}")
 def delete_risk(risk_id: int):
     global risks_db
     risks_db = [r for r in risks_db if r.id != risk_id]
     return {"status": "success"}
 
-@router.post("/map/blueprint")
+@router.post("/blueprint")
 async def upload_blueprint(file: UploadFile = File(...)):
     global current_blueprint_url
     try:
@@ -134,13 +124,13 @@ async def upload_blueprint(file: UploadFile = File(...)):
         with open(save_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # URL assumes localhost:8000 serving static
-        current_blueprint_url = f"http://localhost:8000/static/blueprints/{filename}"
+        # URL assumes localhost:8500 serving static
+        current_blueprint_url = f"http://localhost:8500/static/blueprints/{filename}"
         return {"url": current_blueprint_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/map/blueprint")
+@router.get("/blueprint")
 def get_blueprint():
     return {"url": current_blueprint_url}
 
@@ -149,8 +139,6 @@ async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            # Client usually doesn't send much, just listens.
-            # But we need to keep connection open.
-            data = await websocket.receive_text()
+            await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)

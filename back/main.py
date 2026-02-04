@@ -53,19 +53,19 @@ _static_path = _os.path.join(_os.path.dirname(__file__), "static")
 if _os.path.isdir(_static_path):
     app.mount("/static", StaticFiles(directory=_static_path), name="static")
 
-# 라우터 등록
-app.include_router(auth_router)
-app.include_router(project_router)
-app.include_router(map_router)
-app.include_router(work_router)
-app.include_router(company_router)
-app.include_router(safety_router)
-app.include_router(dashboard_router)
-app.include_router(worker_router)
-app.include_router(admin_router)
-app.include_router(manager_router) # [NEW]
-app.include_router(attendance_router) # [NEW]
-app.include_router(notice_router) # [NEW] 앱에 등록
+# 라우터 등록 (/api 공통 접두어 부여로 프론트엔드 호환성 유지)
+app.include_router(auth_router, prefix="/api")
+app.include_router(project_router, prefix="/api")
+app.include_router(map_router, prefix="/api")
+app.include_router(work_router, prefix="/api")
+app.include_router(company_router, prefix="/api")
+app.include_router(safety_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
+app.include_router(worker_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
+app.include_router(manager_router, prefix="/api")
+app.include_router(attendance_router, prefix="/api")
+app.include_router(notice_router, prefix="/api")
 
 # --- Admin / Data Endpoints ---
 # --- Admin / Data Endpoints deleted (moved to back/admin/router.py) ---

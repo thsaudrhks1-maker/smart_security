@@ -1,0 +1,37 @@
+오늘의 업무: 백엔드 리팩토링 (아키텍처 레이어 분리 및 SQL 중심 패턴 강화)
+
+1. 현재 프로젝트 구조 분석 및 리팩토링 대상 파악
+   - Router, Service, Repository 레이어 분리 상태 확인
+   - ORM 사용처를 Schema/Migration으로 제한하고 CRUD는 Raw SQL로 전환
+
+2. Smart Security 기술 표준(Skill) 점검 및 업데이트
+   - Router -> Service -> Repository 구조 명시화
+   - Raw SQL 헬퍼 활용 가이드 강화
+
+3. 백엔드 핵심 모듈 리팩토링 진행
+   - Worker, Project, Attendance 등 주요 도메인 로직 고도화
+
+4. 작업 결과 검증
+   - API 동작 테스트 및 로그 확인
+   - 구조적 정합성 검증
+
+===
+오후 (작업 마무리):
+1. 백엔드 아키텍처 전면 리팩토링 완료 (Router - Service - Repository 3계층 분리)
+2. 핵심 모듈 (Project, Attendance, Notice, Company, Safety, Work)에 SQL-First Repository 패턴 적용
+3. AsyncSession 의존성 제거 및 back.database의 Raw SQL 헬퍼 함수로 전면 교체
+4. API 엔드포인트 접두어 (/api)를 main.py에서 중앙 집중식으로 관리하도록 통일
+5. 기술 표준 문서 (sql_repository_pattern) 최신화 완료
+6. 특이사항: 프로젝트 전체의 데이터 무결성 및 성능 최적화를 위한 구조 개선 성공
+
+===
+[CEO 요구사항 분석 및 현황] - 2026-02-05
+1. 위험 구역 지도 MVP: 기능 구현됨. 날짜별/구역별 위험 요소 등록 가능. (지도 UI 드래그 배치 등 고도화 필요)
+2. 작업자 맞춤형 위험 Zone: 구현됨. 작업자 대시보드에서 본인 배정 구역 위험 요소를 필터링하여 노출.
+3. Hazard Pin (참여형): 플레이스홀더 상태. 작업자용 위험 신고 및 지도 핀 등록 기능 개발 필요.
+4. Safety Brief: 구현됨. 공정별 안전 수칙 자동 생성 및 노출. (작업 시작 승인 프로세스 고도화 필요)
+
+익일 진행 계획:
+1. 리팩토링된 API들에 대한 통합 테스트 및 404 에러 최종 수정
+2. 프론트엔드 연동 확인 및 필요 시 조정
+3. Hazard Pin 기능 개발 착수 (DB 설계 및 API 구현)
