@@ -104,6 +104,8 @@ async def reset_and_seed():
             name="강남 스마트 오피스 신축공사",
             code="PJ-2026-001",
             location_name="서울시 강남구 테헤란로 123",
+            location_lat=37.56650,
+            location_lng=126.97800,
             start_date=date(2026, 1, 1),
             end_date=date(2026, 12, 31),
             budget_amount=1000000000,
@@ -172,15 +174,28 @@ async def reset_and_seed():
         await db.flush() # ID 확보를 위해 flush
         
         # 5억~10억 규모 리모델링/인테리어 현장 가정 (1개 층 구획)
-        # 보통 주출입구, 메인홀, 사무실1, 사무실2, 탕비실, 화장실, 창고, 외부
+        # 주출입구, 메인홀, 사무실, 회의실, 탕비실, 화장실, 외부, 옥상 + 1층 작업공간 = 8개
+        # 서울광장 중심 기준 가로·세로 동일 간격(step) 2x4 균일 그리드 → 작업위치 정렬 균등하게
+        center_lat, center_lng = 37.56650, 126.97800
+        step = 0.00025  # 가로·세로 동일 간격 (정사각형 칸)
+        # 2열: 중심 좌우
+        lng0 = round(center_lng - step / 2, 6)
+        lng1 = round(center_lng + step / 2, 6)
+        # 4행: 중심 기준 위아래 균등
+        row0 = round(center_lat + step * 1.5, 6)
+        row1 = round(center_lat + step * 0.5, 6)
+        row2 = round(center_lat - step * 0.5, 6)
+        row3 = round(center_lat - step * 1.5, 6)
+        # 그리드 순서: [0,0][0,1] / [1,0][1,1] / [2,0][2,1] / [3,0][3,1]
         zones = [
-            Zone(site_id=site.id, level="1F", name="주출입구 및 복도", type="INDOOR"),
-            Zone(site_id=site.id, level="1F", name="메인 사무공간(A)", type="INDOOR"),
-            Zone(site_id=site.id, level="1F", name="회의실(B)", type="INDOOR"),
-            Zone(site_id=site.id, level="1F", name="탕비실/휴게실", type="INDOOR"),
-            Zone(site_id=site.id, level="1F", name="화장실(남/녀)", type="INDOOR", default_hazards=["미끄럼주의", "환기필요"]),
-            Zone(site_id=site.id, level="1F", name="외부 자재반입구", type="OUTDOOR", default_hazards=["차량주의", "낙하물"]),
-            Zone(site_id=site.id, level="ROOF", name="옥상", type="ROOF", default_hazards=["추락주의"])
+            Zone(site_id=site.id, level="1F", name="주출입구 및 복도", type="INDOOR", lat=row0, lng=lng0),
+            Zone(site_id=site.id, level="1F", name="메인 사무공간(A)", type="INDOOR", lat=row0, lng=lng1),
+            Zone(site_id=site.id, level="1F", name="회의실(B)", type="INDOOR", lat=row1, lng=lng0),
+            Zone(site_id=site.id, level="1F", name="탕비실/휴게실", type="INDOOR", lat=row1, lng=lng1),
+            Zone(site_id=site.id, level="1F", name="화장실(남/녀)", type="INDOOR", lat=row2, lng=lng0, default_hazards=["미끄럼주의", "환기필요"]),
+            Zone(site_id=site.id, level="1F", name="외부 자재반입구", type="OUTDOOR", lat=row2, lng=lng1, default_hazards=["차량주의", "낙하물"]),
+            Zone(site_id=site.id, level="ROOF", name="옥상", type="ROOF", lat=row3, lng=lng0, default_hazards=["추락주의"]),
+            Zone(site_id=site.id, level="1F", name="1층 작업공간", type="INDOOR", lat=row3, lng=lng1),
         ]
         db.add_all(zones)
         await db.commit()

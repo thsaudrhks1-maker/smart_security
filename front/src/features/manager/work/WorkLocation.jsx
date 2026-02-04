@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { ZoneSquare } from './ZoneSquareLayer';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapPin, Plus, Pencil, Map, Building2, X } from 'lucide-react';
@@ -222,7 +223,7 @@ export default function WorkLocation() {
             <div style={{ fontWeight: '700', color: '#334155', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Map size={18} /> 현재 프로젝트 위치 (지도)
             </div>
-            <div style={{ height: '320px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <div style={{ height: '480px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
               <MapOnly center={[centerLat, centerLng]} zones={zones} />
             </div>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '6px' }}>
@@ -394,13 +395,20 @@ export default function WorkLocation() {
 }
 
 function MapOnly({ center, zones }) {
-  const markers = (zones || []).filter((z) => z.lat != null && z.lng != null);
+  const zonesWithCoords = (zones || []).filter((z) => z.lat != null && z.lng != null);
   return (
     <MapContainer center={center} zoom={15} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
       <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <Marker position={center} />
-      {markers.map((z) => (
-        <Marker key={z.id} position={[Number(z.lat), Number(z.lng)]} />
+      {zonesWithCoords.map((z) => (
+        <ZoneSquare
+          key={z.id}
+          zone={z}
+          fillColor="#ffffff"
+          fillOpacity={0.55}
+          strokeColor="rgba(0,0,0,0.4)"
+          strokeWidth={2}
+        />
       ))}
     </MapContainer>
   );

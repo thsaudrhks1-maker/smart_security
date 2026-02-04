@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import { MapContainer, TileLayer, Popup } from 'react-leaflet';
+import { ZoneSquareStyled } from './ZoneSquareLayer';
 import 'leaflet/dist/leaflet.css';
 import { workApi } from '../../../api/workApi';
 import { getMyWorkers } from '../../../api/managerApi';
@@ -10,14 +10,7 @@ import { getProjectById, getProjectSites } from '../../../api/projectApi';
 import apiClient from '../../../api/client';
 import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, X, ShieldAlert, Trash2, Map } from 'lucide-react';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-const WORK_TYPE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
+const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
 
 const RISK_TYPES = [
   { value: 'HEAVY_EQUIPMENT', label: '중장비' },
@@ -274,7 +267,7 @@ const DailyPlanManagement = () => {
           </p>
           <div
             style={{
-              height: '320px',
+              height: '480px',
               borderRadius: '8px',
               overflow: 'hidden',
               border: '1px solid #e2e8f0',
@@ -291,7 +284,7 @@ const DailyPlanManagement = () => {
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                opacity={0.88}
+                opacity={1.00}
               />
               <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
             </MapContainer>
@@ -331,7 +324,7 @@ const DailyPlanManagement = () => {
   );
 };
 
-// 지도: 작업 구역·위험 구역 마커 (좌표 기반, 색깔별 작업 리스트·위험 위치 표기)
+// 지도: 모든 구역을 정사각형 컴포넌트로 표시. 작업/위험 없으면 흰색 투명, 있으면 색상·위험 구역 빨강
 function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
   const zonesWithCoords = useMemo(() => zones.filter((z) => z.lat != null && z.lng != null), [zones]);
   const workTypeOrder = useMemo(() => [...new Set(plans.map((p) => p.work_type))], [plans]);
@@ -341,13 +334,6 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
     return WORK_TYPE_COLORS[i % WORK_TYPE_COLORS.length];
   };
 
-  const dangerIcon = L.divIcon({
-    className: 'daily-plan-danger-marker',
-    html: '<div style="width:24px;height:24px;border-radius:50%;background:#dc2626;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>',
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-
   return (
     <>
       {zonesWithCoords.map((zone) => {
@@ -355,48 +341,43 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
         const zoneDangers = dangerZones.filter((d) => d.zone_id === zone.id);
         const hasWork = zonePlans.length > 0;
         const hasDanger = zoneDangers.length > 0;
-        if (!hasWork && !hasDanger) return null;
 
-        const color = hasWork ? getWorkTypeColor(zonePlans[0].work_type) : '#dc2626';
-        const icon = hasDanger && !hasWork
-          ? dangerIcon
-          : L.divIcon({
-              className: 'daily-plan-zone-marker',
-              html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`,
-              iconSize: [28, 28],
-              iconAnchor: [14, 14],
-            });
+        const pathOptions =
+          hasWork
+            ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: 'rgba(0,0,0,0.45)', weight: 2 }
+            : hasDanger
+              ? { fillColor: '#dc2626', fillOpacity: 0.7, color: 'rgba(0,0,0,0.45)', weight: 2 }
+              : { fillColor: '#ffffff', fillOpacity: 0.55, color: 'rgba(0,0,0,0.4)', weight: 2 };
 
-        return (
-          <Marker key={`zone-${zone.id}`} position={[zone.lat, zone.lng]} icon={icon}>
-            <Popup>
-              <div style={{ minWidth: '180px' }}>
-                <strong style={{ display: 'block', marginBottom: '6px' }}>[{zone.level}] {zone.name}</strong>
-                {zonePlans.length > 0 && (
-                  <div style={{ marginBottom: '8px', fontSize: '0.9rem' }}>
-                    <span style={{ color: '#64748b' }}>작업:</span>
-                    {zonePlans.map((p) => (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getWorkTypeColor(p.work_type), flexShrink: 0 }} />
-                        {p.work_type} (주의 {p.calculated_risk_score})
-                      </div>
-                    ))}
+        const popupContent = (
+          <div style={{ minWidth: '180px' }}>
+            <strong style={{ display: 'block', marginBottom: '6px' }}>[{zone.level}] {zone.name}</strong>
+            {zonePlans.length > 0 && (
+              <div style={{ marginBottom: '8px', fontSize: '0.9rem' }}>
+                <span style={{ color: '#64748b' }}>작업:</span>
+                {zonePlans.map((p) => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getWorkTypeColor(p.work_type), flexShrink: 0 }} />
+                    {p.work_type} (주의 {p.calculated_risk_score})
                   </div>
-                )}
-                {zoneDangers.length > 0 && (
-                  <div style={{ fontSize: '0.85rem', color: '#b91c1c' }}>
-                    <span style={{ fontWeight: '600' }}>위험 구역:</span>
-                    {zoneDangers.map((d) => (
-                      <div key={d.id} style={{ marginTop: '4px' }}>
-                        {RISK_TYPES.find((r) => r.value === d.risk_type)?.label || d.risk_type} — {d.description}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
-            </Popup>
-          </Marker>
+            )}
+            {zoneDangers.length > 0 && (
+              <div style={{ fontSize: '0.85rem', color: '#b91c1c' }}>
+                <span style={{ fontWeight: '600' }}>위험 구역:</span>
+                {zoneDangers.map((d) => (
+                  <div key={d.id} style={{ marginTop: '4px' }}>
+                    {RISK_TYPES.find((r) => r.value === d.risk_type)?.label || d.risk_type} — {d.description}
+                  </div>
+                ))}
+              </div>
+            )}
+            {!hasWork && !hasDanger && <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>배정된 작업·위험 없음</span>}
+          </div>
         );
+
+        return <ZoneSquareStyled key={`zone-${zone.id}`} zone={zone} pathOptions={pathOptions} popupContent={popupContent} />;
       })}
     </>
   );
