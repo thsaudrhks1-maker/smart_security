@@ -25,3 +25,14 @@ export const checkOut = async (attendanceId) => {
     const response = await api.post('/api/attendance/check-out', { attendance_id: attendanceId });
     return response.data;
 };
+
+/**
+ * 프로젝트별 출역 현황 조회 (관리자용)
+ * @param {number} projectId 
+ * @param {string} date YYYY-MM-DD (옵션)
+ */
+export const getProjectAttendance = async (projectId, date = null) => {
+    const url = date ? `/api/attendance/project/${projectId}?date=${date}` : `/api/attendance/project/${projectId}`;
+    const response = await api.get(url);
+    return response.data;
+};

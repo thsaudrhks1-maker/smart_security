@@ -153,6 +153,22 @@ const DailyPlanManagement = () => {
         </div>
       </div>
 
+      {/* 금일 요약 (작업·위험·배정 인원) */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem', padding: '0.75rem 1rem', background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
+          <HardHat size={18} color="#3b82f6" />
+          <strong>작업</strong> <span style={{ color: '#3b82f6', fontWeight: '700' }}>{filteredPlans.length}건</span>
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
+          <AlertTriangle size={18} color="#dc2626" />
+          <strong>위험 구역</strong> <span style={{ color: '#dc2626', fontWeight: '700' }}>{dangerZonesInSite.length}건</span>
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#334155' }}>
+          <Users size={18} color="#64748b" />
+          <strong>배정 인원</strong> <span style={{ color: '#475569', fontWeight: '700' }}>{filteredPlans.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}명</span>
+        </span>
+      </div>
+
       {/* 본문: 라우터 전체가 잘리면 투명 얇은 스크롤로 지도·오른쪽 패널 모두 스크롤 */}
       <div className="daily-plan-body-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
         <div style={{ display: 'flex', gap: '1.5rem', minHeight: 'min-content', paddingBottom: '1rem' }}>
@@ -168,7 +184,7 @@ const DailyPlanManagement = () => {
                   <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
                 </MapContainer>
               </div>
-              <DailyPlanMapLegend plans={filteredPlans} />
+              <DailyPlanMapLegend plans={filteredPlans} dangerZones={dangerZonesInSite} />
             </div>
           )}
 
@@ -300,9 +316,11 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
         const zoneDangers = dangerZones.filter((d) => d.zone_id === zone.id);
         const hasWork = zonePlans.length > 0;
         const hasDanger = zoneDangers.length > 0;
+        const isOverlap = hasWork && hasDanger;
 
-        const pathOptions =
-          hasWork
+        const pathOptions = isOverlap
+          ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: '#dc2626', weight: 4 }
+          : hasWork
             ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: 'rgba(0,0,0,0.45)', weight: 2 }
             : hasDanger
               ? { fillColor: '#dc2626', fillOpacity: 0.7, color: 'rgba(0,0,0,0.45)', weight: 2 }
@@ -311,6 +329,9 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
         const popupContent = (
           <div style={{ minWidth: '180px' }}>
             <strong style={{ display: 'block', marginBottom: '6px' }}>[{zone.level}] {zone.name}</strong>
+            {isOverlap && (
+              <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: '600', marginBottom: '6px' }}>⚠️ 작업 + 위험 구역</div>
+            )}
             {zonePlans.length > 0 && (
               <div style={{ marginBottom: '8px', fontSize: '0.9rem' }}>
                 <span style={{ color: '#64748b' }}>작업:</span>
@@ -342,12 +363,15 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
   );
 }
 
-// 지도 범례 (색깔별 작업 리스트 + 위험 구역)
-function DailyPlanMapLegend({ plans }) {
+// 지도 범례 (작업 유형 + 위험 + 겹침)
+function DailyPlanMapLegend({ plans, dangerZones }) {
   const workTypes = useMemo(() => [...new Set(plans.map((p) => p.work_type))], [plans]);
-  if (workTypes.length === 0) return null;
+  const hasOverlap = useMemo(() => {
+    const zoneIdsWithWork = new Set(plans.map((p) => p.zone_id));
+    return dangerZones.some((d) => zoneIdsWithWork.has(d.zone_id));
+  }, [plans, dangerZones]);
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 20px', marginTop: '10px', fontSize: '0.85rem', color: '#475569' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', marginTop: '10px', fontSize: '0.85rem', color: '#475569' }}>
       {workTypes.map((wt, i) => (
         <span key={wt} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: WORK_TYPE_COLORS[i % WORK_TYPE_COLORS.length] }} />
@@ -358,6 +382,12 @@ function DailyPlanMapLegend({ plans }) {
         <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} />
         위험 구역
       </span>
+      {hasOverlap && (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#991b1b' }}>
+          <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: '#3b82f6', border: '2px solid #dc2626', boxSizing: 'border-box' }} />
+          작업+위험
+        </span>
+      )}
     </div>
   );
 }

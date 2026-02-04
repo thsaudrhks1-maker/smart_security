@@ -47,6 +47,8 @@ class DailyWorkPlanRead(DailyWorkPlanBase):
     created_at: datetime
     date: date  # 응답은 date 객체 → JSON 직렬화 시 "YYYY-MM-DD"로 내려감
     zone_name: Optional[str] = None
+    zone_lat: Optional[float] = None  # 지도 표시용
+    zone_lng: Optional[float] = None
     work_type: Optional[str] = None
     required_ppe: Optional[List[str]] = []
     checklist_items: Optional[List[str]] = []

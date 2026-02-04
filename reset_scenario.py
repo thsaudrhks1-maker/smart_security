@@ -137,16 +137,26 @@ async def reset_and_seed():
 
 
 
-        print("✅ [Step 6] 작업자 출퇴근 기록 생성 (Worker1: 출근)")
-        att = Attendance(
-            user_id=worker.id,
-            project_id=project.id,
-            date=date.today(), # date 객체
-            check_in_time=datetime.now().replace(hour=7, minute=50), # datetime 객체
-            status="PRESENT",
-            check_in_method="APP"
-        )
-        db.add(att)
+        print("✅ [Step 6] 작업자 출퇴근 기록 생성 (2.03·2.04·오늘 더미)")
+        d0303 = date(2026, 2, 3)
+        d0304 = date(2026, 2, 4)
+        def dt(d, h, m):
+            return datetime.combine(d, datetime.min.time().replace(hour=h, minute=m))
+        attendance_list = [
+            # 2.03일자: 여러 명, 시간 차이
+            Attendance(user_id=worker.id,   project_id=project.id, date=d0303, check_in_time=dt(d0303, 7, 50), check_out_time=dt(d0303, 17, 30), status="PRESENT", check_in_method="APP"),
+            Attendance(user_id=worker2.id,  project_id=project.id, date=d0303, check_in_time=dt(d0303, 8, 5),  check_out_time=dt(d0303, 18, 0), status="PRESENT", check_in_method="APP"),
+            Attendance(user_id=worker3.id,  project_id=project.id, date=d0303, check_in_time=dt(d0303, 9, 15), check_out_time=dt(d0303, 17, 45), status="LATE", check_in_method="APP"),
+            Attendance(user_id=worker4.id,  project_id=project.id, date=d0303, check_in_time=dt(d0303, 7, 55), check_out_time=None, status="PRESENT", check_in_method="APP"),
+            # 2.04일자
+            Attendance(user_id=worker.id,   project_id=project.id, date=d0304, check_in_time=dt(d0304, 7, 45), check_out_time=dt(d0304, 17, 40), status="PRESENT", check_in_method="APP"),
+            Attendance(user_id=worker2.id,  project_id=project.id, date=d0304, check_in_time=dt(d0304, 8, 0),  check_out_time=dt(d0304, 17, 55), status="PRESENT", check_in_method="APP"),
+            Attendance(user_id=worker3.id,  project_id=project.id, date=d0304, check_in_time=dt(d0304, 8, 50), check_out_time=None, status="PRESENT", check_in_method="APP"),
+            Attendance(user_id=worker4.id,  project_id=project.id, date=d0304, check_in_time=dt(d0304, 9, 30), check_out_time=dt(d0304, 16, 0), status="LATE", check_in_method="APP"),
+            # 오늘(실행일) 1건
+            Attendance(user_id=worker.id,   project_id=project.id, date=date.today(), check_in_time=datetime.now().replace(hour=7, minute=50), status="PRESENT", check_in_method="APP"),
+        ]
+        db.add_all(attendance_list)
         await db.commit()
         
         print("☀️ [Step 7] 날씨(Weather) 데이터 생성 중...")

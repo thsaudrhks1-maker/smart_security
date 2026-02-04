@@ -130,6 +130,7 @@ async def get_my_today_plans(
         except Exception:
             pass
 
+        zone = p.zone
         response.append(DailyWorkPlanRead(
             id=p.id,
             site_id=p.site_id,
@@ -142,7 +143,9 @@ async def get_my_today_plans(
             status=p.status,
             calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
             created_at=p.created_at,
-            zone_name=p.zone.name if p.zone else "Unknown",
+            zone_name=zone.name if zone else "Unknown",
+            zone_lat=float(zone.lat) if zone and zone.lat is not None else None,
+            zone_lng=float(zone.lng) if zone and zone.lng is not None else None,
             work_type=p.template.work_type if p.template else "Unknown",
             required_ppe=p.template.required_ppe if p.template else [],
             checklist_items=p.template.checklist_items if p.template else [],

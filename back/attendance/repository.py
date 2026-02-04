@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from datetime import datetime
+from datetime import datetime, date
 from back.attendance.model import Attendance, AttendanceStatus
 from back.attendance.schema import CheckInRequest
 
@@ -65,3 +65,48 @@ class AttendanceRepository:
         await db.commit()
         await db.refresh(attendance)
         return attendance
+
+    @staticmethod
+    def _parse_date(value):
+        """str 'YYYY-MM-DD' 또는 date -> date. PostgreSQL DATE 바인딩용."""
+        if value is None:
+            return date.today()
+        if isinstance(value, date) and not isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            return date.fromisoformat(value[:10])
+        return value
+
+    @staticmethod
+    async def get_project_attendance_list(db: AsyncSession, project_id: int, target_date: str = None):
+        """
+        프로젝트별 출역 명단 조회 (Raw SQL)
+        - target_date가 없으면 오늘 날짜 기준. DB DATE 컬럼에는 date 객체로 전달.
+        """
+        from sqlalchemy import text
+
+        plan_date = AttendanceRepository._parse_date(target_date)
+
+        query = text("""
+            SELECT 
+                a.id,
+                a.user_id,
+                u.full_name,
+                c.name as company_name,
+                u.job_type,
+                a.check_in_time,
+                a.check_out_time,
+                a.status,
+                a.check_in_method
+            FROM attendance a
+            JOIN users u ON a.user_id = u.id
+            LEFT JOIN companies c ON u.company_id = c.id
+            WHERE a.project_id = :project_id
+              AND a.date = :target_date
+            ORDER BY a.check_in_time DESC
+        """)
+
+        result = await db.execute(query, {"project_id": project_id, "target_date": plan_date})
+        
+        # 딕셔너리 형태로 변환하여 반환
+        return [dict(row._mapping) for row in result]

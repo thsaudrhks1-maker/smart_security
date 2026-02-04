@@ -19,8 +19,8 @@ const WorkerLayout = () => {
   ];
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f1f5f9', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '70px' }}>
+    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f1f5f9', height: '100vh', maxHeight: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', paddingBottom: '80px', WebkitOverflowScrolling: 'touch' }}>
         <Outlet />
       </div>
       

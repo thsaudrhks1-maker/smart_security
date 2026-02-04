@@ -26,3 +26,15 @@ class AttendanceResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class ProjectAttendanceResponse(BaseModel):
+    """프로젝트별 출역 현황용 (관리자 뷰)"""
+    id: int
+    user_id: int
+    full_name: str
+    company_name: str
+    job_type: Optional[str]
+    check_in_time: Optional[datetime]
+    check_out_time: Optional[datetime]
+    status: str
+    check_in_method: str

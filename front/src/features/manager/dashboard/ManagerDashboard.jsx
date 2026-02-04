@@ -12,6 +12,7 @@ import {
   QrCode
 } from 'lucide-react';
 import MemberApprovalWidget from '../components/MemberApprovalWidget';
+import AttendanceListWidget from '../components/AttendanceListWidget';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();
@@ -122,20 +123,27 @@ const ManagerDashboard = () => {
           </div>
         </div>
 
-        {/* 3. 승인 대기 인원 위젯 (New) */}
-        <MemberApprovalWidget projectId={project_info.id} />
-
-        {/* 4. QR 코드 */}
-        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h3 style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <QrCode size={20} color="#334155" /> 출근 관리 QR
-          </h3>
-          <div style={{ border: '8px solid #1e293b', borderRadius: '12px', overflow: 'hidden', padding: '10px', background: 'white' }}>
-            <QrCode size={150} color="#000" />
+        {/* 3. 승인 대기 인원 위젯 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <MemberApprovalWidget projectId={project_info.id} />
+          
+          {/* 4. QR 코드 */}
+          <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <h3 style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <QrCode size={20} color="#334155" /> 출근 관리 QR
+            </h3>
+            <div style={{ border: '8px solid #1e293b', borderRadius: '12px', overflow: 'hidden', padding: '10px', background: 'white' }}>
+              <QrCode size={150} color="#000" />
+            </div>
+            <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', color: '#64748b' }}>
+              [QR코드 인쇄하기]
+            </button>
           </div>
-          <button style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', color: '#64748b' }}>
-            [QR코드 인쇄하기]
-          </button>
+        </div>
+
+        {/* 5. 실시간 출역 현황 위젯 (상세 리스트) */}
+        <div style={{ gridColumn: 'span 1' }}>
+          <AttendanceListWidget projectId={project_info.id} />
         </div>
 
       </div>

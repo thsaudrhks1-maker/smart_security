@@ -1,28 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Briefcase, AlertTriangle, CheckCircle, Clock, MapPin, HardHat, 
-  ArrowLeft, Map, Cloud, Bell, FileText, Shield, Calendar, ChevronRight
+import {
+  Briefcase, AlertTriangle, CheckCircle, Clock, MapPin, HardHat,
+  ArrowLeft, Map, Cloud, Bell, FileText, Shield, Calendar, ChevronRight,
+  ChevronDown, ChevronUp, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../../api/client';
 import { useAuth } from '../../../context/AuthContext';
 import SimpleModal from '../components/common/SimpleModal';
+import WorkerSettingsModal from '../components/common/WorkerSettingsModal';
 import AttendanceCard from '../components/dashboard/AttendanceCard';
+import WorkerWorkSiteMap from '../components/dashboard/WorkerWorkSiteMap';
 import { workApi } from '../../../api/workApi';
+import { safetyApi } from '../../../api/safetyApi';
+
+const STORAGE_SHOW_MAP = 'worker_home_show_map';
+const STORAGE_MAP_EXPANDED = 'worker_home_map_expanded';
 
 const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
   // 데이터 상태
-  const [myPlans, setMyPlans] = useState([]); // Array of plans
+  const [myPlans, setMyPlans] = useState([]);
   const [myRisks, setMyRisks] = useState([]);
+  const [allZones, setAllZones] = useState([]);
   const [dashboardInfo, setDashboardInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // 모달 상태 (작업 상세에서 여러 건 중 선택)
   const [activeModal, setActiveModal] = useState(null);
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0); 
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+
+  // 홈 지도: localStorage에서 읽어서 초기화
+  const [showMapOnHome, setShowMapOnHome] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_SHOW_MAP) ?? 'true'); } catch { return true; }
+  });
+  const [mapExpandedByDefault, setMapExpandedByDefault] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_MAP_EXPANDED) ?? 'false'); } catch { return false; }
+  });
+  const [mapExpanded, setMapExpanded] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_MAP_EXPANDED) ?? 'false'); } catch { return false; }
+  });
 
   useEffect(() => {
     const loadWorkerData = async () => {
@@ -48,13 +67,32 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
     loadWorkerData();
   }, []);
 
+  const siteId = myPlans.length > 0 ? myPlans[0].site_id : null;
+  useEffect(() => {
+    if (siteId == null) {
+      setAllZones([]);
+      return;
+    }
+    safetyApi.getZones(siteId).then((data) => setAllZones(data || [])).catch(() => setAllZones([]));
+  }, [siteId]);
+
   // 대시보드 메인 표시용 첫 번째 작업
   const mainPlan = myPlans.length > 0 ? myPlans[0] : null;
   // 상세 모달에서 선택한 작업 (여러 건일 때 전환)
   const detailPlan = myPlans.length > 0 ? myPlans[selectedPlanIndex] ?? myPlans[0] : null;
 
   const handleViewLocation = (risk) => {
-    navigate('/map', { state: { focusZone: risk } });
+    navigate('/worker/safety', { state: { focusZone: risk } });
+  };
+
+  const saveShowMapOnHome = (value) => {
+    setShowMapOnHome(value);
+    try { localStorage.setItem(STORAGE_SHOW_MAP, JSON.stringify(value)); } catch (_) {}
+  };
+  const saveMapExpandedByDefault = (value) => {
+    setMapExpandedByDefault(value);
+    setMapExpanded(value);
+    try { localStorage.setItem(STORAGE_MAP_EXPANDED, JSON.stringify(value)); } catch (_) {}
   };
 
   const openModal = (type) => setActiveModal(type);
@@ -65,7 +103,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   }
 
   return (
-    <div style={{ padding: '0.75rem', background: '#f1f5f9', minHeight: '100vh', paddingBottom: '80px' }}>
+    <div style={{ padding: '0.75rem', background: '#f1f5f9', minHeight: '100%', paddingBottom: '0.5rem' }}>
       
       {/* 헤더 */}
       <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -84,12 +122,79 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           </div>
         </div>
         
-        {isAdminView && onBackToAdmin && (
-          <button onClick={onBackToAdmin} style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-            <ArrowLeft size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {isAdminView && onBackToAdmin && (
+            <button onClick={onBackToAdmin} style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => openModal('settings')}
+            style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            title="환경설정"
+          >
+            <Settings size={18} color="#64748b" />
           </button>
-        )}
+        </div>
       </div>
+
+      {/* 나의 작업 현장 지도 (접었다 펼치기) */}
+      {showMapOnHome ? (
+        <div style={{ marginBottom: '1rem', background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+          <button
+            type="button"
+            onClick={() => setMapExpanded((v) => !v)}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#f8fafc',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.95rem',
+              fontWeight: '700',
+              color: '#1e293b'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Map size={20} color="#3b82f6" />
+              나의 작업 현장 지도
+            </span>
+            {mapExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {mapExpanded && (
+            <div style={{ padding: '0 0.75rem 0.75rem' }}>
+              <WorkerWorkSiteMap plans={myPlans} risks={myRisks} allZones={allZones} height={240} showLegend />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginBottom: '1rem' }}>
+          <button
+            type="button"
+            onClick={() => { saveShowMapOnHome(true); setMapExpanded(true); }}
+            style={{
+              width: '100%',
+              padding: '0.6rem',
+              background: 'white',
+              border: '1px dashed #cbd5e1',
+              borderRadius: '8px',
+              color: '#64748b',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            <Map size={18} /> 지도 보기
+          </button>
+        </div>
+      )}
 
       {/* 메인 그리드 레이아웃 (2열 구조) */}
       <div style={{ 
@@ -129,8 +234,8 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
                 }}>
                   {mainPlan.work_type}
                 </div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: '1.3' }}>
-                  {mainPlan.description && mainPlan.description.length > 15 ? mainPlan.description.substring(0, 15) + '...' : mainPlan.description}
+                <div style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: '1.35', wordBreak: 'keep-all' }}>
+                  {mainPlan.description || ''}
                 </div>
                 {/* 위험도 표시 (High/Medium) */}
                 {mainPlan.calculated_risk_score >= 50 && (
@@ -426,6 +531,15 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>금일 배정된 작업이 없습니다.</div>
         )}
       </SimpleModal>
+
+      <WorkerSettingsModal
+        isOpen={activeModal === 'settings'}
+        onClose={closeModal}
+        showMapOnHome={showMapOnHome}
+        mapExpandedByDefault={mapExpandedByDefault}
+        onShowMapOnHomeChange={saveShowMapOnHome}
+        onMapExpandedByDefaultChange={saveMapExpandedByDefault}
+      />
 
       {/* 2. 위험 지역 상세 모달 */}
       <SimpleModal
