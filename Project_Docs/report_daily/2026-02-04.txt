@@ -21,37 +21,45 @@ B. 데이터베이스 시딩 고도화 (Incremental Seeding) - [완료]
    - `db_lifecycle_manager` 스킬 업데이트: 증분 시딩 원칙 명문화.
 
 ============================================================
-2. 금일 오후 업무 (PM) - [계획]
+2. 금일 오후 업무 (PM) - [완료]
 ============================================================
-A. 지도 API 연동 (Map Integration)
-   - 네이버 지도 API 클라이언트 ID 발급 및 환경변수 설정
-   - MapContainer 컴포넌트 구현 및 대시보드 연동
+A. 작업 안전 관리 고도화 (Safety Resource Management) - [완료]
+   - [Model] DailyWorkPlan 모델 확장: 작업별 장비 제외/추가 ID 컬럼 추가.
+   - [Data] 정예 안전 장비 15종 정규화: PPE, 중장비, 공구 등 핵심 장비 데이터 구축.
+   - [Data] 시딩 로직 최적화: `reset_scenario.py`를 통해 모든 공종과 장비의 N:M 매핑 재구성.
 
-B. 출역 관리(Attendance) 대시보드 연동 - [완료]
+B. 근로자 대시보드 UI/UX 개선 - [완료]
+   - [Map] 지도 중첩 표시 오류 수정: 작업 구역과 위험 구역이 일치할 경우의 필드 매핑(zone_id) 정정.
+   - [UI] 인터랙티브 체크리스트 구현: 보호구 착용 및 안전 수칙 확인을 위한 체크박스 UI 도입.
+   - [API] 맞춤형 안전정보 자동 생성: 근로자의 금일 공종에 기반한 전용 안전 수칙을 '일일 안전정보'에 자동 노출.
+
+C. 출역 관리(Attendance) 대시보드 연동 - [완료]
    - 오늘 및 과거 출역 현황 리스트 조회 API 연동.
    - 대시보드 내 출역 명단 위젯 구현 (AttendanceListWidget).
 
-C. 작업 계획 프로세스 (Work Plan) 시작
-   - 작업 템플릿 DB 시딩
-   - 내일의 작업 등록 화면 구현 (Phase 2 진입)
+D. 작업 계획 프로세스 (Work Plan) 안정화 - [완료]
+   - DailyWorkPlan CRUD API와 신규 안전 장비 모델 연동 완료.
+   - 템플릿 기반 리스크 스코어 계산 로직 검증.
 
 ============================================================
-3. 특이사항 및 이슈 해결 (DB Unicode Escaping)
+3. 특이사항 및 이슈 해결
 ============================================================
-- 이슈: DB 내 JSON/JSONB 컬럼에 한글 데이터 저장 시 유니코드(\uXXXX)로 이스케이프되어 가독성 저하.
-- 원인 분석:
-  1. SQLAlchemy의 json_serializer 설정이 asyncpg 드라이버에서 무시됨.
-  2. Raw SQL 사용 시 수동으로 json.dumps()를 사용하면서 기본값(ensure_ascii=True) 적용.
-- 해결 과정:
-  1. back/database.py: SQLAlchemy 엔진 설정에 전역 json_serializer(ensure_ascii=False) 적용.
-  2. Hybrid DB Pattern 최적화: 서비스 로직은 Raw SQL 기반으로, 인프라/시딩은 ORM 기반으로 역할 분담.
-  3. reset_scenario.py: 모든 시딩 로직을 ORM 방식으로 전환하여 엔진 레벨의 안전한 직렬화 보장.
-  4. reset_scenario.py: 삭제 대상 테이블 목록에 work_templates 누락 수정 및 실행부(asyncio.run) 추가.
-- 결과: DB 내 모든 한글 데이터가 UTF-8 문자열 그대로 저장되어 DBeaver 등에서 가독성 확보.
+- 이슈 1: DB Unicode Escaping (해결)
+  - 원인: SQLAlchemy 엔진의 JSON 직렬화 설정 미흡 및 Raw SQL의 dumps 파라미터 누락.
+  - 해결: asyncpg 대응 전역 serializer 적용으로 DB 내 한글 가독성 확보.
+
+- 이슈 2: DailyWorkPlan AttributeError (해결)
+  - 원인: 라우터/스키마에는 정의된 필드가 실제 DB 모델(model.py)에는 누락됨.
+  - 해결: DailyWorkPlan 및 SafetyResource 모델에 누락된 컬럼(excluded_ids 등) 추가 및 시드 데이터 동기화.
+
+- 이슈 3: 지도 구역 색상 미표시 (해결)
+  - 원인: 프론트엔드 지도 컴포넌트가 요구하는 `zone_id` 대신 `id` 필드를 백엔드에서 전송함.
+  - 해결: 작업자용 위험 지역 조회 API 응답에 `zone_id` 명시적 추가.
 
 ============================================================
 4. 익일 계획
 ============================================================
-- 위험 경고 엔진 (Risk Engine) 로직 구현.
+- 위험 경고 엔진 (Risk Engine) 로직 심화 구현.
 - 현장 위험도 시각화 (히트맵 등).
-- 지도 API 실연동.
+- 관리자용 위험 지역 설정 UI 고도화.
+- 실제 현장 도면(Blueprint) 업로드 및 지도 오버레이 테스트.

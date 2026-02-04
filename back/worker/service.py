@@ -86,6 +86,7 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
         level = (danger_zones[0].get("risk_type") or z.get("level") or "CAUTION")
         result.append({
             "id": z["id"],
+            "zone_id": z["id"], # 프론트엔드 호환용
             "name": z["name"],
             "type": z.get("type"),
             "level": level,
@@ -160,22 +161,48 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
     except Exception as e:
         print(f"⚠️ Emergency Alert Table Error: {e}")
         
-    # 4. 안전정보 (Safe Call)
+    # 4. 안전정보 & 작업 안전 수칙 결합
     try:
+        my_infos = []
+        
+        # (A) 금일 배정된 작업 기반의 '전용 안전 수칙' 생성
+        my_work = await get_my_work_today(user_id)
+        if my_work:
+            ppe_list = my_work.get("required_ppe") or []
+            chk_list = my_work.get("checklist_items") or []
+            
+            # 내용을 리스트형태의 텍스트로 변환
+            content = "이 공정은 사고 위험이 있는 작업입니다. 아래 수칙을 반드시 준수하세요.\n\n"
+            if ppe_list:
+                content += "[필수 보호구]\n- " + "\n- ".join(ppe_list) + "\n\n"
+            if chk_list:
+                content += "[안전 체크리스트]\n- " + "\n- ".join(chk_list)
+            
+            my_infos.append({
+                "id": -1, # 가상 ID
+                "title": f"🛡️ {my_work['work_type']} 필수 안전 수칙",
+                "content": content,
+                "date": today.isoformat(),
+                "type": "TASK_SAFETY"
+            })
+
+        # (B) 관리자가 등록한 공통 안전정보 조회
         if worker:
             infos = await get_daily_safety_infos(today)
-            my_infos = []
             worker_id_str = str(worker["id"])
             for info in infos:
-                target_workers = info.get("is_read_by_worker") or ""
-                if worker_id_str in target_workers:
+                target_workers = str(info.get("is_read_by_worker") or "")
+                # 콤마로 구분된 리스트일 수 있으므로 유연하게 체크
+                if worker_id_str in [w.strip() for w in target_workers.split(",") if w.strip()]:
                     my_infos.append({
                         "id": info["id"],
                         "title": info["title"],
                         "content": info["content"],
-                        "date": info["date"]
+                        "date": info["date"],
+                        "type": "GENERAL"
                     })
-            result["safety_infos"] = my_infos
+        
+        result["safety_infos"] = my_infos
     except Exception as e:
         print(f"⚠️ Safety Info Error: {e}")
 

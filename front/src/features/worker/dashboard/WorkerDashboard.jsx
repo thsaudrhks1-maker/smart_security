@@ -479,49 +479,80 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
               </div>
             </div>
 
-            {detailPlan.required_ppe && detailPlan.required_ppe.length > 0 && (
+            {/* 🛡️ 필수 보호구 체크리스트 */}
+            {detailPlan.required_resources && detailPlan.required_resources.length > 0 ? (
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: '#3b82f6' }}>🛡️ 필수 보호구</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {detailPlan.required_ppe.map((item, i) => (
-                    <span key={i} style={{ background: '#eff6ff', color: '#3b82f6', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', border: '1px solid #bfdbfe' }}>
-                      {item}
-                    </span>
+                <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                   <Shield size={18} /> 필수 보호구 착용 확인
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {detailPlan.required_resources.map((res, i) => (
+                    <label key={res.id || i} style={{ 
+                      display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer'
+                    }}>
+                      <input type="checkbox" style={{ width: '18px', height: '18px' }} />
+                      <div style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: '600' }}>{res.name}</div>
+                    </label>
                   ))}
                 </div>
               </div>
+            ) : (
+                detailPlan.required_ppe && detailPlan.required_ppe.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Shield size={18} /> 필수 보호구 확인
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {detailPlan.required_ppe.map((item, i) => (
+                                <span key={i} style={{ background: '#eff6ff', color: '#3b82f6', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', fontWeight: '600' }}>
+                                    {item}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )
             )}
 
+            {/* ✅ 안전 점검 리스트 */}
             {detailPlan.checklist_items && detailPlan.checklist_items.length > 0 && (
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontWeight: '700', marginBottom: '0.5rem', color: '#10b981' }}>✅ 안전 점검 리스트</div>
-                <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                   <CheckCircle size={18} /> 안전 점검 리스트
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {detailPlan.checklist_items.map((item, i) => (
-                    <li key={i} style={{ marginBottom: '4px', fontSize: '0.9rem', color: '#334155' }}>{item}</li>
+                    <label key={i} style={{ 
+                      display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7', cursor: 'pointer'
+                    }}>
+                      <input type="checkbox" style={{ width: '18px', height: '18px', marginTop: '2px' }} />
+                      <div style={{ fontSize: '0.9rem', color: '#166534', fontWeight: '500', lineHeight: '1.4' }}>{item}</div>
+                    </label>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
 
+            {/* ⚠️ 주의: 위험 요소 */}
             {detailPlan.daily_hazards && detailPlan.daily_hazards.length > 0 && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '1rem' }}>
-                <div style={{ fontWeight: '700', marginBottom: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertTriangle size={18} />
-                  ⚠️ 주의: 위험 요소
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '1.25rem' }}>
+                <div style={{ fontWeight: '800', marginBottom: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={20} />
+                  오늘의 위험 요인
                 </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {detailPlan.daily_hazards.map((hazard, i) => (
-                    <span key={i} style={{
-                      background: '#fee2e2',
+                    <div key={i} style={{
+                      background: 'white',
                       color: '#991b1b',
-                      padding: '6px 10px',
-                      borderRadius: '6px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
                       fontSize: '0.85rem',
-                      fontWeight: '600',
-                      border: '1px solid #fca5a5'
+                      fontWeight: '700',
+                      border: '1px solid #fca5a5',
+                      boxShadow: '0 1px 2px rgba(220, 38, 38, 0.05)'
                     }}>
                       {hazard}
-                    </span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -630,11 +661,25 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
         {dashboardInfo?.safety_infos && dashboardInfo.safety_infos.length > 0 ? (
            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
              {dashboardInfo.safety_infos.map((info, idx) => (
-               <div key={idx} style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', padding: '1rem' }}>
-                 <div style={{ fontWeight: '700', color: '#10b981', marginBottom: '0.75rem', fontSize: '1rem' }}>
+               <div key={idx} style={{ 
+                 background: info.type === 'TASK_SAFETY' ? '#f0f9ff' : '#f0fdf4', 
+                 border: info.type === 'TASK_SAFETY' ? '1px solid #bae6fd' : '1px solid #86efac', 
+                 borderRadius: '8px', 
+                 padding: '1rem' 
+               }}>
+                 <div style={{ 
+                   fontWeight: '800', 
+                   color: info.type === 'TASK_SAFETY' ? '#0369a1' : '#10b981', 
+                   marginBottom: '0.75rem', 
+                   fontSize: '1rem',
+                   display: 'flex',
+                   alignItems: 'center',
+                   gap: '6px'
+                 }}>
+                   {info.type === 'TASK_SAFETY' ? <Shield size={18} /> : <Bell size={18} />}
                    {info.title}
                  </div>
-                 <div style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
+                 <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
                    {info.content}
                  </div>
                </div>
