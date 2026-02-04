@@ -12,7 +12,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// 지도 클릭 이벤트 핸들러 컴포넌트
+// 역지오코딩 (좌표 → 주소, Nominatim)
+async function reverseGeocode(lat, lng) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=ko`,
+      { headers: { 'Accept-Language': 'ko' } }
+    );
+    const data = await res.json();
+    return data?.display_name || null;
+  } catch {
+    return null;
+  }
+}
+
+// 지도 클릭 이벤트 핸들러 컴포넌트 (클릭 시 역지오코딩 후 주소까지 콜백)
 function LocationMarker({ onLocationSelect }) {
   const [position, setPosition] = useState(null);
 
@@ -21,7 +35,10 @@ function LocationMarker({ onLocationSelect }) {
       const { lat, lng } = e.latlng;
       setPosition([lat, lng]);
       if (onLocationSelect) {
-        onLocationSelect(lat, lng);
+        onLocationSelect(lat, lng, null);
+        reverseGeocode(lat, lng).then((address) => {
+          if (address) onLocationSelect(lat, lng, address);
+        });
       }
     },
   });
@@ -39,15 +56,15 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
     initialLat && initialLng ? [initialLat, initialLng] : null
   );
 
-  // 위치 선택 핸들러
-  const handleLocationSelect = (lat, lng) => {
+  // 위치 선택 핸들러 (주소 있으면 함께 전달: 지도 클릭 시 역지오코딩 결과)
+  const handleLocationSelect = (lat, lng, address = null) => {
     setSelectedCoords([lat, lng]);
     if (onLocationSelect) {
-      onLocationSelect(lat, lng);
+      onLocationSelect(lat, lng, address);
     }
   };
 
-  // 주소 검색 (Nominatim API 사용 - 무료)
+  // 주소 검색 (Nominatim API 사용 - 무료, 검색 결과 주소를 그대로 부모에 전달)
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
@@ -56,7 +73,6 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
     }
 
     try {
-      // OpenStreetMap Nominatim API (무료)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           searchQuery
@@ -65,12 +81,12 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
       const data = await response.json();
 
       if (data && data.length > 0) {
-        const { lat, lon } = data[0];
+        const { lat, lon, display_name } = data[0];
         const newCenter = [parseFloat(lat), parseFloat(lon)];
         setCenter(newCenter);
         setSelectedCoords(newCenter);
         if (onLocationSelect) {
-          onLocationSelect(parseFloat(lat), parseFloat(lon));
+          onLocationSelect(parseFloat(lat), parseFloat(lon), display_name || null);
         }
       } else {
         alert('주소를 찾을 수 없습니다. 더 구체적으로 입력해주세요.');

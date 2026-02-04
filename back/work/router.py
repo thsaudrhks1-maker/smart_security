@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from datetime import datetime as dt, date as dt_date
 
 from back.database import get_db
 from back.auth.dependencies import get_current_user
@@ -18,6 +19,17 @@ async def get_work_templates(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(WorkTemplate))
     return result.scalars().all()
 
+def _parse_date(value):
+    """str 'YYYY-MM-DD' -> date. PostgreSQL DATE 컬럼 비교용."""
+    if value is None:
+        return None
+    if isinstance(value, dt_date):
+        return value
+    if isinstance(value, str):
+        return dt.strptime(value, "%Y-%m-%d").date()
+    return value
+
+
 # --- Daily Work Plans ---
 @router.get("/work/plans", response_model=list[DailyWorkPlanRead])
 async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSession = Depends(get_db)):
@@ -28,7 +40,7 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
     )
     
     if date:
-        query = query.where(DailyWorkPlan.date == date)
+        query = query.where(DailyWorkPlan.date == _parse_date(date))
     if site_id:
         query = query.where(DailyWorkPlan.site_id == site_id)
         
@@ -57,6 +69,7 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
             date=p.date,
             description=p.description,
             equipment_flags=p.equipment_flags,
+            daily_hazards=p.daily_hazards or [],
             status=p.status,
             calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
             created_at=p.created_at,
@@ -67,27 +80,21 @@ async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSessio
             allocations=alloc_list
         ))
     return response
-    
+
 @router.get("/work/my-plans", response_model=list[DailyWorkPlanRead])
 async def get_my_today_plans(
-    date: str = None, 
-    current_user = Depends(get_current_user), # User 타입 힌트 생략 (순환 참조 방지)
+    date: str = None,
+    current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if not date:
-        from datetime import date as dt_date
-        date = dt_date.today().isoformat()
-        
-    # Query: My Allocations -> Plans
-    # (Select DailyWorkPlan where id IN (select plan_id from allocations where worker_id = :me) AND date = :date)
-    
-    # 조인으로 한 번에 가져오기
+    plan_date = dt_date.today() if not date else _parse_date(date)
+
     query = (
         select(DailyWorkPlan)
         .join(WorkerAllocation, DailyWorkPlan.id == WorkerAllocation.plan_id)
         .where(
             WorkerAllocation.worker_id == current_user.id,
-            DailyWorkPlan.date == date
+            DailyWorkPlan.date == plan_date
         )
         .options(
             selectinload(DailyWorkPlan.zone),
@@ -120,6 +127,7 @@ async def get_my_today_plans(
             date=p.date,
             description=p.description,
             equipment_flags=p.equipment_flags,
+            daily_hazards=p.daily_hazards or [],
             status=p.status,
             calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
             created_at=p.created_at,
@@ -157,14 +165,16 @@ async def create_work_plan(plan: DailyWorkPlanCreate, db: AsyncSession = Depends
     # Cap at 100
     risk = min(risk, 100)
     
-    # 4. Create Plan
+    # 4. Create Plan (date는 DB DATE 타입이므로 date 객체로 변환)
+    plan_date = _parse_date(plan.date)
     db_plan = DailyWorkPlan(
         site_id=plan.site_id,
         zone_id=plan.zone_id,
         template_id=plan.template_id,
-        date=plan.date,
+        date=plan_date,
         description=plan.description,
         equipment_flags=plan.equipment_flags,
+        daily_hazards=plan.daily_hazards if getattr(plan, "daily_hazards", None) else None,
         status=plan.status,
         calculated_risk_score=risk
     )
@@ -191,6 +201,7 @@ async def create_work_plan(plan: DailyWorkPlanCreate, db: AsyncSession = Depends
         date=db_plan.date,
         description=db_plan.description,
         equipment_flags=db_plan.equipment_flags,
+        daily_hazards=db_plan.daily_hazards or [],
         status=db_plan.status,
         calculated_risk_score=db_plan.calculated_risk_score,
         created_at=db_plan.created_at,

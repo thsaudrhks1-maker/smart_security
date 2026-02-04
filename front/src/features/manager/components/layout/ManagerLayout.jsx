@@ -5,12 +5,13 @@ import {
   Briefcase, 
   Users, 
   ClipboardCheck, 
-  ClipboardList, // NEW
+  ClipboardList,
   LogOut, 
   HardHat,
   FileText,
   ShieldAlert,
   MapPin,
+  Map,
   GraduationCap,
   Megaphone,
   Bell
@@ -23,7 +24,8 @@ const ManagerLayout = () => {
 
   const menu = [
     { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
-    { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' }, // NEW
+    { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' },
+    { label: '작업 위치', icon: Map, path: '/manager/locations' },
     { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
     { label: '근로자 관리', icon: Users, path: '/manager/workers' },
     { label: '출역 관리', icon: ClipboardCheck, path: '/manager/attendance' },

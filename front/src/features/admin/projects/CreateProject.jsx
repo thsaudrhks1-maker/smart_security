@@ -6,22 +6,31 @@ import { MapPin, Calendar, Building2, Save, X, Plus, UserPlus } from 'lucide-rea
 import LocationPicker from '../components/common/LocationPicker'; // 지도 컴포넌트 추가
 import './CreateProject.css';
 
+// 오늘 날짜 YYYY-MM-DD
+const todayStr = () => new Date().toISOString().slice(0, 10);
+// 오늘 기준 6개월 뒤 YYYY-MM-DD
+const sixMonthsLaterStr = () => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 6);
+  return d.toISOString().slice(0, 10);
+};
+
 const CreateProject = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
-  // 폼 데이터
+  // 폼 데이터 (착공일=오늘, 준공예정일=6개월 뒤 기본값)
   const [formData, setFormData] = useState({
     name: '',
     location_address: '',
-    location_lat: null, // 위도 추가
-    location_lng: null, // 경도 추가
+    location_lat: null,
+    location_lng: null,
     client_company: '',     
-    client_id: null, // 발주처 ID 추가
+    client_id: null,
     constructor_company: '', 
-    constructor_id: null, // 시공사 ID 추가
-    start_date: '',
-    end_date: '',
+    constructor_id: null,
+    start_date: todayStr(),
+    end_date: sixMonthsLaterStr(),
     project_type: '건축',   
     budget_amount: 0,
     partner_ids: [], // 협력사 ID 목록 추가
@@ -44,12 +53,13 @@ const CreateProject = () => {
   const [isDirectClient, setIsDirectClient] = useState(false);
   const [isDirectConstructor, setIsDirectConstructor] = useState(false);
 
-  // 지도 관련 로직 (클릭 시 좌표 갱신)
-  const handleMapClick = (lat, lng) => {
+  // 지도 클릭/검색 시 좌표 + 주소(역지오코딩 또는 검색 결과) 반영 → 현장 주소 자동 기입
+  const handleMapClick = (lat, lng, address = null) => {
     setFormData(prev => ({
       ...prev,
       location_lat: lat,
-      location_lng: lng
+      location_lng: lng,
+      ...(address != null && address !== '' ? { location_address: address } : {})
     }));
   };
 
@@ -482,6 +492,9 @@ const CreateProject = () => {
 
           {/* 지도 클릭 좌표 설정 UI */}
           {/* 실제 지도 라이브러리 연동 (LocationPicker) */}
+          <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem' }}>
+            지도를 클릭하거나 주소를 검색하면 위 현장 주소에 자동으로 기입됩니다.
+          </p>
           <div style={{ marginTop: '1rem' }}>
             <LocationPicker 
               onLocationSelect={handleMapClick} 
@@ -489,6 +502,9 @@ const CreateProject = () => {
               initialLng={formData.location_lng}
             />
           </div>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.75rem' }}>
+            GPS 기반 도면은 프로젝트 저장 후 [프로젝트 상세 → 현장 관리]에서 업로드할 수 있습니다. 작업 구역·위험 구역 표시는 추후 도면 위 영역 지정 기능으로 확장 예정입니다.
+          </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
           <div className="form-group">

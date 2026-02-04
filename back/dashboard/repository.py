@@ -1,6 +1,17 @@
 from back.database import fetch_all, fetch_one
 from datetime import datetime
 
+
+def _to_date(value):
+    if value is None:
+        return None
+    if hasattr(value, "year"):
+        return value
+    if isinstance(value, str):
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    return value
+
+
 class DashboardRepository:
     """
     SQL-First Repository for Dashboard
@@ -17,7 +28,7 @@ class DashboardRepository:
             WHERE dp.site_id = :site_id 
               AND dp.date = :date
         """
-        result = await fetch_one(sql, {"site_id": site_id, "date": date})
+        result = await fetch_one(sql, {"site_id": site_id, "date": _to_date(date)})
         return result['cnt'] if result else 0
 
     @staticmethod
@@ -30,7 +41,7 @@ class DashboardRepository:
             WHERE dp.site_id = :site_id 
               AND dp.date = :date
         """
-        return await fetch_all(sql, {"site_id": site_id, "date": date})
+        return await fetch_all(sql, {"site_id": site_id, "date": _to_date(date)})
 
     @staticmethod
     async def get_today_worker_list_detailed(site_id: int, date: str):
@@ -57,4 +68,4 @@ class DashboardRepository:
                 w.trade, 
                 w.name
         """
-        return await fetch_all(sql, {"site_id": site_id, "date": date})
+        return await fetch_all(sql, {"site_id": site_id, "date": _to_date(date)})

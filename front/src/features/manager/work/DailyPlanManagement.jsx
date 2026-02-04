@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { workApi } from '../../../api/workApi';
 import { getMyWorkers } from '../../../api/managerApi';
-import apiClient from '../../../api/client'; // zone api 호출용
-import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { safetyApi } from '../../../api/safetyApi';
+import apiClient from '../../../api/client';
+import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, X, ShieldAlert } from 'lucide-react';
+
+const RISK_TYPES = [
+  { value: 'HEAVY_EQUIPMENT', label: '중장비' },
+  { value: 'FIRE', label: '화재' },
+  { value: 'FALL', label: '낙하물' },
+  { value: 'ETC', label: '기타' },
+];
 
 const DailyPlanManagement = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [dangerZones, setDangerZones] = useState([]);
+  const [dangerForm, setDangerForm] = useState({ zone_id: '', risk_type: 'HEAVY_EQUIPMENT', description: '' });
+  const [dangerSubmitting, setDangerSubmitting] = useState(false);
 
-  // 데이터 로딩
   const loadPlans = async () => {
     try {
       setLoading(true);
@@ -23,9 +34,58 @@ const DailyPlanManagement = () => {
     }
   };
 
+  const loadZones = async () => {
+    try {
+      const data = await safetyApi.getZones();
+      setZones(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadDangerZones = async () => {
+    try {
+      const data = await safetyApi.getDailyDangerZones(selectedDate);
+      setDangerZones(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     loadPlans();
   }, [selectedDate]);
+
+  useEffect(() => {
+    loadZones();
+  }, []);
+
+  useEffect(() => {
+    loadDangerZones();
+  }, [selectedDate]);
+
+  const handleAddDangerZone = async (e) => {
+    e.preventDefault();
+    if (!dangerForm.zone_id || !dangerForm.description.trim()) {
+      alert('구역과 위험 설명을 입력해주세요.');
+      return;
+    }
+    setDangerSubmitting(true);
+    try {
+      await safetyApi.createDailyDangerZone({
+        date: selectedDate,
+        zone_id: parseInt(dangerForm.zone_id),
+        risk_type: dangerForm.risk_type,
+        description: dangerForm.description.trim(),
+      });
+      setDangerForm({ zone_id: '', risk_type: 'HEAVY_EQUIPMENT', description: '' });
+      loadDangerZones();
+    } catch (err) {
+      alert('등록 실패: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setDangerSubmitting(false);
+    }
+  };
 
   // 날짜 이동
   const handleDateChange = (days) => {
@@ -43,7 +103,7 @@ const DailyPlanManagement = () => {
           <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Calendar color="#3b82f6" size={28} /> 일일 작업 계획
           </h1>
-          <p style={{ color: '#64748b', marginTop: '5px' }}>작업 구역과 근로자를 배정하고 위험도를 관리합니다.</p>
+          <p style={{ color: '#64748b', marginTop: '5px' }}>작업 위치(구역)와 DB 작업 목록 중 하나를 선택해 근무자에게 배정합니다.</p>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -72,6 +132,66 @@ const DailyPlanManagement = () => {
         </div>
       </div>
 
+      {/* 오늘의 위험 구역 (작업자에게 데일리로 전달) */}
+      <div style={{ marginBottom: '1.5rem', padding: '1.25rem', background: '#fef3c7', borderRadius: '12px', border: '1px solid #fcd34d' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', fontWeight: '700', color: '#92400e' }}>
+          <ShieldAlert size={20} /> 그날 위험 구역 (날짜별)
+        </div>
+        <p style={{ fontSize: '0.85rem', color: '#b45309', marginBottom: '1rem' }}>
+          선택한 날짜에 특정 구역에서만 발생하는 위험(중장비, 화재 등)을 등록하면 작업자 앱에 표시됩니다.
+        </p>
+        <form onSubmit={handleAddDangerZone} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end', marginBottom: '1rem' }}>
+          <label style={{ minWidth: '140px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>구역</span>
+            <select
+              value={dangerForm.zone_id}
+              onChange={e => setDangerForm({ ...dangerForm, zone_id: e.target.value })}
+              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
+              required
+            >
+              <option value="">선택</option>
+              {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
+            </select>
+          </label>
+          <label style={{ minWidth: '100px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>유형</span>
+            <select
+              value={dangerForm.risk_type}
+              onChange={e => setDangerForm({ ...dangerForm, risk_type: e.target.value })}
+              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
+            >
+              {RISK_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: '1', minWidth: '200px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>설명</span>
+            <input
+              type="text"
+              value={dangerForm.description}
+              onChange={e => setDangerForm({ ...dangerForm, description: e.target.value })}
+              placeholder="예: 이동식 크레인 인양 작업 중 (접근 금지)"
+              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
+              required
+            />
+          </label>
+          <button type="submit" disabled={dangerSubmitting} style={{ padding: '8px 16px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: dangerSubmitting ? 'not-allowed' : 'pointer' }}>
+            {dangerSubmitting ? '등록 중...' : '추가'}
+          </button>
+        </form>
+        {dangerZones.length > 0 ? (
+          <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.9rem', color: '#78350f' }}>
+            {dangerZones.map(d => (
+              <li key={d.id} style={{ marginBottom: '4px' }}>
+                <strong>{RISK_TYPES.find(r => r.value === d.risk_type)?.label || d.risk_type}</strong> — {d.description}
+                {zones.find(z => z.id === d.zone_id) && <span style={{ color: '#92400e' }}> (구역: {zones.find(z => z.id === d.zone_id).name})</span>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다.</div>
+        )}
+      </div>
+
       {/* 작업 리스트 (Kanban Card Style) */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
@@ -95,6 +215,7 @@ const DailyPlanManagement = () => {
         <CreatePlanModal 
             onClose={() => setShowModal(false)} 
             currDate={selectedDate}
+            zones={zones}
             onSuccess={() => { setShowModal(false); loadPlans(); }} 
         />
       )}
@@ -125,9 +246,17 @@ const PlanCard = ({ plan }) => {
             <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
                 {plan.work_type}
             </h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
                 {plan.description || "상세 설명이 없습니다."}
             </p>
+            {plan.daily_hazards && plan.daily_hazards.length > 0 && (
+                <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: '#b45309', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                    <AlertTriangle size={14} />
+                    {plan.daily_hazards.map((h, i) => (
+                        <span key={i} style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: '6px' }}>{h}</span>
+                    ))}
+                </div>
+            )}
 
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
                 <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: '600' }}>배정 인원</div>
@@ -151,67 +280,95 @@ const PlanCard = ({ plan }) => {
     );
 };
 
-// 작업 등록 모달
-const CreatePlanModal = ({ onClose, currDate, onSuccess }) => {
-    // 폼 상태
+// 작업 등록 모달 (zones 부모에서 넘기면 사용, 없으면 자체 로드)
+const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null }) => {
     const [formData, setFormData] = useState({
         date: currDate,
         zone_id: '',
         template_id: '',
         description: '',
+        daily_hazards_text: '',
         equipment_flags: [],
-        worker_ids: [] // 단순화를 위해 ID만 저장
+        worker_ids: []
     });
 
-    // 데이터 소스
-    const [zones, setZones] = useState([]);
+    const [zones, setZonesState] = useState(zonesProp || []);
     const [templates, setTemplates] = useState([]);
     const [workers, setWorkers] = useState([]);
-    
+
     useEffect(() => {
-        const loadSources = async () => {
+        if (zonesProp && zonesProp.length > 0) {
+            setZonesState(zonesProp);
+            return;
+        }
+        const loadZones = async () => {
             const z = await apiClient.get('/safety/zones');
+            setZonesState(z.data || []);
+        };
+        loadZones();
+    }, [zonesProp]);
+
+    useEffect(() => {
+        const loadRest = async () => {
             const t = await workApi.getTemplates();
-            const w = await getMyWorkers(); // API 필요
-            setZones(z.data);
+            const w = await getMyWorkers();
             setTemplates(t);
             setWorkers(w);
         };
-        loadSources();
+        loadRest();
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // 데이터 변환
+        const selectedZone = zones.find(z => z.id === parseInt(formData.zone_id));
+        if (!selectedZone?.site_id) {
+            alert('작업 위치(구역)를 선택해주세요.');
+            return;
+        }
+        const daily_hazards = formData.daily_hazards_text
+            ? formData.daily_hazards_text.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
+            : [];
+        const approvedIds = formData.worker_ids.filter(id =>
+            workers.some(w => w.id === id && w.member_status === 'ACTIVE')
+        );
         const payload = {
-            site_id: 1, // 임시 고정 (로그인 유저 기준 가져와야 함)
+            site_id: selectedZone.site_id,
             zone_id: parseInt(formData.zone_id),
             template_id: parseInt(formData.template_id),
             date: formData.date,
             description: formData.description,
-            equipment_flags: [], // UI 미구현으로 빈배열
+            daily_hazards: daily_hazards.length ? daily_hazards : null,
+            equipment_flags: [],
             status: "PLANNED",
-            allocations: formData.worker_ids.map(id => ({ worker_id: parseInt(id), role: "작업자" }))
+            allocations: approvedIds.map(id => ({ worker_id: parseInt(id), role: "작업자" }))
         };
 
         try {
             await workApi.createPlan(payload);
             onSuccess();
         } catch (err) {
-            alert('등록 실패');
+            alert('등록 실패: ' + (err.response?.data?.detail || err.message));
             console.error(err);
         }
     };
+
+    const selectedZoneName = formData.zone_id ? zones.find(z => z.id === parseInt(formData.zone_id))?.name : null;
+    const selectedTemplateName = formData.template_id ? templates.find(t => t.id === parseInt(formData.template_id))?.work_type : null;
+    // 이중 승인(프로젝트 멤버 승인) 완료된 근로자만 작업 배정 가능
+    const approvableWorkers = workers.filter(w => w.member_status === 'ACTIVE');
+    const workerCount = formData.worker_ids.filter(id => approvableWorkers.some(w => w.id === id)).length;
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
             <div style={{ background: 'white', borderRadius: '12px', width: '500px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.4rem' }}>새 작업 등록</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.4rem' }}>위치 + 작업 배정</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X /></button>
                 </div>
-                
+                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>
+                    작업 위치(구역)와 DB 작업 목록 중 하나를 선택한 뒤, 배정할 근무자를 고르면 해당 날짜에 자동 배정됩니다.
+                </p>
+
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {/* 날짜 */}
                     <label>
@@ -219,23 +376,32 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess }) => {
                         <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     </label>
 
-                    {/* 구역 */}
+                    {/* 작업 위치(구역) */}
                     <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 구역</div>
+                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 위치 (구역)</div>
                         <select value={formData.zone_id} onChange={e => setFormData({...formData, zone_id: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
                             <option value="">선택하세요</option>
                             {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
                         </select>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>작업 위치 탭에서 등록한 구역입니다.</div>
                     </label>
 
-                    {/* 공종(템플릿) */}
+                    {/* 작업 목록(DB) 중 1건 선택 */}
                     <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 종류(공종)</div>
+                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 목록 (공종 1건 선택)</div>
                         <select value={formData.template_id} onChange={e => setFormData({...formData, template_id: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
                             <option value="">선택하세요</option>
                             {templates.map(t => <option key={t.id} value={t.id}>{t.work_type} (위험도: {t.base_risk_score})</option>)}
                         </select>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>DB에 등록된 작업(공종) 목록 중 하나를 선택합니다.</div>
                     </label>
+
+                    {/* 배정 요약 */}
+                    {selectedZoneName && selectedTemplateName && (
+                        <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.9rem', color: '#1e40af' }}>
+                            <strong>배정 요약:</strong> 근무자 {workerCount}명에게 <strong>위치 [{selectedZoneName}]</strong> + <strong>작업 [{selectedTemplateName}]</strong> 을 배정합니다.
+                        </div>
+                    )}
 
                     {/* 내용 */}
                     <label>
@@ -243,51 +409,71 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess }) => {
                         <input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="예: 2층 A구역 벽체 미장 작업" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     </label>
 
-                    {/* 작업자 (Multi Select 대용 - 체크박스 리스트) */}
+                    {/* 그날 위험요소 (작업자에게 데일리로 전달) */}
+                    <label>
+                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <AlertTriangle size={16} color="#f59e0b" /> 그날 위험요소
+                        </div>
+                        <textarea
+                            value={formData.daily_hazards_text}
+                            onChange={e => setFormData({ ...formData, daily_hazards_text: e.target.value })}
+                            placeholder="쉼표 또는 줄바꿈으로 구분 (예: 화재위험, 낙하물 주의, 고소 작업)"
+                            rows={2}
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                        />
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>작업자 앱에 오늘의 주의사항으로 표시됩니다.</div>
+                    </label>
+
+                    {/* 근무자 선택: 승인 완료된 사람만 배정 가능 */}
                     <div>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업자 배정</div>
+                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>근무자 (배정 대상)</div>
+                        <div style={{ fontSize: '0.75rem', color: '#2563eb', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            ✓ 승인 완료된 근로자만 배정할 수 있습니다.
+                        </div>
                         <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px', maxHeight: '150px', overflowY: 'auto' }}>
-                            {workers.map(w => {
-                                const isSelected = formData.worker_ids.includes(w.id);
-                                return (
-                                    <div 
-                                        key={w.id} 
-                                        style={{ 
-                                            display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', 
-                                            marginBottom: '4px',
-                                            borderRadius: '6px',
-                                            background: isSelected ? '#eff6ff' : 'transparent',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s'
-                                        }}
-                                        onClick={() => {
-                                            const newIds = isSelected 
-                                                ? formData.worker_ids.filter(id => id !== w.id)
-                                                : [...formData.worker_ids, w.id];
-                                            setFormData({...formData, worker_ids: newIds});
-                                        }}
-                                    >
-                                        <input 
-                                            type="checkbox" 
-                                            checked={isSelected}
-                                            readOnly
-                                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                                        />
-                                        <span style={{ 
-                                            color: '#1e293b', // 진한 색상으로 변경
-                                            fontSize: '0.95rem',
-                                            fontWeight: isSelected ? '600' : '400'
-                                        }}>
-                                            {w.full_name} <span style={{ color: '#64748b', fontSize: '0.85rem' }}>({w.job_type})</span>
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                            {approvableWorkers.length === 0 ? (
+                                <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+                                    승인 완료된 근로자가 없습니다. <br />근로자 관리에서 승인을 완료한 후 배정해주세요.
+                                </div>
+                            ) : (
+                                approvableWorkers.map(w => {
+                                    const isSelected = formData.worker_ids.includes(w.id);
+                                    return (
+                                        <div 
+                                            key={w.id} 
+                                            style={{ 
+                                                display: 'flex', alignItems: 'center', gap: '10px', padding: '8px', 
+                                                marginBottom: '4px',
+                                                borderRadius: '6px',
+                                                background: isSelected ? '#eff6ff' : 'transparent',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onClick={() => {
+                                                const newIds = isSelected 
+                                                    ? formData.worker_ids.filter(id => id !== w.id)
+                                                    : [...formData.worker_ids, w.id];
+                                                setFormData({...formData, worker_ids: newIds});
+                                            }}
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                checked={isSelected}
+                                                readOnly
+                                                style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                            />
+                                            <span style={{ fontSize: '0.95rem', fontWeight: isSelected ? '600' : '400', color: '#1e293b' }}>
+                                                {w.full_name} <span style={{ color: '#64748b', fontSize: '0.85rem' }}>({w.job_type})</span>
+                                            </span>
+                                        </div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
 
                     <button type="submit" style={{ marginTop: '1rem', background: '#3b82f6', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}>
-                        등록하기
+                        {workerCount > 0 ? `위치+작업 배정 (${workerCount}명)` : '등록하기'}
                     </button>
                 </form>
             </div>
