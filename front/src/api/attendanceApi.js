@@ -9,6 +9,16 @@ export const getMyTodayAttendance = async () => {
 };
 
 /**
+ * 나의 출근 내역 (기간별) - 작업자 출근현황 화면용
+ * @param {string} startDate YYYY-MM-DD
+ * @param {string} endDate YYYY-MM-DD
+ */
+export const getMyAttendance = async (startDate, endDate) => {
+    const response = await api.get('/api/attendance/my', { params: { start: startDate, end: endDate } });
+    return response.data;
+};
+
+/**
  * 출근 하기
  * @param {Object} data { project_id, work_type_id(옵션), check_in_method }
  */
@@ -34,18 +44,5 @@ export const checkOut = async (attendanceId) => {
 export const getProjectAttendance = async (projectId, date = null) => {
     const url = date ? `/api/attendance/project/${projectId}?date=${date}` : `/api/attendance/project/${projectId}`;
     const response = await api.get(url);
-    return response.data;
-};
-
-/**
- * 나의 출근 내역 조회 (작업자용, 기간별)
- * @param {string} start YYYY-MM-DD (옵션, 미지정 시 최근 7일)
- * @param {string} end YYYY-MM-DD (옵션, 미지정 시 오늘)
- */
-export const getMyAttendance = async (start = null, end = null) => {
-    const params = {};
-    if (start) params.start = start;
-    if (end) params.end = end;
-    const response = await api.get('/worker/my-attendance', { params });
     return response.data;
 };

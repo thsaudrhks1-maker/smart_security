@@ -9,7 +9,7 @@ from back.company.model import Company, ProjectParticipant, Site
 from back.project.model import Project, ProjectMember
 from back.attendance.model import Attendance, AttendanceStatus
 from back.work.model import Weather, WorkTemplate, DailyWorkPlan, WorkerAllocation, SafetyResource, TemplateResourceMap
-from back.safety.model import Zone
+from back.safety.model import Zone, DailyDangerZone
 from seed.safety_resource_data import RESOURCES as SAFETY_RESOURCE_ROWS
 
 async def reset_and_seed():
@@ -277,21 +277,20 @@ async def reset_and_seed():
         await db.flush()  # ID 확보
 
         # 공정(템플릿) ↔ 장비 연결 (template_resource_map)
-        # templates[0]=철거, [1]=조적, [2]=전기배선, [3]=수도배관, [4]=목공, [5]=타일, [6]=도장, [7]=도배
-        # resources: 0안전모,1안전화,2방진,3보안경,4절연장갑,5일반장갑,6그네안전대,7착탈안전대,8방독,9화학장갑,10무릎,11귀마개,12조끼,13용접면,14고글,15호이스트,16안전망,17소화기, 18덤프,19굴착기,20타워크레인,21이동크레인,22지게차,23펌프카, 24A사다리,25비계,26드릴,27용접기,28리프트,29타카
-        def res(*idx): return [resources[i] for i in idx]
+        # 0안전모, 1안전화, 2방진, 3보안경, 4절연장갑, 5코팅장갑, 6안전대, 7방독, 8화학장갑, 9용접면, 10소화기, 11굴착기, 12A사다리, 13드릴, 14리프트
         def link(t_idx, r_indices):
             for i in r_indices:
                 db.add(TemplateResourceMap(template_id=templates[t_idx].id, resource_id=resources[i].id))
-        link(0, [0, 1, 2, 3, 17, 19, 24])   # 철거: 안전모,안전화,방진,보안경,소화기,굴착기,A사다리
-        link(1, [0, 1, 5, 24, 25])          # 조적: 안전모,안전화,장갑,A사다리,비계
-        link(2, [0, 1, 4, 26, 28])          # 전기배선: 안전모,안전화,절연장갑,드릴,리프트
-        link(3, [0, 1, 13, 27])              # 수도배관: 안전모,안전화,용접면,용접기
-        link(4, [0, 1, 2, 29])               # 목공: 안전모,안전화,방진,타카
-        link(5, [0, 5, 10, 24])              # 타일: 안전모,장갑,무릎보호대,A사다리
-        link(6, [8, 9, 14, 17])             # 도장: 방독,화학장갑,고글,소화기
-        link(7, [1, 5, 24])                  # 도배/바닥재: 안전화,장갑,A사다리
-        await db.commit()  # resources + template_resource_map 한꺼번에
+
+        link(0, [0, 1, 2, 3, 10, 11, 12])  # 철거: 안전모,안전화,방진,보안경,소화기,굴착기,A사다리
+        link(1, [0, 1, 5, 12])             # 조적: 안전모,안전화,코팅장갑,A사다리
+        link(2, [0, 1, 4, 13, 14])         # 전기배선: 안전모,안전화,절연장갑,드릴,리프트
+        link(3, [0, 1, 9, 10])             # 수도배관: 안전모,안전화,용접면,소화기
+        link(4, [0, 1, 2, 5])              # 목공: 안전모,안전화,방진,코팅장갑
+        link(5, [0, 5, 12])                # 타일: 안전모,코팅장갑,A사다리
+        link(6, [7, 8, 10])                # 도장: 방독,화학장갑,소화기
+        link(7, [1, 5, 12])                # 도배: 안전화,코팅장갑,A사다리
+        await db.commit()
 
         print("\n🎉 모든 데이터 초기화 및 연동 완료! (소규모 현장 모드)")
         
@@ -323,6 +322,22 @@ async def reset_and_seed():
             WorkerAllocation(plan_id=plan_today.id, worker_id=worker3.id, role="조적 반장"), # 김철근
             WorkerAllocation(plan_id=plan_today.id, worker_id=worker4.id, role="조공")      # 이배관
         ])
+        
+        # 1-2. 오늘 작업: 1층 화장실 - 전기 배선 (박작업)
+        plan_today_bathroom = DailyWorkPlan(
+            site_id=site.id,
+            zone_id=zones[4].id,  # 화장실(남/녀)
+            template_id=templates[2].id,  # 전기 배선
+            date=today,
+            description="화장실 구역 전기 배선 및 조명 설비",
+            equipment_flags=["DRILL"],
+            daily_hazards=["미끄럼 주의", "환기 필요"],
+            status="PLANNED",
+            calculated_risk_score=45
+        )
+        db.add(plan_today_bathroom)
+        await db.flush()
+        db.add(WorkerAllocation(plan_id=plan_today_bathroom.id, worker_id=worker.id, role="전기 반장"))  # 박작업
         
         # 2. 내일 작업: 1층 화장실 - 배관 설비 (이배관)
         plan_tmr_1 = DailyWorkPlan(
@@ -385,6 +400,29 @@ async def reset_and_seed():
         
         await db.commit()
         print("✅ 3일치 작업 계획 생성 완료!")
+
+        # -------------------------------------------------------------
+        # [NEW] 일일 위험 구역(DailyDangerZone) 시딩 - 위험지역 2건 (화장실 + 1곳)
+        # 박작업(user pk 4)과 같은 화장실 구역에 1건, 그 외 1건
+        # -------------------------------------------------------------
+        print("⚠️ [Step 10b] 일일 위험 구역(DailyDangerZone) 2건 추가 중...")
+        danger_zones = [
+            DailyDangerZone(
+                zone_id=zones[4].id,  # 화장실(남/녀) - 박작업(전기공) 작업 구역과 연계 테스트용
+                date=today,
+                risk_type="ETC",
+                description="화장실 구역 배관 작업 중 미끄럼·환기 주의",
+            ),
+            DailyDangerZone(
+                zone_id=zones[0].id,  # 주출입구 및 복도
+                date=today,
+                risk_type="FALL",
+                description="로비 자재 반입 중 낙하물 주의",
+            ),
+        ]
+        db.add_all(danger_zones)
+        await db.commit()
+        print("✅ 일일 위험 구역 2건 추가 완료 (화장실 구역 1건 + 주출입구 1건)")
 
 if __name__ == "__main__":
     asyncio.run(reset_and_seed())

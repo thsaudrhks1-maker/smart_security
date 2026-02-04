@@ -68,22 +68,17 @@ const AttendanceListWidget = ({ projectId }) => {
         alignItems: 'center', 
         marginBottom: '1.5rem' 
       }}>
-        <div>
-          <h3 style={{ 
-            fontSize: '1.1rem', 
-            fontWeight: '700', 
-            color: '#334155', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            margin: 0
-          }}>
-            <Users size={20} color="#6366f1" /> 실시간 출역 현황
-          </h3>
-          <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
-            사고·분쟁 시 책임 소재 확인, 근무시간 증명·급여 산정 참고용
-          </p>
-        </div>
+        <h3 style={{ 
+          fontSize: '1.1rem', 
+          fontWeight: '700', 
+          color: '#334155', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          margin: 0
+        }}>
+          <Users size={20} color="#6366f1" /> 실시간 출역 현황
+        </h3>
         
         <div style={{ display: 'flex', gap: '8px' }}>
           <div style={{ 
@@ -208,8 +203,8 @@ const AttendanceListWidget = ({ projectId }) => {
                     </div>
                   </div>
 
-                  {/* 상태 및 출근/퇴근 시간 */}
-                  <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                  {/* 시간 및 상태 */}
+                  <div style={{ textAlign: 'right' }}>
                     <div style={{ 
                       fontSize: '0.75rem', 
                       fontWeight: '600', 
@@ -218,17 +213,12 @@ const AttendanceListWidget = ({ projectId }) => {
                       background: statusStyle.bg, 
                       color: statusStyle.text,
                       display: 'inline-block',
-                      marginBottom: '6px'
+                      marginBottom: '4px'
                     }}>
                       {statusStyle.label}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#475569', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Clock size={12} /> 출근 {formatTime(item.check_in_time)}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: item.check_out_time ? '#475569' : '#94a3b8' }}>
-                        <Clock size={12} /> 퇴근 {item.check_out_time ? formatTime(item.check_out_time) : '-'}
-                      </span>
+                    <div style={{ fontSize: '0.85rem', color: '#475569', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                      <Clock size={12} /> {formatTime(item.check_in_time)}
                     </div>
                   </div>
                 </div>

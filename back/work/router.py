@@ -8,8 +8,8 @@ from back.database import get_db
 from back.auth.dependencies import get_current_user
 from sqlalchemy import delete as sql_delete
 
-from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
-from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
+from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation, SafetyResource, TemplateResourceMap
+from back.work.schema import WorkTemplateRead, WorkTemplateContentRead, SafetyResourceRead, DailyWorkPlanCreate, DailyWorkPlanRead, DailyWorkPlanUpdate, WorkerAllocationRead
 from back.safety.model import Zone
 from back.worker.repository import get_daily_danger_zones
 
@@ -20,6 +20,56 @@ router = APIRouter(tags=["work"])
 async def get_work_templates(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(WorkTemplate))
     return result.scalars().all()
+
+
+@router.get("/work/templates/contents", response_model=list[WorkTemplateContentRead])
+async def get_work_templates_contents(db: AsyncSession = Depends(get_db)):
+    """공정(작업 템플릿) 목록 + 공정별 필요 장구류(설명·안전수칙 포함). 콘텐츠 관리/열람용."""
+    q = select(WorkTemplate).options(
+        selectinload(WorkTemplate.required_resource_assocs).selectinload(TemplateResourceMap.resource)
+    )
+    res = await db.execute(q)
+    templates = res.scalars().unique().all()
+    out = []
+    for t in templates:
+        resources = []
+        for assoc in t.required_resource_assocs:
+            if assoc.resource:
+                resources.append(SafetyResourceRead(
+                    id=assoc.resource.id,
+                    name=assoc.resource.name,
+                    type=assoc.resource.type,
+                    icon=assoc.resource.icon,
+                    description=assoc.resource.description,
+                    safety_rules=assoc.resource.safety_rules or [],
+                ))
+        out.append(WorkTemplateContentRead(
+            id=t.id,
+            work_type=t.work_type,
+            base_risk_score=t.base_risk_score or 0,
+            checklist_items=t.checklist_items or [],
+            required_resources=resources,
+        ))
+    return out
+
+
+@router.get("/work/safety-resources", response_model=list[SafetyResourceRead])
+async def get_safety_resources_all(db: AsyncSession = Depends(get_db)):
+    """전체 장구류/안전공구 마스터 목록. 콘텐츠 열람 - 안전공구 리스트용."""
+    res = await db.execute(select(SafetyResource).order_by(SafetyResource.type, SafetyResource.name))
+    rows = res.scalars().all()
+    return [
+        SafetyResourceRead(
+            id=r.id,
+            name=r.name,
+            type=r.type,
+            icon=r.icon,
+            description=r.description,
+            safety_rules=r.safety_rules or [],
+        )
+        for r in rows
+    ]
+
 
 def _parse_date(value):
     """str 'YYYY-MM-DD' -> date. PostgreSQL DATE 컬럼 비교용."""
@@ -32,56 +82,163 @@ def _parse_date(value):
     return value
 
 
+def _resource_to_read(r):
+    """SafetyResource ORM -> SafetyResourceRead"""
+    if r is None:
+        return None
+    return SafetyResourceRead(
+        id=r.id,
+        name=r.name,
+        type=r.type,
+        icon=r.icon,
+        description=r.description,
+        safety_rules=r.safety_rules or [],
+    )
+
+
+async def _plan_required_resources(db: AsyncSession, plan: DailyWorkPlan) -> list:
+    """일정별 적용 안전공구: (템플릿 기본 − 제외) + 추가."""
+    excluded = set(plan.excluded_resource_ids or [])
+    # 템플릿 기본 (template.required_resource_assocs 로드되어 있어야 함)
+    from_template = []
+    if plan.template and getattr(plan.template, "required_resource_assocs", None):
+        for assoc in plan.template.required_resource_assocs:
+            if assoc.resource and assoc.resource.id not in excluded:
+                from_template.append(_resource_to_read(assoc.resource))
+    # 추가
+    additional_ids = plan.additional_resource_ids or []
+    if not additional_ids:
+        return from_template
+    res = await db.execute(select(SafetyResource).where(SafetyResource.id.in_(additional_ids)))
+    additional = [_resource_to_read(r) for r in res.scalars().all()]
+    seen = {r.id for r in from_template}
+    for r in additional:
+        if r and r.id not in seen:
+            from_template.append(r)
+            seen.add(r.id)
+    return from_template
+
+
+def _plan_to_read(p, alloc_list, required_resources: list = None):
+    """DailyWorkPlan ORM -> DailyWorkPlanRead (required_resources는 별도 계산 후 전달)."""
+    return DailyWorkPlanRead(
+        id=p.id,
+        site_id=p.site_id,
+        zone_id=p.zone_id,
+        template_id=p.template_id,
+        date=p.date,
+        description=p.description,
+        equipment_flags=p.equipment_flags,
+        daily_hazards=p.daily_hazards or [],
+        status=p.status,
+        calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
+        created_at=p.created_at,
+        zone_name=p.zone.name if p.zone else "Unknown",
+        work_type=p.template.work_type if p.template else "Unknown",
+        required_ppe=p.template.required_ppe if p.template else [],
+        checklist_items=p.template.checklist_items if p.template else [],
+        allocations=alloc_list,
+        required_resources=required_resources or [],
+        excluded_resource_ids=p.excluded_resource_ids or [],
+        additional_resource_ids=p.additional_resource_ids or [],
+    )
+
+
 # --- Daily Work Plans ---
 @router.get("/work/plans", response_model=list[DailyWorkPlanRead])
 async def get_daily_plans(date: str = None, site_id: int = None, db: AsyncSession = Depends(get_db)):
     query = select(DailyWorkPlan).options(
         selectinload(DailyWorkPlan.zone),
-        selectinload(DailyWorkPlan.template),
+        selectinload(DailyWorkPlan.template).selectinload(WorkTemplate.required_resource_assocs).selectinload(TemplateResourceMap.resource),
         selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
     )
-    
     if date:
         query = query.where(DailyWorkPlan.date == _parse_date(date))
     if site_id:
         query = query.where(DailyWorkPlan.site_id == site_id)
-        
     result = await db.execute(query)
-    plans = result.scalars().all()
-    
+    plans = result.scalars().unique().all()
+
     response = []
     for p in plans:
-        alloc_list = []
-        for a in p.allocations:
-            # Worker name 조회
-            worker_name_str = a.worker.full_name if a.worker else "Unknown"
-            
-            alloc_list.append(WorkerAllocationRead(
-                id=a.id, 
-                worker_id=a.worker_id, 
-                role=a.role,
-                worker_name=worker_name_str
-            ))
-            
-        response.append(DailyWorkPlanRead(
-            id=p.id,
-            site_id=p.site_id,
-            zone_id=p.zone_id,
-            template_id=p.template_id,
-            date=p.date,
-            description=p.description,
-            equipment_flags=p.equipment_flags,
-            daily_hazards=p.daily_hazards or [],
-            status=p.status,
-            calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
-            created_at=p.created_at,
-            zone_name=p.zone.name if p.zone else "Unknown",
-            work_type=p.template.work_type if p.template else "Unknown",
-            required_ppe=p.template.required_ppe if p.template else [],
-            checklist_items=p.template.checklist_items if p.template else [],
-            allocations=alloc_list
-        ))
+        alloc_list = [
+            WorkerAllocationRead(id=a.id, worker_id=a.worker_id, role=a.role, worker_name=a.worker.full_name if a.worker else "Unknown")
+            for a in p.allocations
+        ]
+        required_resources = await _plan_required_resources(db, p)
+        response.append(_plan_to_read(p, alloc_list, required_resources))
     return response
+
+
+@router.get("/work/plans/{plan_id}", response_model=DailyWorkPlanRead)
+async def get_work_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
+    """일일 작업 단건 조회 (적용 안전공구·제외/추가 ID 포함)."""
+    query = select(DailyWorkPlan).where(DailyWorkPlan.id == plan_id).options(
+        selectinload(DailyWorkPlan.zone),
+        selectinload(DailyWorkPlan.template).selectinload(WorkTemplate.required_resource_assocs).selectinload(TemplateResourceMap.resource),
+        selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
+    )
+    res = await db.execute(query)
+    plan = res.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="작업 계획을 찾을 수 없습니다.")
+    alloc_list = [
+        WorkerAllocationRead(id=a.id, worker_id=a.worker_id, role=a.role, worker_name=a.worker.full_name if a.worker else "Unknown")
+        for a in plan.allocations
+    ]
+    required_resources = await _plan_required_resources(db, plan)
+    return _plan_to_read(plan, alloc_list, required_resources)
+
+
+@router.patch("/work/plans/{plan_id}", response_model=DailyWorkPlanRead)
+async def update_work_plan(plan_id: int, body: DailyWorkPlanUpdate, db: AsyncSession = Depends(get_db)):
+    """일일 작업 수정 (상세·위험요소·상태·안전공구 제외/추가·배정)."""
+    query = select(DailyWorkPlan).where(DailyWorkPlan.id == plan_id).options(
+        selectinload(DailyWorkPlan.zone),
+        selectinload(DailyWorkPlan.template).selectinload(WorkTemplate.required_resource_assocs).selectinload(TemplateResourceMap.resource),
+        selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
+    )
+    res = await db.execute(query)
+    plan = res.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="작업 계획을 찾을 수 없습니다.")
+
+    if body.description is not None:
+        plan.description = body.description
+    if body.daily_hazards is not None:
+        plan.daily_hazards = body.daily_hazards
+    if body.status is not None:
+        plan.status = body.status
+    if body.excluded_resource_ids is not None:
+        plan.excluded_resource_ids = body.excluded_resource_ids
+    if body.additional_resource_ids is not None:
+        plan.additional_resource_ids = body.additional_resource_ids
+
+    if body.allocations is not None:
+        await db.execute(sql_delete(WorkerAllocation).where(WorkerAllocation.plan_id == plan_id))
+        for alloc in body.allocations:
+            db.add(WorkerAllocation(plan_id=plan_id, worker_id=alloc.worker_id, role=alloc.role or "작업자"))
+    await db.commit()
+    await db.refresh(plan)
+    # 재로드 관계 (allocations 갱신)
+    await db.refresh(plan, ["zone", "template", "allocations"])
+    for a in plan.allocations:
+        await db.refresh(a, ["worker"])
+    # template.required_resource_assocs
+    res2 = await db.execute(
+        select(DailyWorkPlan).where(DailyWorkPlan.id == plan_id).options(
+            selectinload(DailyWorkPlan.zone),
+            selectinload(DailyWorkPlan.template).selectinload(WorkTemplate.required_resource_assocs).selectinload(TemplateResourceMap.resource),
+            selectinload(DailyWorkPlan.allocations).selectinload(WorkerAllocation.worker)
+        )
+    )
+    plan = res2.scalar_one()
+    alloc_list = [
+        WorkerAllocationRead(id=a.id, worker_id=a.worker_id, role=a.role, worker_name=a.worker.full_name if a.worker else "Unknown")
+        for a in plan.allocations
+    ]
+    required_resources = await _plan_required_resources(db, plan)
+    return _plan_to_read(plan, alloc_list, required_resources)
 
 @router.get("/work/my-plans", response_model=list[DailyWorkPlanRead])
 async def get_my_today_plans(

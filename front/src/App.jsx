@@ -13,6 +13,7 @@ import ProjectList from './features/admin/projects/ProjectList';
 import CreateProject from './features/admin/projects/CreateProject';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CompanyList from './features/admin/companies/CompanyList';
+import AdminContents from './features/admin/contents/AdminContents';
 
 // 중간 관리자 (현장 소장)
 import ManagerLayout from './features/manager/components/layout/ManagerLayout';
@@ -22,7 +23,7 @@ import WorkerManagement from './features/manager/workers/WorkerManagement'; // [
 import CompanyManagement from './features/manager/companies/CompanyManagement'; // [NEW]
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkLocation from './features/manager/work/WorkLocation';
-import ManagerAttendance from './features/manager/attendance/ManagerAttendance';
+import ManagerContents from './features/manager/contents/ManagerContents';
 
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
@@ -58,6 +59,7 @@ function App() {
             <Route path="projects/create" element={<CreateProject />} />
             <Route path="projects/:id" element={<ProjectDetail />} />
             <Route path="companies" element={<CompanyList />} />
+            <Route path="contents" element={<AdminContents />} />
           </Route>
           
           {/* 2. 중간 관리자 (현장 소장) - MANAGER & ADMIN */}
@@ -75,7 +77,7 @@ function App() {
             <Route path="partners" element={<PartnerManagement />} />
             <Route path="workers" element={<WorkerManagement />} />
             <Route path="companies" element={<CompanyManagement />} />
-            <Route path="attendance" element={<ManagerAttendance />} />
+            <Route path="contents" element={<ManagerContents />} />
           </Route>
 
           {/* 3. 작업자 전용 (모바일) - WORKER only */}

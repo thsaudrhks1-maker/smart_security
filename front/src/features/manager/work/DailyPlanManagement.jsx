@@ -32,6 +32,7 @@ const DailyPlanManagement = () => {
   const [openWorkAreas, setOpenWorkAreas] = useState(true);
   const [openDangerZones, setOpenDangerZones] = useState(true);
   const [showDangerModal, setShowDangerModal] = useState(false);
+  const [editPlanId, setEditPlanId] = useState(null);
 
   const loadPlans = async () => {
     try {
@@ -221,7 +222,12 @@ const DailyPlanManagement = () => {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {filteredPlans.map(plan => (
-                      <PlanCard key={plan.id} plan={plan} onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }} />
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        onEdit={() => setEditPlanId(plan.id)}
+                        onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }}
+                      />
                     ))}
                   </div>
                 )}
@@ -293,6 +299,15 @@ const DailyPlanManagement = () => {
           zones={zones}
           onClose={() => setShowDangerModal(false)}
           onSuccess={() => { loadDangerZones(); setShowDangerModal(false); }}
+        />
+      )}
+
+      {editPlanId != null && (
+        <EditPlanModal
+          planId={editPlanId}
+          zones={zones}
+          onClose={() => setEditPlanId(null)}
+          onSuccess={() => { setEditPlanId(null); loadPlans(); }}
         />
       )}
     </div>
@@ -393,7 +408,7 @@ function DailyPlanMapLegend({ plans, dangerZones }) {
 }
 
 // 개별 작업 카드 컴포넌트
-const PlanCard = ({ plan, onDelete }) => {
+const PlanCard = ({ plan, onEdit, onDelete }) => {
     const riskColor = plan.calculated_risk_score >= 80 ? '#ef4444' : plan.calculated_risk_score >= 50 ? '#f59e0b' : '#22c55e';
     const riskText = plan.calculated_risk_score >= 80 ? '고위험' : plan.calculated_risk_score >= 50 ? '주의' : '양호';
 
@@ -415,6 +430,16 @@ const PlanCard = ({ plan, onDelete }) => {
                     <span style={{ color: riskColor, fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <AlertTriangle size={14} /> {riskText} ({plan.calculated_risk_score})
                     </span>
+                    {onEdit && (
+                        <button
+                            type="button"
+                            onClick={onEdit}
+                            title="수정"
+                            style={{ padding: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            수정
+                        </button>
+                    )}
                     {onDelete && (
                         <button
                             type="button"
@@ -534,6 +559,211 @@ const DangerZoneModal = ({ selectedDate, zones, onClose, onSuccess }) => {
   );
 };
 
+// 일일 작업 수정 모달 (안전공구 제외/추가, 상세·위험요소·배정 수정)
+const EditPlanModal = ({ planId, zones, onClose, onSuccess }) => {
+  const [plan, setPlan] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [templateContents, setTemplateContents] = useState([]);
+  const [allResources, setAllResources] = useState([]);
+  const [workers, setWorkers] = useState([]);
+  const [form, setForm] = useState({
+    description: '',
+    daily_hazards_text: '',
+    excluded_resource_ids: [],
+    additional_resource_ids: [],
+    worker_ids: []
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [planData, contents, resources, w] = await Promise.all([
+          workApi.getPlan(planId),
+          workApi.getTemplatesContents(),
+          workApi.getSafetyResources(),
+          getMyWorkers()
+        ]);
+        setPlan(planData);
+        setTemplateContents(Array.isArray(contents) ? contents : []);
+        setAllResources(Array.isArray(resources) ? resources : []);
+        setWorkers(w || []);
+        setForm({
+          description: planData.description || '',
+          daily_hazards_text: Array.isArray(planData.daily_hazards) ? planData.daily_hazards.join('\n') : '',
+          excluded_resource_ids: [...(planData.excluded_resource_ids || [])],
+          additional_resource_ids: [...(planData.additional_resource_ids || [])],
+          worker_ids: (planData.allocations || []).map(a => a.worker_id)
+        });
+      } catch (e) {
+        console.error(e);
+        alert('계획 정보를 불러오지 못했습니다.');
+        onClose();
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [planId, onClose]);
+
+  const templateResourceIds = useMemo(() => {
+    if (!plan) return [];
+    const t = templateContents.find(c => c.id === plan.template_id);
+    return (t?.required_resources || []).map(r => r.id);
+  }, [plan, templateContents]);
+
+  // 폼 상태 기준 적용 안전공구: (공정 기본 − 제외) + 추가
+  const effectiveResources = useMemo(() => {
+    if (!plan) return [];
+    const t = templateContents.find(c => c.id === plan.template_id);
+    const fromTemplate = (t?.required_resources || []).filter(r => !form.excluded_resource_ids.includes(r.id));
+    const fromAdditional = form.additional_resource_ids.map(id => allResources.find(r => r.id === id)).filter(Boolean);
+    return [...fromTemplate, ...fromAdditional];
+  }, [plan, templateContents, form.excluded_resource_ids, form.additional_resource_ids, allResources]);
+
+  const approvableWorkers = workers.filter(w => w.member_status === 'ACTIVE');
+  const canAddResourceIds = allResources
+    .map(r => r.id)
+    .filter(id => !effectiveResources.some(rr => rr.id === id));
+
+  const handleExcludeOrRemove = (resourceId) => {
+    if (templateResourceIds.includes(resourceId)) {
+      setForm(f => ({
+        ...f,
+        excluded_resource_ids: f.excluded_resource_ids.includes(resourceId)
+          ? f.excluded_resource_ids.filter(x => x !== resourceId)
+          : [...f.excluded_resource_ids, resourceId]
+      }));
+    } else {
+      setForm(f => ({
+        ...f,
+        additional_resource_ids: f.additional_resource_ids.filter(x => x !== resourceId)
+      }));
+    }
+  };
+
+  const isFromTemplate = (resourceId) => templateResourceIds.includes(resourceId);
+
+  const handleAddResource = (resourceId) => {
+    if (!resourceId || form.additional_resource_ids.includes(Number(resourceId))) return;
+    setForm(f => ({
+      ...f,
+      additional_resource_ids: [...f.additional_resource_ids, Number(resourceId)]
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!plan) return;
+    setSubmitting(true);
+    try {
+      const daily_hazards = form.daily_hazards_text
+        ? form.daily_hazards_text.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
+        : [];
+      await workApi.updatePlan(planId, {
+        description: form.description || null,
+        daily_hazards: daily_hazards.length ? daily_hazards : null,
+        excluded_resource_ids: form.excluded_resource_ids,
+        additional_resource_ids: form.additional_resource_ids,
+        allocations: form.worker_ids.map(id => ({ worker_id: Number(id), role: '작업자' }))
+      });
+      onSuccess();
+    } catch (err) {
+      alert('수정 실패: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const modalLabel = { marginBottom: '5px', fontWeight: '600', color: '#1e293b' };
+  const modalHint = { fontSize: '0.75rem', color: '#374151', marginTop: '4px' };
+  const modalInput = { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', color: '#1e293b' };
+
+  if (loading || !plan) {
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+        <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', color: '#64748b' }}>로딩 중...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'white', borderRadius: '12px', width: '520px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', color: '#1e293b' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#1e293b' }}>일일 작업 수정</h2>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1e293b' }}><X size={22} /></button>
+        </div>
+        <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>
+          {plan.zone_name} · {plan.work_type} (작업일: {typeof plan.date === 'string' ? plan.date : plan.date?.slice?.(0, 10) ?? ''})
+        </p>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <label>
+            <div style={modalLabel}>상세 내용</div>
+            <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="예: 2층 A구역 벽체 미장 작업" style={modalInput} />
+          </label>
+          <label>
+            <div style={{ ...modalLabel, display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={16} color="#f59e0b" /> 그날 위험요소</div>
+            <textarea value={form.daily_hazards_text} onChange={e => setForm({ ...form, daily_hazards_text: e.target.value })} placeholder="쉼표 또는 줄바꿈으로 구분" rows={2} style={{ ...modalInput, resize: 'vertical' }} />
+          </label>
+
+          {/* 적용 안전공구: 제외/추가 */}
+          <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <HardHat size={16} /> 이 일정 적용 안전공구 (제외·추가 가능)
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+              {effectiveResources.map(r => (
+                <span key={r.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef3c7', padding: '4px 8px', borderRadius: '6px', color: '#1e293b', fontSize: '0.85rem' }}>
+                  {r.name}
+                  <button type="button" onClick={() => handleExcludeOrRemove(r.id)} title={isFromTemplate(r.id) ? '공정 기본에서 제외' : '추가 항목 제거'} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', color: '#b45309', fontSize: '1rem', lineHeight: 1 }}>×</button>
+                </span>
+              ))}
+            </div>
+            <div style={{ ...modalHint, marginBottom: '6px' }}>DB에 등록된 공구 추가:</div>
+            <select value="" onChange={e => { handleAddResource(e.target.value); e.target.value = ''; }} style={{ ...modalInput, maxWidth: '100%' }}>
+              <option value="">선택하여 추가</option>
+              {canAddResourceIds.map(id => {
+                const r = allResources.find(x => x.id === id);
+                return r ? <option key={r.id} value={r.id}>{r.name}</option> : null;
+              })}
+            </select>
+          </div>
+
+          <div>
+            <div style={modalLabel}>근무자 (배정 대상)</div>
+            <div style={{ ...modalHint, marginBottom: '6px' }}>✓ 승인 완료된 근로자만 배정할 수 있습니다.</div>
+            <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px', maxHeight: '140px', overflowY: 'auto' }}>
+              {approvableWorkers.length === 0 ? (
+                <div style={{ padding: '0.75rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>승인 완료된 근로자가 없습니다.</div>
+              ) : (
+                approvableWorkers.map(w => {
+                  const isSelected = form.worker_ids.includes(w.id);
+                  return (
+                    <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px', borderRadius: '6px', background: isSelected ? '#eff6ff' : 'transparent', cursor: 'pointer' }} onClick={() => setForm(f => ({ ...f, worker_ids: isSelected ? f.worker_ids.filter(i => i !== w.id) : [...f.worker_ids, w.id] }))}>
+                      <input type="checkbox" checked={isSelected} readOnly style={{ cursor: 'pointer' }} />
+                      <span style={{ fontSize: '0.9rem', color: '#1e293b' }}>{w.full_name} <span style={{ color: '#64748b', fontSize: '0.85rem' }}>({w.job_type})</span></span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: '600', color: '#475569' }}>취소</button>
+            <button type="submit" disabled={submitting} style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+              {submitting ? '저장 중...' : '저장'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // 작업 등록 모달 (zones 부모에서 넘기면 사용, 없으면 자체 로드)
 const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null }) => {
     const [formData, setFormData] = useState({
@@ -562,11 +792,17 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null
         loadZones();
     }, [zonesProp]);
 
+    const [templateContents, setTemplateContents] = useState([]);
+
     useEffect(() => {
         const loadRest = async () => {
-            const t = await workApi.getTemplates();
-            const w = await getMyWorkers();
+            const [t, contents, w] = await Promise.all([
+                workApi.getTemplates(),
+                workApi.getTemplatesContents(),
+                getMyWorkers(),
+            ]);
             setTemplates(t);
+            setTemplateContents(Array.isArray(contents) ? contents : []);
             setWorkers(w);
         };
         loadRest();
@@ -612,60 +848,88 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null
     const approvableWorkers = workers.filter(w => w.member_status === 'ACTIVE');
     const workerCount = formData.worker_ids.filter(id => approvableWorkers.some(w => w.id === id)).length;
 
+    const modalLabel = { marginBottom: '5px', fontWeight: '600', color: '#1e293b' };
+    const modalHint = { fontSize: '0.75rem', color: '#374151', marginTop: '4px' };
+    const modalInput = { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', color: '#1e293b' };
+
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-            <div style={{ background: 'white', borderRadius: '12px', width: '500px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ background: 'white', borderRadius: '12px', width: '500px', padding: '2rem', maxHeight: '90vh', overflowY: 'auto', color: '#1e293b' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '1.4rem' }}>위치 + 작업 배정</h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X /></button>
+                    <h2 style={{ margin: 0, fontSize: '1.4rem', color: '#1e293b' }}>위치 + 작업 배정</h2>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1e293b' }}><X /></button>
                 </div>
-                <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>
-                    작업 위치(구역)와 DB 작업 목록 중 하나를 선택한 뒤, 배정할 근무자를 고르면 해당 날짜에 자동 배정됩니다.
+                <p style={{ fontSize: '0.9rem', color: '#1e293b', marginBottom: '1rem' }}>
+                    일일 작업 구역(위치)과 작업(공종)을 선택한 뒤, 배정할 근무자를 고르면 해당 날짜에 자동 배정됩니다.
                 </p>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {/* 날짜 */}
-                    <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업일자</div>
-                        <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-                    </label>
+                    {/* 일일 작업 구역 · 위치 */}
+                    <div style={{ paddingBottom: '0.75rem', borderBottom: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', marginBottom: '10px' }}>일일 작업 구역 · 위치</div>
+                        <label>
+                            <div style={modalLabel}>작업일자</div>
+                            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} style={modalInput} />
+                        </label>
+                        <label style={{ display: 'block', marginTop: '1rem' }}>
+                            <div style={modalLabel}>위치 (구역)</div>
+                            <select value={formData.zone_id} onChange={e => setFormData({...formData, zone_id: e.target.value})} style={modalInput} required>
+                                <option value="">선택하세요</option>
+                                {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
+                            </select>
+                            <div style={modalHint}>작업 위치 탭에서 등록한 구역입니다.</div>
+                        </label>
+                    </div>
 
-                    {/* 작업 위치(구역) */}
-                    <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 위치 (구역)</div>
-                        <select value={formData.zone_id} onChange={e => setFormData({...formData, zone_id: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
-                            <option value="">선택하세요</option>
-                            {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
-                        </select>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>작업 위치 탭에서 등록한 구역입니다.</div>
-                    </label>
+                    {/* 작업 (공종) */}
+                    <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', marginBottom: '10px' }}>작업 (공종)</div>
+                        <label>
+                            <div style={modalLabel}>작업 목록 (1건 선택)</div>
+                            <select value={formData.template_id} onChange={e => setFormData({...formData, template_id: e.target.value})} style={modalInput} required>
+                                <option value="">선택하세요</option>
+                                {templates.map(t => <option key={t.id} value={t.id}>{t.work_type} (위험도: {t.base_risk_score})</option>)}
+                            </select>
+                            <div style={modalHint}>DB에 등록된 작업(공종) 목록 중 하나를 선택합니다.</div>
+                        </label>
+                    </div>
 
-                    {/* 작업 목록(DB) 중 1건 선택 */}
-                    <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>작업 목록 (공종 1건 선택)</div>
-                        <select value={formData.template_id} onChange={e => setFormData({...formData, template_id: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} required>
-                            <option value="">선택하세요</option>
-                            {templates.map(t => <option key={t.id} value={t.id}>{t.work_type} (위험도: {t.base_risk_score})</option>)}
-                        </select>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>DB에 등록된 작업(공종) 목록 중 하나를 선택합니다.</div>
-                    </label>
+                    {/* 이 공정 필요 안전공구 (콘텐츠 기준) */}
+                    {formData.template_id && (() => {
+                        const content = templateContents.find(t => t.id === parseInt(formData.template_id));
+                        const resources = content?.required_resources || [];
+                        if (resources.length === 0) return null;
+                        return (
+                            <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <HardHat size={16} /> 이 공정 필요 안전공구 ({resources.length}종)
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: '#1e293b', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {resources.map(r => (
+                                        <span key={r.id} style={{ background: '#fef3c7', padding: '4px 8px', borderRadius: '6px', color: '#1e293b' }}>{r.name}</span>
+                                    ))}
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#374151', marginTop: '6px' }}>콘텐츠 열람에서 상세 안전수칙을 확인할 수 있습니다.</div>
+                            </div>
+                        );
+                    })()}
 
                     {/* 배정 요약 */}
                     {selectedZoneName && selectedTemplateName && (
-                        <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.9rem', color: '#1e40af' }}>
+                        <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.9rem', color: '#1e293b' }}>
                             <strong>배정 요약:</strong> 근무자 {workerCount}명에게 <strong>위치 [{selectedZoneName}]</strong> + <strong>작업 [{selectedTemplateName}]</strong> 을 배정합니다.
                         </div>
                     )}
 
                     {/* 내용 */}
                     <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>상세 내용</div>
-                        <input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="예: 2층 A구역 벽체 미장 작업" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                        <div style={modalLabel}>상세 내용</div>
+                        <input type="text" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="예: 2층 A구역 벽체 미장 작업" style={modalInput} />
                     </label>
 
                     {/* 그날 위험요소 (작업자에게 데일리로 전달) */}
                     <label>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ ...modalLabel, display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <AlertTriangle size={16} color="#f59e0b" /> 그날 위험요소
                         </div>
                         <textarea
@@ -673,20 +937,20 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null
                             onChange={e => setFormData({ ...formData, daily_hazards_text: e.target.value })}
                             placeholder="쉼표 또는 줄바꿈으로 구분 (예: 화재위험, 낙하물 주의, 고소 작업)"
                             rows={2}
-                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', resize: 'vertical' }}
+                            style={{ ...modalInput, resize: 'vertical' }}
                         />
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>작업자 앱에 오늘의 주의사항으로 표시됩니다.</div>
+                        <div style={modalHint}>작업자 앱에 오늘의 주의사항으로 표시됩니다.</div>
                     </label>
 
                     {/* 근무자 선택: 승인 완료된 사람만 배정 가능 */}
                     <div>
-                        <div style={{ marginBottom: '5px', fontWeight: '600', color: '#475569' }}>근무자 (배정 대상)</div>
-                        <div style={{ fontSize: '0.75rem', color: '#2563eb', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={modalLabel}>근무자 (배정 대상)</div>
+                        <div style={{ ...modalHint, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             ✓ 승인 완료된 근로자만 배정할 수 있습니다.
                         </div>
                         <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px', maxHeight: '150px', overflowY: 'auto' }}>
                             {approvableWorkers.length === 0 ? (
-                                <div style={{ padding: '1rem', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+                                <div style={{ padding: '1rem', textAlign: 'center', color: '#1e293b', fontSize: '0.9rem' }}>
                                     승인 완료된 근로자가 없습니다. <br />근로자 관리에서 승인을 완료한 후 배정해주세요.
                                 </div>
                             ) : (
@@ -717,7 +981,7 @@ const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null
                                                 style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                                             />
                                             <span style={{ fontSize: '0.95rem', fontWeight: isSelected ? '600' : '400', color: '#1e293b' }}>
-                                                {w.full_name} <span style={{ color: '#64748b', fontSize: '0.85rem' }}>({w.job_type})</span>
+                                                {w.full_name} <span style={{ color: '#374151', fontSize: '0.85rem' }}>({w.job_type})</span>
                                             </span>
                                         </div>
                                     );

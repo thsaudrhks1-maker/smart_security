@@ -40,8 +40,8 @@ class ProjectAttendanceResponse(BaseModel):
     check_in_method: str
 
 
-class MyAttendanceRow(BaseModel):
-    """작업자 '나의 출근현황' 한 행"""
+class MyAttendanceListItem(BaseModel):
+    """나의 출근 내역 (기간별) - 작업자 출근현황용"""
     id: int
     date: date
     check_in_time: Optional[datetime] = None
@@ -50,7 +50,3 @@ class MyAttendanceRow(BaseModel):
     company_name: Optional[str] = None
     my_part: Optional[str] = None
     work_description: Optional[str] = None
-    work_minutes: Optional[int] = None  # 근로시간(분), 퇴근 없으면 None
-
-    class Config:
-        from_attributes = True

@@ -21,49 +21,23 @@ B. 데이터베이스 시딩 고도화 (Incremental Seeding) - [완료]
    - `db_lifecycle_manager` 스킬 업데이트: 증분 시딩 원칙 명문화.
 
 ============================================================
-2. 금일 오후 업무 (PM) - [완료]
+2. 금일 오후 업무 (PM) - [계획]
 ============================================================
-A. 출역 관리(Attendance) 대시보드 연동 - [완료]
+A. 지도 API 연동 (Map Integration)
+   - 네이버 지도 API 클라이언트 ID 발급 및 환경변수 설정
+   - MapContainer 컴포넌트 구현 및 대시보드 연동
+
+B. 출역 관리(Attendance) 대시보드 연동 - [완료]
    - 오늘 및 과거 출역 현황 리스트 조회 API 연동.
    - 대시보드 내 출역 명단 위젯 구현 (AttendanceListWidget).
 
-B. 작업자 앱: 할당 작업 및 위험지역 연동 - [완료]
-   - Backend: /work/my-plans 응답에 구역별 DailyDangerZone 병합하여 daily_hazards 풍부화.
-   - Backend: get_my_risks_today는 '그날 데일리 위험존이 있는 구역'만 반환하도록 변경.
-   - Frontend: WorkerDashboard에서 /worker/my-risks/today 호출 후 위험지역 카드에 표시.
-   - 작업 상세 모달: 여러 건일 때 구역·작업유형 탭으로 선택, daily_hazards(위험 요소) 노출.
-
-C. 작업자 앱: 홈 지도 및 안전지도 탭 - [완료]
-   - 홈에 '나의 작업 현장 지도' 접었다 펼치기 섹션 추가 (WorkerWorkSiteMap).
-   - 환경설정 모달(WorkerSettingsModal) 분리: 홈 지도 표시 on/off, 지도 기본 펼침 (localStorage 저장).
-   - 안전지도 탭을 '나의 작업 구역 + 금일 위험 구역' 전용 지도로 전환.
-   - 현장 전체 ZONE 표시: allZones(site_id) 조회 후 지도에 모두 표시. 내 작업만 파랑, 위험만 빨강, 겹침은 파란 채움+굵은 빨간 테두리로 구분.
-   - Backend: DailyWorkPlanRead에 zone_lat, zone_lng 추가 (my-plans에서 채움).
-
-D. 작업자 앱: 스크롤 및 UI 보정 - [완료]
-   - WorkerLayout: 스크롤 영역에 minHeight 0 적용하여 지도·카드 많을 때 위아래 스크롤 정상 동작.
-   - 환경설정 모달 라벨 색상 명시 (color #1e293b)로 가독성 개선.
-   - 금일 나의 작업 카드: 설명 전체 표시 (15자 잘림 제거).
-
-E. 중간관리자: 일일 작업 계획 지도 겹침 표시 및 금일 요약 - [완료]
-   - 지도에서 '작업+위험' 겹치는 구역: 작업 유형 색 채움 + 굵은 빨간 테두리, 팝업에 '작업+위험 구역' 문구.
-   - 범례에 '작업+위험' 항목 추가 (겹침이 있을 때만 표시).
-   - 금일 요약 strip 추가: 작업 N건, 위험 구역 N건, 배정 인원 N명.
-
-F. 중간관리자: 출역 관리 전용 페이지 - [완료]
-   - ManagerAttendance.jsx 신설: 배정 프로젝트 기준 출역 현황 전체 화면 표시.
-   - App.jsx에 /manager/attendance 라우트 등록.
-   - Backend: 출역 API get_project_attendance_list에서 date 파라미터를 문자열이 아닌 date 객체로 변환 후 DB 바인딩 (asyncpg DataError 해소).
-
-G. 출역 더미 및 위젯 개선 - [완료]
-   - reset_scenario.py: 2026-02-03, 2026-02-04 일자 출역 더미 추가 (여러 명, 출근/퇴근 시간 차이).
-   - AttendanceListWidget: 각 행에 출근 시간·퇴근 시간 모두 표시 (퇴근 없으면 '-').
-   - 위젯 상단에 목적 안내 문구 추가: 사고·분쟁 시 책임 소재 확인, 근무시간 증명·급여 산정 참고용.
+C. 작업 계획 프로세스 (Work Plan) 시작
+   - 작업 템플릿 DB 시딩
+   - 내일의 작업 등록 화면 구현 (Phase 2 진입)
 
 ============================================================
-3. 특이사항 및 이슈 해결
+3. 특이사항 및 이슈 해결 (DB Unicode Escaping)
 ============================================================
-3-1. DB Unicode Escaping (기존)
 - 이슈: DB 내 JSON/JSONB 컬럼에 한글 데이터 저장 시 유니코드(\uXXXX)로 이스케이프되어 가독성 저하.
 - 원인 분석:
   1. SQLAlchemy의 json_serializer 설정이 asyncpg 드라이버에서 무시됨.
@@ -74,11 +48,6 @@ G. 출역 더미 및 위젯 개선 - [완료]
   3. reset_scenario.py: 모든 시딩 로직을 ORM 방식으로 전환하여 엔진 레벨의 안전한 직렬화 보장.
   4. reset_scenario.py: 삭제 대상 테이블 목록에 work_templates 누락 수정 및 실행부(asyncio.run) 추가.
 - 결과: DB 내 모든 한글 데이터가 UTF-8 문자열 그대로 저장되어 DBeaver 등에서 가독성 확보.
-
-3-2. 출역 API 500 에러 및 CORS 표시
-   - 이슈: /api/attendance/project/1?date=2026-02-04 호출 시 500 Internal Server Error, 브라우저 콘솔에 CORS 오류로 보임.
-   - 원인: date 쿼리 파라미터를 문자열 그대로 DB에 바인딩하여 asyncpg가 DATE 컬럼에 str 전달 시 'str' object has no attribute 'toordinal' 발생.
-   - 해결: back/attendance/repository.py에 _parse_date() 추가, target_date를 date 객체로 변환 후 쿼리 바인딩. 서버 정상 응답 후 CORS 표시도 해소.
 
 ============================================================
 4. 익일 계획

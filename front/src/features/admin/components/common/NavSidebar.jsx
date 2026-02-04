@@ -41,7 +41,7 @@ const NavSidebar = () => {
     ]},
     { category: "Safety & Content", items: [
       { icon: ShieldAlert, label: "안전 관제 센터", path: "/admin/map", implemented: false },
-      { icon: FileText, label: "콘텐츠 관리", path: "/admin/contents", implemented: false },
+      { icon: FileText, label: "콘텐츠 관리", path: "/admin/contents", implemented: true },
       { icon: CheckSquare, label: "체크리스트 관리", path: "/admin/checklist", implemented: false },
       { icon: Globe, label: "외국인 콘텐츠 관리", path: "/admin/global", implemented: false },
     ]},

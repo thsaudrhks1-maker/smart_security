@@ -25,6 +25,7 @@ const ManagerLayout = () => {
   const menu = [
     { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
     { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' },
+    { label: '콘텐츠 열람', icon: FileText, path: '/manager/contents' },
     { label: '작업 위치', icon: Map, path: '/manager/locations' },
     { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
     { label: '근로자 관리', icon: Users, path: '/manager/workers' },

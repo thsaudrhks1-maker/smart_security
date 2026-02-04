@@ -11,8 +11,7 @@ class SafetyResource(Base):
     """
     장비/장구류 마스터 테이블 (원천 데이터)
     - PPE: 장구류(안전모, 안전대 등), HEAVY: 중장비, TOOL: 공구
-    - description: 장비 설명, safety_rules: 해당 장비 사용 시 안전수칙(리스트)
-    - 데일리 계획에서 안전관리자가 추가 장구류/수칙 넣고 빼는 건 별도 레이어(일일 추가 필드)로 확장 가능
+    - 추후 image_url 등 확장 가능
     """
     __tablename__ = "safety_resources"
 
@@ -20,8 +19,8 @@ class SafetyResource(Base):
     name = Column(String, nullable=False, comment="명칭 (예: 그네형 안전대, 15톤 덤프, A형 사다리)")
     type = Column(String, nullable=False, index=True, comment="PPE(장구류), HEAVY(중장비), TOOL(공구)")
     icon = Column(String, nullable=True, comment="아이콘 이름 (프론트 렌더링용)")
-    description = Column(Text, nullable=True, comment="장비/장구류 설명 (용도·적용 상황)")
-    safety_rules = Column(JSON, nullable=True, comment="안전수칙 목록 (JSON 배열, 예: [\"끈 조임 확인\", \"파손 여부 점검\"])")
+    description = Column(String, nullable=True, comment="기본 설명")
+    safety_rules = Column(JSON, nullable=True, comment="해당 장비 사용 시 필수 안전 수칙 (JSON 리스트)")
 
     # 관계: 어떤 공정(작업 템플릿)에서 이 장비가 필요한지 (N:M)
     template_assocs = relationship("TemplateResourceMap", back_populates="resource", cascade="all, delete-orphan")
@@ -79,6 +78,10 @@ class DailyWorkPlan(Base):
     status = Column(String, default="PLANNED", comment="PLANNED, IN_PROGRESS, DONE")
     
     created_at = Column(DateTime, default=datetime.now)
+
+    # 일정별 적용 안전공구 커스터마이징 (템플릿 기본값에 대한 예외 처리)
+    excluded_resource_ids = Column(JSON, nullable=True, comment="해당 작업에서 제외된 템플릿 기본 장비 ID 리스트")
+    additional_resource_ids = Column(JSON, nullable=True, comment="해당 작업에 추가로 투입된 장비 ID 리스트")
 
     # 관계
     site = relationship("Site", back_populates="daily_plans")
