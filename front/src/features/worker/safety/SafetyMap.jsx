@@ -217,7 +217,7 @@ const SafetyMap = () => {
           {/* 지도 영역 */}
           <div style={{ flex: 0.75, position: 'relative', borderRight: '2px solid #ddd', background:'#f0f0f0' }}>
               <MapContainer center={center} zoom={zoom} style={{height: '100%', width: '100%'}}>
-                  {showMap && <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />}
+                  {showMap && <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />}
                   
                   <MapClickHandler onMapClick={handleMapClick} isEditMode={isEditMode} />
 

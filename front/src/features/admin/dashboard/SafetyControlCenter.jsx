@@ -228,7 +228,7 @@ const SafetyControlCenter = () => {
       {showMap && (
         <div style={{ height: '450px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', position: 'relative', marginBottom: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
           <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '100%', width: '100%' }}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" opacity={0.20} />
             {risks.filter(r => r.lat && r.lng).map(r => (
                 <Circle key={r.id} center={[r.lat, r.lng]} radius={r.radius || 20} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2 }}>
                      <Popup>

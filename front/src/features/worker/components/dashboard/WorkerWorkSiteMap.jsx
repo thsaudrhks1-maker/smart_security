@@ -55,7 +55,7 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
           <TileLayer
             attribution='&copy; OpenStreetMap'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            opacity={0.85}
+            opacity={0.20}
           />
           {zonesWithCoords.map((zone) => {
             const hasWork = planZoneIds.has(zone.id);

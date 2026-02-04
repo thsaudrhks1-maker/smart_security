@@ -181,7 +181,7 @@ const DailyPlanManagement = () => {
               </div>
               <div style={{ height: 560, minHeight: 440 }}>
                 <MapContainer center={mapCenter} zoom={16} maxZoom={19} style={{ height: '100%', width: '100%', background: 'transparent' }} scrollWheelZoom={true}>
-                  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={1.00} />
+                  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
                   <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
                 </MapContainer>
               </div>

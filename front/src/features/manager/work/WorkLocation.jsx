@@ -398,7 +398,7 @@ function MapOnly({ center, zones }) {
   const zonesWithCoords = (zones || []).filter((z) => z.lat != null && z.lng != null);
   return (
     <MapContainer center={center} zoom={15} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
-      <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
       <Marker position={center} />
       {zonesWithCoords.map((z) => (
         <ZoneSquare

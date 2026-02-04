@@ -17,12 +17,16 @@ def json_serializer(obj):
 def json_deserializer(s):
     return json.loads(s)
 
-# Async Engine 생성
+# Async Engine 생성 (원격 DB 연결 안정성을 위해 커넥션 풀 최적화)
 engine = create_async_engine(
     DATABASE_URL,
     echo=True, # 쿼리 로깅
     json_serializer=json_serializer,
-    json_deserializer=json_deserializer
+    json_deserializer=json_deserializer,
+    pool_size=20,       # 기본 5개에서 20개로 확장
+    max_overflow=10,    # 초과 시 최대 10개까지 추가 허용
+    pool_timeout=30,    # 연결 대기 시간 30초 설정
+    pool_recycle=1800   # 30분마다 연결 재확인
 )
 
 # Async Session Factory

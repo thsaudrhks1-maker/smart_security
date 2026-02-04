@@ -20,8 +20,9 @@ from back.worker.router import router as worker_router
 from back.admin.router import router as admin_router
 from back.manager.router import router as manager_router # [NEW]
 from back.attendance.router import router as attendance_router # [NEW]
+from back.notice.router import router as notice_router
 
-app = FastAPI(title="Smart Safety Guardian API")
+app = FastAPI(title="Smart Security AI API")
 
 # CORS 설정 (프론트엔드 포트 허용)
 # allow_credentials=True일 때는 allow_origins에 '*'를 사용할 수 없음
@@ -63,7 +64,8 @@ app.include_router(dashboard_router)
 app.include_router(worker_router)
 app.include_router(admin_router)
 app.include_router(manager_router) # [NEW]
-app.include_router(attendance_router) # [NEW] 앱에 등록
+app.include_router(attendance_router) # [NEW]
+app.include_router(notice_router) # [NEW] 앱에 등록
 
 # --- Admin / Data Endpoints ---
 # --- Admin / Data Endpoints deleted (moved to back/admin/router.py) ---

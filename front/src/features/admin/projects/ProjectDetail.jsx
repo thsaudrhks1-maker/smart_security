@@ -355,6 +355,7 @@ const ProjectDetail = () => {
                           <TileLayer
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            opacity={0.20}
                           />
                           <Marker position={[project.location_lat, project.location_lng]} />
                         </MapContainer>

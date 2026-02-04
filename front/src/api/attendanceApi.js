@@ -1,48 +1,41 @@
-import api from './client';
+import apiClient from './client';
 
-/**
- * 나의 오늘 출근 기록 조회
- */
+// 특정 프로젝트의 날짜별 출역 현황 조회 (매니저용)
+export const getProjectAttendance = async (projectId, date) => {
+  const params = date ? { date } : {};
+  const response = await apiClient.get(`/api/attendance/project/${projectId}`, { params });
+  return response.data;
+};
+
+// 나의 오늘 출근 기록 (근로자용 대시보드)
 export const getMyTodayAttendance = async () => {
-    const response = await api.get('/api/attendance/today');
-    return response.data;
+  const response = await apiClient.get('/api/attendance/today');
+  return response.data;
 };
 
-/**
- * 나의 출근 내역 (기간별) - 작업자 출근현황 화면용
- * @param {string} startDate YYYY-MM-DD
- * @param {string} endDate YYYY-MM-DD
- */
-export const getMyAttendance = async (startDate, endDate) => {
-    const response = await api.get('/api/attendance/my', { params: { start: startDate, end: endDate } });
-    return response.data;
+// 나의 출근 내역 리스트 (근로자용 상세페이지 - WorkerAttendance.jsx에서 사용)
+export const getMyAttendance = async (start, end) => {
+  const response = await apiClient.get('/api/attendance/my', { params: { start, end } });
+  return response.data;
 };
 
-/**
- * 출근 하기
- * @param {Object} data { project_id, work_type_id(옵션), check_in_method }
- */
+// 출근하기
 export const checkIn = async (data) => {
-    const response = await api.post('/api/attendance/check-in', data);
-    return response.data;
+  const response = await apiClient.post('/api/attendance/check-in', data);
+  return response.data;
 };
 
-/**
- * 퇴근 하기
- * @param {number} attendanceId 
- */
+// 퇴근하기
 export const checkOut = async (attendanceId) => {
-    const response = await api.post('/api/attendance/check-out', { attendance_id: attendanceId });
-    return response.data;
+  const response = await apiClient.post('/api/attendance/check-out', { attendance_id: attendanceId });
+  return response.data;
 };
 
-/**
- * 프로젝트별 출역 현황 조회 (관리자용)
- * @param {number} projectId 
- * @param {string} date YYYY-MM-DD (옵션)
- */
-export const getProjectAttendance = async (projectId, date = null) => {
-    const url = date ? `/api/attendance/project/${projectId}?date=${date}` : `/api/attendance/project/${projectId}`;
-    const response = await api.get(url);
-    return response.data;
+// 기존 객체 방식 호환을 위해 추가
+export const attendanceApi = {
+  getProjectAttendance,
+  getMyTodayAttendance,
+  getMyAttendance,
+  checkIn,
+  checkOut
 };

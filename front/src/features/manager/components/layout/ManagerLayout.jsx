@@ -34,7 +34,7 @@ const ManagerLayout = () => {
     { label: '위반자 등록/현황', icon: ShieldAlert, path: '/manager/violations' },
     { label: '근로자 위치확인', icon: MapPin, path: '/manager/location' },
     { label: '안전교육 현황', icon: GraduationCap, path: '/manager/education' },
-    { label: '현장 공지', icon: Megaphone, path: '/manager/notice' },
+    { label: '현장 공지', icon: Megaphone, path: '/manager/notices' },
     { label: '긴급 알림', icon: Bell, path: '/manager/emergency' },
   ];
 

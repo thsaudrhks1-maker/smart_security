@@ -24,6 +24,8 @@ import CompanyManagement from './features/manager/companies/CompanyManagement'; 
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkLocation from './features/manager/work/WorkLocation';
 import ManagerContents from './features/manager/contents/ManagerContents';
+import ManagerAttendance from './features/manager/attendance/ManagerAttendance';
+import ManagerNotice from './features/manager/notice/ManagerNotice';
 
 // 작업자 전용 (모바일)
 import WorkerLayout from './features/worker/components/layout/WorkerLayout';
@@ -78,6 +80,8 @@ function App() {
             <Route path="workers" element={<WorkerManagement />} />
             <Route path="companies" element={<CompanyManagement />} />
             <Route path="contents" element={<ManagerContents />} />
+            <Route path="attendance" element={<ManagerAttendance />} />
+            <Route path="notices" element={<ManagerNotice />} />
           </Route>
 
           {/* 3. 작업자 전용 (모바일) - WORKER only */}

@@ -123,8 +123,9 @@ async def get_safety_violations_count(worker_id: int) -> int:
 
 async def get_recent_notices(limit: int = 3) -> list[dict]:
     sql = """
-        SELECT * FROM notices 
-        ORDER BY created_at DESC 
+        SELECT id, title, content, is_important as priority, created_at 
+        FROM notices 
+        ORDER BY is_important DESC, created_at DESC 
         LIMIT :limit
     """
     return await fetch_all(sql, {"limit": limit})
