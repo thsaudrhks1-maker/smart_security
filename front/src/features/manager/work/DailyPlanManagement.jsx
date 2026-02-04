@@ -103,6 +103,9 @@ const DailyPlanManagement = () => {
     ? [project.location_lat, project.location_lng]
     : [37.5665, 126.978];
 
+  // 작업 등록 시 기본 선택할 구역 state (자식으로부터 받을 수도 있으나 CreatePlanModal에서 사용)
+  const [initialZoneId, setInitialZoneId] = useState('');
+
   // 날짜 이동
   const handleDateChange = (days) => {
     const date = new Date(selectedDate);
@@ -182,7 +185,15 @@ const DailyPlanManagement = () => {
               <div style={{ height: 560, minHeight: 440 }}>
                 <MapContainer center={mapCenter} zoom={16} maxZoom={19} style={{ height: '100%', width: '100%', background: 'transparent' }} scrollWheelZoom={true}>
                   <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
-                  <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
+                  <DailyPlanMapMarkers 
+                    zones={zones} 
+                    plans={filteredPlans} 
+                    dangerZones={dangerZonesInSite} 
+                    onZoneClick={(zone) => {
+                      setInitialZoneId(zone.id.toString());
+                      setShowModal(true);
+                    }}
+                  />
                 </MapContainer>
               </div>
               <DailyPlanMapLegend plans={filteredPlans} dangerZones={dangerZonesInSite} />
@@ -212,7 +223,7 @@ const DailyPlanManagement = () => {
               </button>
             </div>
             {openWorkAreas && (
-              <div className="daily-plan-thin-scroll" style={{ padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', maxHeight: '360px', overflowY: 'auto', overflowX: 'hidden' }}>
+              <div className="daily-plan-thin-scroll" style={{ padding: '0.75rem', borderTop: '1px solid #e2e8f0', maxHeight: '420px', overflowY: 'auto', overflowX: 'hidden', background: '#f8fafc' }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>로딩 중...</div>
                 ) : filteredPlans.length === 0 ? (
@@ -220,11 +231,12 @@ const DailyPlanManagement = () => {
                     등록된 작업 계획이 없습니다. 위 <strong>작업 등록</strong> 버튼으로 추가하세요.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {filteredPlans.map(plan => (
                       <PlanCard
                         key={plan.id}
                         plan={plan}
+                        dangerZones={dangerZonesInSite}
                         onEdit={() => setEditPlanId(plan.id)}
                         onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }}
                       />
@@ -261,19 +273,59 @@ const DailyPlanManagement = () => {
                   선택한 날짜에 특정 구역에서만 발생하는 위험을 등록하면 작업자 앱에 표시됩니다.
                 </p>
                 {dangerZonesInSite.length > 0 ? (
-                  <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.9rem', color: '#78350f', listStyle: 'none' }}>
-                    {dangerZonesInSite.map(d => (
-                      <li key={d.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ flex: 1 }}>
-                          <strong>{RISK_TYPES.find(r => r.value === d.risk_type)?.label || d.risk_type}</strong> — {d.description}
-                          {zones.find(z => z.id === d.zone_id) && <span style={{ color: '#92400e' }}> ({zones.find(z => z.id === d.zone_id).name})</span>}
-                        </span>
-                        <button type="button" onClick={async () => { if (window.confirm('삭제할까요?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} title="삭제" style={{ padding: '4px 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', fontSize: '0.8rem' }}>
-                          <Trash2 size={14} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {dangerZonesInSite.map(d => {
+                      const workersInThisZone = filteredPlans
+                        .filter(p => p.zone_id === d.zone_id)
+                        .flatMap(p => p.allocations || []);
+                      
+                      return (
+                        <div key={d.id} style={{ 
+                          background: 'white', padding: '12px', borderRadius: '10px', 
+                          border: '1px solid #fcd34d', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' 
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                                <span style={{ background: '#b45309', color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
+                                  {RISK_TYPES.find(r => r.value === d.risk_type)?.label || d.risk_type}
+                                </span>
+                                <span style={{ fontWeight: '700', color: '#92400e', fontSize: '0.9rem' }}>
+                                  {zones.find(z => z.id === d.zone_id)?.name || '알 수 없는 구역'}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.9rem', color: '#78350f', fontWeight: '500' }}>{d.description}</div>
+                            </div>
+                            <button 
+                              type="button" 
+                              onClick={async () => { if (window.confirm('삭제할까요?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} 
+                              style={{ padding: '6px', background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          
+                          {/* 위험 구역 내 작업자 알림 */}
+                          <div style={{ borderTop: '1px dashed #fcd34d', paddingTop: '8px', marginTop: '4px' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#b45309', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                              <Users size={14} /> 해당 구역 작업 인원: {workersInThisZone.length}명
+                            </div>
+                            {workersInThisZone.length > 0 ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                                {workersInThisZone.map((w, idx) => (
+                                  <span key={idx} style={{ background: '#fef3c7', border: '1px solid #fde68a', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>
+                                    {w.worker_name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>배정된 인원 없음</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다. <strong>추가</strong> 버튼으로 등록하세요.</div>
                 )}
@@ -286,10 +338,11 @@ const DailyPlanManagement = () => {
 
       {showModal && (
         <CreatePlanModal 
-            onClose={() => setShowModal(false)} 
+            onClose={() => { setShowModal(false); setInitialZoneId(''); }} 
             currDate={selectedDate}
             zones={zones}
-            onSuccess={() => { setShowModal(false); loadPlans(); }} 
+            initialZoneId={initialZoneId}
+            onSuccess={() => { setShowModal(false); setInitialZoneId(''); loadPlans(); }} 
         />
       )}
 
@@ -314,8 +367,8 @@ const DailyPlanManagement = () => {
   );
 };
 
-// 지도: 모든 구역을 정사각형 컴포넌트로 표시. 작업/위험 없으면 흰색 투명, 있으면 색상·위험 구역 빨강
-function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
+// 지도: 모든 구역을 정사각형 컴포넌트로 표시
+function DailyPlanMapMarkers({ zones, plans, dangerZones, onZoneClick }) {
   const zonesWithCoords = useMemo(() => zones.filter((z) => z.lat != null && z.lng != null), [zones]);
   const workTypeOrder = useMemo(() => [...new Set(plans.map((p) => p.work_type))], [plans]);
 
@@ -334,41 +387,61 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones }) {
         const isOverlap = hasWork && hasDanger;
 
         const pathOptions = isOverlap
-          ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: '#dc2626', weight: 4 }
+          ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: '#dc2626', weight: 3 }
           : hasWork
-            ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: 'rgba(0,0,0,0.45)', weight: 2 }
+            ? { fillColor: getWorkTypeColor(zonePlans[0].work_type), fillOpacity: 0.78, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
             : hasDanger
-              ? { fillColor: '#dc2626', fillOpacity: 0.7, color: 'rgba(0,0,0,0.45)', weight: 2 }
-              : { fillColor: '#ffffff', fillOpacity: 0.55, color: 'rgba(0,0,0,0.4)', weight: 2 };
+              ? { fillColor: '#dc2626', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
+              : { fillColor: '#ffffff', fillOpacity: 0.55, color: 'rgba(0,0,0,0.25)', weight: 1.5 };
 
         const popupContent = (
-          <div style={{ minWidth: '180px' }}>
-            <strong style={{ display: 'block', marginBottom: '6px' }}>[{zone.level}] {zone.name}</strong>
-            {isOverlap && (
-              <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: '600', marginBottom: '6px' }}>⚠️ 작업 + 위험 구역</div>
-            )}
+          <div style={{ minWidth: '200px', padding: '4px' }}>
+            <div style={{ borderBottom: '1px solid #e2e8f0', pb: '8px', mb: '8px', fontWeight: '800', fontSize: '1rem', color: '#1e293b' }}>
+              [{zone.level}] {zone.name}
+            </div>
+            
             {zonePlans.length > 0 && (
-              <div style={{ marginBottom: '8px', fontSize: '0.9rem' }}>
-                <span style={{ color: '#64748b' }}>작업:</span>
+              <div style={{ marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.025em', marginBottom: '4px' }}>현장 작업</div>
                 {zonePlans.map((p) => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: getWorkTypeColor(p.work_type), flexShrink: 0 }} />
-                    {p.work_type} (주의 {p.calculated_risk_score})
+                  <div key={p.id} style={{ marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700', color: '#334155' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: getWorkTypeColor(p.work_type) }} />
+                      {p.work_type}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', paddingLeft: '14px' }}>
+                      {p.allocations?.map(a => a.worker_name).join(', ') || '배정 인원 없음'}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+
             {zoneDangers.length > 0 && (
-              <div style={{ fontSize: '0.85rem', color: '#b91c1c' }}>
-                <span style={{ fontWeight: '600' }}>위험 구역:</span>
+              <div style={{ marginBottom: '12px', background: '#fef2f2', padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2' }}>
+                <div style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                  <ShieldAlert size={14} /> 위험 구역
+                </div>
                 {zoneDangers.map((d) => (
-                  <div key={d.id} style={{ marginTop: '4px' }}>
-                    {RISK_TYPES.find((r) => r.value === d.risk_type)?.label || d.risk_type} — {d.description}
+                  <div key={d.id} style={{ fontSize: '0.8rem', color: '#991b1b', lineHeight: '1.4' }}>
+                    • {d.description}
                   </div>
                 ))}
               </div>
             )}
-            {!hasWork && !hasDanger && <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>배정된 작업·위험 없음</span>}
+
+            {!hasWork && !hasDanger && (
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', py: '10px' }}>등록된 작업/위험 없음</div>
+            )}
+
+            <div style={{ display: 'flex', gap: '6px', marginTop: '10px', pt: '8px', borderTop: '1px solid #f1f5f9' }}>
+               <button 
+                 onClick={() => onZoneClick(zone)}
+                 style={{ flex: 1, padding: '6px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer' }}
+               >
+                 작업/위험 추가
+               </button>
+            </div>
           </div>
         );
 
@@ -408,9 +481,12 @@ function DailyPlanMapLegend({ plans, dangerZones }) {
 }
 
 // 개별 작업 카드 컴포넌트
-const PlanCard = ({ plan, onEdit, onDelete }) => {
+const PlanCard = ({ plan, dangerZones, onEdit, onDelete }) => {
     const riskColor = plan.calculated_risk_score >= 80 ? '#ef4444' : plan.calculated_risk_score >= 50 ? '#f59e0b' : '#22c55e';
     const riskText = plan.calculated_risk_score >= 80 ? '고위험' : plan.calculated_risk_score >= 50 ? '주의' : '양호';
+
+    // 해당 구역에 등록된 사이트 전체 위험(DangerZone)이 있는지 확인
+    const zoneDangers = (dangerZones || []).filter(d => d.zone_id === plan.zone_id);
 
     const handleDelete = () => {
         if (!window.confirm('이 작업 계획을 삭제할까요? 배정된 인원 정보도 함께 삭제됩니다.')) return;
@@ -418,71 +494,75 @@ const PlanCard = ({ plan, onEdit, onDelete }) => {
     };
 
     return (
-        <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', borderLeft: `5px solid ${riskColor}`, position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div style={{ 
+            background: 'white', borderRadius: '12px', padding: '1.25rem', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: `4px solid ${riskColor}`, 
+            position: 'relative', border: '1px solid #e2e8f0'
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <span style={{ 
-                    background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '20px', 
-                    fontSize: '0.8rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' 
+                    background: '#f8fafc', color: '#64748b', padding: '4px 10px', borderRadius: '6px', 
+                    fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px',
+                    border: '1px solid #f1f5f9'
                 }}>
                     <MapPin size={12} /> {plan.zone_name}
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: riskColor, fontWeight: '800', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertTriangle size={14} /> {riskText} ({plan.calculated_risk_score})
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ color: riskColor, fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={14} /> {riskText}
                     </span>
-                    {onEdit && (
-                        <button
-                            type="button"
-                            onClick={onEdit}
-                            title="수정"
-                            style={{ padding: '6px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                            수정
-                        </button>
-                    )}
-                    {onDelete && (
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            title="삭제"
-                            style={{ padding: '6px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    )}
-                </span>
+                    <div style={{ width: '1px', height: '12px', background: '#e2e8f0', margin: '0 4px' }} />
+                    <button
+                        type="button"
+                        onClick={onEdit}
+                        style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', padding: '2px 4px' }}
+                    >
+                        수정
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', padding: '2px 4px' }}
+                    >
+                        삭제
+                    </button>
+                </div>
             </div>
 
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem', letterSpacing: '-0.025em' }}>
                 {plan.work_type}
             </h3>
-            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '0.75rem', lineHeight: '1.4' }}>
-                {plan.description || "상세 설명이 없습니다."}
-            </p>
-            {plan.daily_hazards && plan.daily_hazards.length > 0 && (
-                <div style={{ marginBottom: '1rem', fontSize: '0.85rem', color: '#b45309', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                    <AlertTriangle size={14} />
-                    {plan.daily_hazards.map((h, i) => (
-                        <span key={i} style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: '6px' }}>{h}</span>
+            
+            {/* ⚠️ 실시간 위험 구역 알림 연동 */}
+            {zoneDangers.length > 0 && (
+                <div style={{ 
+                    background: '#fff1f2', border: '1px solid #ffe4e6', borderRadius: '8px', 
+                    padding: '8px 10px', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '4px'
+                }}>
+                    {zoneDangers.map(d => (
+                        <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', color: '#be123c', fontSize: '0.8rem', fontWeight: '700' }}>
+                           <ShieldAlert size={14} style={{ flexShrink: 0, marginTop: '2px' }} /> <span>[긴급위험] {d.description}</span>
+                        </div>
                     ))}
                 </div>
             )}
 
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
-                <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: '600' }}>배정 인원</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {plan.allocations.length > 0 ? plan.allocations.map(a => (
-                        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '6px 10px', borderRadius: '6px' }}>
-                            <div style={{ width: '24px', height: '24px', background: '#cbd5e1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Users size={14} color="white" />
+            <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: '1.5' }}>
+                {plan.description || "상세 설명이 없습니다."}
+            </p>
+
+            <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '8px', fontWeight: '700', textTransform: 'uppercase' }}>배정 인원 ({plan.allocations?.length || 0})</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {plan.allocations && plan.allocations.length > 0 ? plan.allocations.map(a => (
+                        <div key={a.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'white', border: '1px solid #e2e8f0', padding: '4px 8px', borderRadius: '6px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                            <div style={{ width: '20px', height: '20px', background: '#3b82f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Users size={12} color="white" />
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#334155' }}>{a.worker_name}</span>
-                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{a.role}</span>
-                            </div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#334155' }}>{a.worker_name}</span>
                         </div>
                     )) : (
-                        <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>배정된 인원이 없습니다.</span>
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>배정 인원 없음</span>
                     )}
                 </div>
             </div>
@@ -765,10 +845,10 @@ const EditPlanModal = ({ planId, zones, onClose, onSuccess }) => {
 };
 
 // 작업 등록 모달 (zones 부모에서 넘기면 사용, 없으면 자체 로드)
-const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null }) => {
+const CreatePlanModal = ({ onClose, currDate, onSuccess, zones: zonesProp = null, initialZoneId = '' }) => {
     const [formData, setFormData] = useState({
         date: currDate,
-        zone_id: '',
+        zone_id: initialZoneId || '',
         template_id: '',
         description: '',
         daily_hazards_text: '',
