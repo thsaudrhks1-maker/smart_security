@@ -110,3 +110,52 @@ class AttendanceRepository:
         
         # 딕셔너리 형태로 변환하여 반환
         return [dict(row._mapping) for row in result]
+
+    @staticmethod
+    async def get_my_attendance_list(
+        db: AsyncSession,
+        user_id: int,
+        start_date: date,
+        end_date: date,
+    ):
+        """
+        작업자 본인 출근 내역 조회 (기간별)
+        - 근무회사, 나의 파트(역할), 당일 작업내용(일일 계획 설명) 포함
+        """
+        from sqlalchemy import text
+
+        query = text("""
+            SELECT
+                a.id,
+                a.date,
+                a.check_in_time,
+                a.check_out_time,
+                a.status,
+                c.name AS company_name,
+                pm.role_name AS my_part,
+                (
+                    SELECT p.description
+                    FROM worker_allocations wa
+                    JOIN daily_work_plans p ON wa.plan_id = p.id
+                    WHERE wa.worker_id = a.user_id AND p.date = a.date
+                    LIMIT 1
+                ) AS work_description
+            FROM attendance a
+            JOIN users u ON a.user_id = u.id
+            LEFT JOIN companies c ON u.company_id = c.id
+            LEFT JOIN project_members pm ON pm.user_id = a.user_id
+                AND pm.project_id = a.project_id AND pm.status = 'ACTIVE'
+            WHERE a.user_id = :user_id
+              AND a.date >= :start_date
+              AND a.date <= :end_date
+            ORDER BY a.date DESC
+        """)
+        result = await db.execute(
+            query,
+            {
+                "user_id": user_id,
+                "start_date": AttendanceRepository._parse_date(start_date),
+                "end_date": AttendanceRepository._parse_date(end_date),
+            },
+        )
+        return [dict(row._mapping) for row in result]

@@ -38,3 +38,19 @@ class ProjectAttendanceResponse(BaseModel):
     check_out_time: Optional[datetime]
     status: str
     check_in_method: str
+
+
+class MyAttendanceRow(BaseModel):
+    """작업자 '나의 출근현황' 한 행"""
+    id: int
+    date: date
+    check_in_time: Optional[datetime] = None
+    check_out_time: Optional[datetime] = None
+    status: str
+    company_name: Optional[str] = None
+    my_part: Optional[str] = None
+    work_description: Optional[str] = None
+    work_minutes: Optional[int] = None  # 근로시간(분), 퇴근 없으면 None
+
+    class Config:
+        from_attributes = True

@@ -36,3 +36,16 @@ export const getProjectAttendance = async (projectId, date = null) => {
     const response = await api.get(url);
     return response.data;
 };
+
+/**
+ * 나의 출근 내역 조회 (작업자용, 기간별)
+ * @param {string} start YYYY-MM-DD (옵션, 미지정 시 최근 7일)
+ * @param {string} end YYYY-MM-DD (옵션, 미지정 시 오늘)
+ */
+export const getMyAttendance = async (start = null, end = null) => {
+    const params = {};
+    if (start) params.start = start;
+    if (end) params.end = end;
+    const response = await api.get('/worker/my-attendance', { params });
+    return response.data;
+};

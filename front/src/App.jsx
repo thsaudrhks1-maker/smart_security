@@ -29,6 +29,7 @@ import WorkerLayout from './features/worker/components/layout/WorkerLayout';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
 import WorkList from './features/worker/work/WorkList';
 import SafetyMap from './features/worker/safety/SafetyMap';
+import WorkerAttendance from './features/worker/attendance/WorkerAttendance';
 import Emergency from './features/worker/components/Emergency';
 
 function App() {
@@ -88,6 +89,7 @@ function App() {
           >
             <Route index element={<WorkerDashboard />} />
             <Route path="work" element={<WorkList />} />
+            <Route path="attendance" element={<WorkerAttendance />} />
             <Route path="safety" element={<SafetyMap />} />
             <Route path="emergency" element={<Emergency />} />
             <Route path="report" element={<PagePlaceholder title="위험 신고" />} />

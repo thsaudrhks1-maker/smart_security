@@ -1,4 +1,5 @@
 from back.utils import date_utils
+from datetime import date, datetime
 from typing import Dict, List, Any
 from back.worker.repository import (
     get_worker_by_user_id,
@@ -218,4 +219,44 @@ async def get_dashboard_info(user_id: int) -> Dict[str, Any]:
         print(f"⚠️ Notices Info Error: {e}")
 
     
+    return result
+
+
+async def get_my_attendance(
+    user_id: int,
+    start_date: date,
+    end_date: date,
+    db,
+) -> List[Dict[str, Any]]:
+    """
+    작업자 본인 출근 내역 조회 (기간별).
+    각 행에 work_minutes(근로시간 분) 계산하여 포함.
+    """
+    from back.attendance.repository import AttendanceRepository
+
+    rows = await AttendanceRepository.get_my_attendance_list(
+        db, user_id, start_date, end_date
+    )
+    result = []
+    for r in rows:
+        work_minutes = None
+        if r.get("check_in_time") and r.get("check_out_time"):
+            try:
+                cin = r["check_in_time"]
+                cout = r["check_out_time"]
+                if hasattr(cin, "timestamp") and hasattr(cout, "timestamp"):
+                    work_minutes = int((cout.timestamp() - cin.timestamp()) / 60)
+            except (TypeError, ValueError):
+                pass
+        result.append({
+            "id": r["id"],
+            "date": r["date"],
+            "check_in_time": r.get("check_in_time"),
+            "check_out_time": r.get("check_out_time"),
+            "status": r.get("status") or "PRESENT",
+            "company_name": r.get("company_name"),
+            "my_part": r.get("my_part"),
+            "work_description": r.get("work_description"),
+            "work_minutes": work_minutes,
+        })
     return result

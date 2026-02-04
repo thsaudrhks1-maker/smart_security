@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, Map, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, ClipboardList, Map, AlertTriangle } from 'lucide-react';
 
 /**
  * 작업자용 레이아웃(모바일)
@@ -14,8 +14,9 @@ const WorkerLayout = () => {
   const navItems = [
     { path: '/worker', icon: LayoutDashboard, label: '홈' },
     { path: '/worker/work', icon: CheckSquare, label: '작업' },
+    { path: '/worker/attendance', icon: ClipboardList, label: '출근' },
     { path: '/worker/safety', icon: Map, label: '안전지도' },
-    { path: '/worker/report', icon: AlertTriangle, label: '신고' }, // emergency 라우트는 별도 버튼으로 처리하거나 여기에 포함
+    { path: '/worker/report', icon: AlertTriangle, label: '신고' },
   ];
 
   return (

@@ -8,8 +8,9 @@ from back.auth.model import User
 from back.company.model import Company, ProjectParticipant, Site
 from back.project.model import Project, ProjectMember
 from back.attendance.model import Attendance, AttendanceStatus
-from back.work.model import Weather, WorkTemplate, DailyWorkPlan, WorkerAllocation
+from back.work.model import Weather, WorkTemplate, DailyWorkPlan, WorkerAllocation, SafetyResource, TemplateResourceMap
 from back.safety.model import Zone
+from seed.safety_resource_data import RESOURCES as SAFETY_RESOURCE_ROWS
 
 async def reset_and_seed():
     print("🚀 [Step 1] 데이터베이스 초기화 중...")
@@ -22,7 +23,7 @@ async def reset_and_seed():
             "worker_allocations", "daily_work_plans", "safety_logs", 
             "daily_danger_zones", "zones", "sites", "projects", 
             "users", "companies", "notices", "weather", "emergency_alerts", 
-            "safety_violations", "work_templates", "daily_safety_info"
+            "safety_violations", "template_resource_map", "work_templates", "safety_resources", "daily_safety_info"
         ]
         for table in tables:
             await conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
@@ -137,11 +138,11 @@ async def reset_and_seed():
 
 
 
-        print("✅ [Step 6] 작업자 출퇴근 기록 생성 (2.03·2.04·오늘 더미)")
+        print("✅ [Step 6] 작업자 출퇴근 기록 생성 (2.03·2.04·오늘 + 박작업 일주일치)")
         d0303 = date(2026, 2, 3)
         d0304 = date(2026, 2, 4)
-        def dt(d, h, m):
-            return datetime.combine(d, datetime.min.time().replace(hour=h, minute=m))
+        def dt(d, h, m, s=0):
+            return datetime.combine(d, datetime.min.time().replace(hour=h, minute=m, second=s))
         attendance_list = [
             # 2.03일자: 여러 명, 시간 차이
             Attendance(user_id=worker.id,   project_id=project.id, date=d0303, check_in_time=dt(d0303, 7, 50), check_out_time=dt(d0303, 17, 30), status="PRESENT", check_in_method="APP"),
@@ -156,6 +157,23 @@ async def reset_and_seed():
             # 오늘(실행일) 1건
             Attendance(user_id=worker.id,   project_id=project.id, date=date.today(), check_in_time=datetime.now().replace(hour=7, minute=50), status="PRESENT", check_in_method="APP"),
         ]
+        # 박작업(worker) 일주일치: 오늘 포함 최근 7일 중 없는 날만 추가
+        already_worker_dates = {d0303, d0304, date.today()}
+        for i in range(7):
+            d = date.today() - timedelta(days=(6 - i))
+            if d in already_worker_dates:
+                continue
+            attendance_list.append(
+                Attendance(
+                    user_id=worker.id,
+                    project_id=project.id,
+                    date=d,
+                    check_in_time=dt(d, 7, 45 + (i % 3), 0),
+                    check_out_time=dt(d, 17, 30 + (i % 2) * 10, 0),
+                    status="LATE" if i % 4 == 1 else "PRESENT",
+                    check_in_method="APP",
+                )
+            )
         db.add_all(attendance_list)
         await db.commit()
         
@@ -251,6 +269,29 @@ async def reset_and_seed():
         ]
         db.add_all(templates)
         await db.commit()
+        await db.refresh(templates[0])  # ID 확보를 위해 한 건이라도 refresh (전체는 아래에서 참조)
+
+        print("🦺 [Step 9b] 장비/장구류 마스터(SafetyResource) 및 공정-장비 연결 생성 중...")
+        resources = [SafetyResource(**r) for r in SAFETY_RESOURCE_ROWS]
+        db.add_all(resources)
+        await db.flush()  # ID 확보
+
+        # 공정(템플릿) ↔ 장비 연결 (template_resource_map)
+        # templates[0]=철거, [1]=조적, [2]=전기배선, [3]=수도배관, [4]=목공, [5]=타일, [6]=도장, [7]=도배
+        # resources: 0안전모,1안전화,2방진,3보안경,4절연장갑,5일반장갑,6그네안전대,7착탈안전대,8방독,9화학장갑,10무릎,11귀마개,12조끼,13용접면,14고글,15호이스트,16안전망,17소화기, 18덤프,19굴착기,20타워크레인,21이동크레인,22지게차,23펌프카, 24A사다리,25비계,26드릴,27용접기,28리프트,29타카
+        def res(*idx): return [resources[i] for i in idx]
+        def link(t_idx, r_indices):
+            for i in r_indices:
+                db.add(TemplateResourceMap(template_id=templates[t_idx].id, resource_id=resources[i].id))
+        link(0, [0, 1, 2, 3, 17, 19, 24])   # 철거: 안전모,안전화,방진,보안경,소화기,굴착기,A사다리
+        link(1, [0, 1, 5, 24, 25])          # 조적: 안전모,안전화,장갑,A사다리,비계
+        link(2, [0, 1, 4, 26, 28])          # 전기배선: 안전모,안전화,절연장갑,드릴,리프트
+        link(3, [0, 1, 13, 27])              # 수도배관: 안전모,안전화,용접면,용접기
+        link(4, [0, 1, 2, 29])               # 목공: 안전모,안전화,방진,타카
+        link(5, [0, 5, 10, 24])              # 타일: 안전모,장갑,무릎보호대,A사다리
+        link(6, [8, 9, 14, 17])             # 도장: 방독,화학장갑,고글,소화기
+        link(7, [1, 5, 24])                  # 도배/바닥재: 안전화,장갑,A사다리
+        await db.commit()  # resources + template_resource_map 한꺼번에
 
         print("\n🎉 모든 데이터 초기화 및 연동 완료! (소규모 현장 모드)")
         

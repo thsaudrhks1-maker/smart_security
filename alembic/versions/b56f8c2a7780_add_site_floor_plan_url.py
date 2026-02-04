@@ -17,8 +17,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column('sites', sa.Column('floor_plan_url', sa.String(), nullable=True, comment='도면 이미지 URL (1개 층 기준)'))
+    conn = op.get_bind()
+    insp = sa.inspect(conn)
+    cols = [c["name"] for c in insp.get_columns("sites")]
+    if "floor_plan_url" not in cols:
+        op.add_column('sites', sa.Column('floor_plan_url', sa.String(), nullable=True, comment='도면 이미지 URL (1개 층 기준)'))
 
 
 def downgrade() -> None:
-    op.drop_column('sites', 'floor_plan_url')
+    conn = op.get_bind()
+    insp = sa.inspect(conn)
+    cols = [c["name"] for c in insp.get_columns("sites")]
+    if "floor_plan_url" in cols:
+        op.drop_column('sites', 'floor_plan_url')
