@@ -6,10 +6,11 @@ from datetime import datetime as dt, date as dt_date
 
 from back.database import get_db
 from back.auth.dependencies import get_current_user
+from sqlalchemy import delete as sql_delete
+
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
 from back.safety.model import Zone
-# from back.company.model import Worker # 삭제
 
 router = APIRouter(tags=["work"])
 
@@ -211,3 +212,16 @@ async def create_work_plan(plan: DailyWorkPlanCreate, db: AsyncSession = Depends
         checklist_items=template.checklist_items,
         allocations=[] 
     )
+
+
+@router.delete("/work/plans/{plan_id}", status_code=204)
+async def delete_work_plan(plan_id: int, db: AsyncSession = Depends(get_db)):
+    """일일 작업 계획 삭제 (배정(WorkerAllocation) 먼저 삭제 후 계획 삭제)"""
+    result = await db.execute(select(DailyWorkPlan).where(DailyWorkPlan.id == plan_id))
+    plan = result.scalar_one_or_none()
+    if not plan:
+        raise HTTPException(status_code=404, detail="작업 계획을 찾을 수 없습니다.")
+    await db.execute(sql_delete(WorkerAllocation).where(WorkerAllocation.plan_id == plan_id))
+    await db.execute(sql_delete(DailyWorkPlan).where(DailyWorkPlan.id == plan_id))
+    await db.commit()
+    return None

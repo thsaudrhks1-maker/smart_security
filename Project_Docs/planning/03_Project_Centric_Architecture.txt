@@ -182,6 +182,14 @@ Site/Company 등록          O         △ (보조)     X
 - [Notices] (공지사항)
 - [Attendance] (출역 기록)
 
+일일 작업자 작업 위치 개수:
+  - 한 건의 DailyWorkPlan은 하나의 Zone(작업 위치)에만 연결됨 (zone_id 1:1).
+  - 한 작업자는 여러 계획에 배정될 수 있음 (WorkerAllocation 다건). 따라서 당일 "여러 개"의 작업 위치를 가질 수 있음.
+
+위험요소와 Zone 참조:
+  - 일일 변동 위험(DailyDangerZone)은 Zone과 zone_id(FK)로 DB 참조 연결됨.
+  - 위험의 "위치"는 해당 Zone의 좌표(lat/lng) 또는 DailyDangerZone의 x,y,z(옵션)로 표시.
+
 ---
 
 4.2 신규 테이블: Project (프로젝트)

@@ -114,3 +114,18 @@ async def create_daily_danger_zone(
         risk_type=db_row.risk_type,
         description=db_row.description
     )
+
+
+@router.delete("/safety/daily-danger-zones/{danger_zone_id}", status_code=204)
+async def delete_daily_danger_zone(
+    danger_zone_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """일일 변동 위험 구역 삭제"""
+    result = await db.execute(select(DailyDangerZone).where(DailyDangerZone.id == danger_zone_id))
+    row = result.scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="해당 위험 구역을 찾을 수 없습니다.")
+    await db.delete(row)
+    await db.commit()
+    return None

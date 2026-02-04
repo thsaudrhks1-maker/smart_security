@@ -33,4 +33,8 @@ export const safetyApi = {
         const response = await apiClient.post('/safety/daily-danger-zones', data);
         return response.data;
     },
+    /** 일일 변동 위험 구역 삭제 */
+    deleteDailyDangerZone: async (id) => {
+        await apiClient.delete(`/safety/daily-danger-zones/${id}`);
+    },
 };
