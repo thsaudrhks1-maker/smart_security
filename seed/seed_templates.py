@@ -2,11 +2,12 @@ import asyncio
 import sys
 import os
 
-# 프로젝트 루트 경로를 sys.path에 추가 (seed 폴더에서 실행 시 back 모듈 못 찾는 문제 해결)
+# 프로젝트 루트 경로를 sys.path에 추가
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from sqlalchemy import text
+from sqlalchemy import delete
 from back.database import AsyncSessionLocal
+from back.work.model import WorkTemplate
 
 async def seed_templates():
     templates = [
@@ -70,31 +71,19 @@ async def seed_templates():
     ]
 
     async with AsyncSessionLocal() as session:
-        print("🌱 Seeding Work Templates...")
+        print("🌱 Seeding Work Templates using ORM...")
         
-        # 기존 데이터 삭제 (중복 방지)
-        await session.execute(text("TRUNCATE TABLE work_templates RESTART IDENTITY CASCADE"))
+        # 기존 데이터 삭제
+        await session.execute(delete(WorkTemplate))
         
         for t in templates:
-            # check_items list -> jsonb or text array? Model definition uses JSON usually or ARRAY.
-            # Assuming JSON based on schema.
-            
-            # Use raw SQL for speed and simplicity
-            sql = """
-            INSERT INTO work_templates (work_type, base_risk_score, required_ppe, checklist_items)
-            VALUES (:type, :risk, :ppe, :check)
-            """
-            # PostgreSQL Array syntax adjustment if needed, but SQLAlchemy params handle lists well usually
-            # if the column type is JSONB or ARRAY. Let's assume JSONB for now or ARRAY.
-            # Checking model: work_templates usually has JSON columns for these.
-            import json
-            
-            await session.execute(text(sql), {
-                "type": t["work_type"],
-                "risk": t["base_risk"],
-                "ppe": json.dumps(t["ppe"], ensure_ascii=False), # JSON string
-                "check": json.dumps(t["check_items"], ensure_ascii=False)
-            })
+            new_tmpl = WorkTemplate(
+                work_type=t["work_type"],
+                base_risk_score=t["base_risk"],
+                required_ppe=t["ppe"],
+                checklist_items=t["check_items"]
+            )
+            session.add(new_tmpl)
             
         await session.commit()
         print(f"✅ inserted {len(templates)} templates.")

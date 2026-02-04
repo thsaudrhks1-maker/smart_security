@@ -5,9 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loading } = useAuth();
-  
+  const auth = useAuth();
   const [formData, setFormData] = useState({ username: 'admin', password: '0000' });
+
+  if (auth == null) {
+    return <div className="container" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>Loading...</div>;
+  }
+  const { login, loading } = auth;
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -18,14 +22,20 @@ const Login = () => {
     setIsSubmitting(true);
     setError('');
 
-    const result = await login(formData.username, formData.password);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(formData.username, formData.password);
+      if (result.success) {
+        navigate('/dashboard');
+        return;
+      }
+      setError(result.message || '로그인에 실패했습니다.');
+    } catch (err) {
+      console.error('Login error', err);
+      const msg = err.response?.data?.detail ?? err.message ?? '서버에 연결할 수 없습니다. 백엔드(및 DB)가 실행 중인지 확인하세요.';
+      setError(typeof msg === 'string' ? msg : '로그인 중 오류가 발생했습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   if(loading) return <div>Loading...</div>;

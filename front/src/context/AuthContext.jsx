@@ -34,7 +34,13 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error("Login failed:", error);
-      return { success: false, message: error.response?.data?.detail || "로그인 실패" };
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        return { success: false, message: "서버 응답이 없습니다. 백엔드(포트 8500)와 DB(PostgreSQL)가 실행 중인지 확인하세요." };
+      }
+      if (error.response?.status === 401) {
+        return { success: false, message: "아이디 또는 비밀번호가 올바르지 않습니다." };
+      }
+      return { success: false, message: error.response?.data?.detail || error.message || "로그인 실패" };
     }
   };
 

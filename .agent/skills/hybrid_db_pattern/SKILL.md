@@ -5,13 +5,16 @@ description: SQLAlchemy ORM과 Raw SQL을 효과적으로 함께 사용하기 �
 
 # 하이브리드 DB 패턴 (SQLAlchemy ORM + Raw SQL)
 
-이 프로젝트는 DB 상호 작용을 위해 **하이브리드 접근 방식**을 채택합니다.
+이 프로젝트는 DB 상호 작용의 명확성을 위해 다음과 같은 **역할 분담**을 채택합니다.
 
-1.  **SQLAlchemy ORM (AsyncSession)**:
-    *   **용도**: 복잡한 비즈니스 로직, 엔티티 상태 관리, Cascade 삭제 등 객체 지향적 일관성이 중요할 때 사용.
-2.  **Raw SQL (Helper Functions)**:
-    *   **용도**: 읽기 전용 대량 조회(대시보드), 복잡한 통계/집계 쿼리, 성능이 최우선일 때, 또는 ORM 오버헤드가 불필요할 때 사용.
-    *   **헬퍼 함수**: `back.database` 모듈에 정의된 간소화된 함수들(`execute`, `fetch_one`, `fetch_all`, `insert_and_return`)을 사용.
+1.  **SQLAlchemy ORM (Maintenance & Schema)**:
+    *   **용도**: 테이블 구조 정의(Models), 마이그레이션(Alembic), 시스템 초기화 및 더미 데이터 생성(Seeding/Reset).
+    *   **이유**: 스키마 변경 시의 유연성과 관계 설정을 편리하게 관리하기 위함.
+
+2.  **Raw SQL (Standard Application Logic - CRUD)**:
+    *   **용도**: 실제 앱 구동 시 발생하는 모든 비즈니스 로직. 근로자 등록, 프로젝트 생성, 수정, 대시보드 조회 등.
+    *   **사용법**: `back.database`에 정의된 비동기 헬퍼 함수(`execute`, `fetch_one`, `fetch_all`, `insert_and_return`)를 사용.
+    *   **이유**: 쿼리 실행의 직접 제어, 성능 최적화, 그리고 개발자가 실행되는 SQL을 명확히 파악하기 위함.
 
 ## 규칙 (Rules)
 

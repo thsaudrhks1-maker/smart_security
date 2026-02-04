@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from back.database import get_db
-from back.auth.router import get_current_user
+from back.auth.dependencies import get_current_user
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
 from back.safety.model import Zone

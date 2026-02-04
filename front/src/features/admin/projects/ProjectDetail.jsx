@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjectById, getProjectWorkers } from '../../../api/projectApi';
+import { getProjectById, getProjectWorkers, getProjectSites, createProjectSite, uploadSiteFloorPlan } from '../../../api/projectApi';
+import { safetyApi } from '../../../api/safetyApi';
+import apiClient from '../../../api/client';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { MapPin, Plus, Upload, X } from 'lucide-react';
 import './ProjectDetail.css';
 
 // Leaflet 아이콘 이슈 해결
@@ -18,13 +21,86 @@ const ProjectDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [workers, setWorkers] = useState([]); // 작업자 목록 상태 추가
+  const [workers, setWorkers] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [zonesBySiteId, setZonesBySiteId] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [addSiteModal, setAddSiteModal] = useState(false);
+  const [newSiteName, setNewSiteName] = useState('');
+  const [newSiteAddress, setNewSiteAddress] = useState('');
+  const [zoneForm, setZoneForm] = useState({ siteId: null, name: '', level: '1F', type: 'INDOOR' });
+  const [uploadingSiteId, setUploadingSiteId] = useState(null);
 
   useEffect(() => {
     loadProject();
   }, [id]);
+
+  useEffect(() => {
+    if (id && activeTab === 'sites') {
+      loadSites();
+    }
+  }, [id, activeTab]);
+
+  const loadSites = async () => {
+    try {
+      const list = await getProjectSites(id);
+      setSites(list);
+      for (const site of list) {
+        const zones = await safetyApi.getZones(site.id);
+        setZonesBySiteId(prev => ({ ...prev, [site.id]: zones }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddSite = async (e) => {
+    e.preventDefault();
+    if (!newSiteName.trim()) return alert('현장명을 입력하세요.');
+    try {
+      await createProjectSite(id, { name: newSiteName.trim(), address: newSiteAddress.trim() });
+      setAddSiteModal(false);
+      setNewSiteName('');
+      setNewSiteAddress('');
+      loadSites();
+    } catch (err) {
+      console.error(err);
+      alert('현장 추가에 실패했습니다.');
+    }
+  };
+
+  const handleFloorPlanUpload = async (siteId, file) => {
+    if (!file) return;
+    setUploadingSiteId(siteId);
+    try {
+      await uploadSiteFloorPlan(id, siteId, file);
+      loadSites();
+    } catch (err) {
+      console.error(err);
+      alert('도면 업로드에 실패했습니다.');
+    } finally {
+      setUploadingSiteId(null);
+    }
+  };
+
+  const handleAddZone = async (e) => {
+    e.preventDefault();
+    if (!zoneForm.siteId || !zoneForm.name.trim()) return alert('현장을 선택하고 구역명을 입력하세요.');
+    try {
+      await safetyApi.createZone({
+        site_id: zoneForm.siteId,
+        name: zoneForm.name.trim(),
+        level: zoneForm.level,
+        type: zoneForm.type,
+      });
+      setZoneForm({ siteId: null, name: '', level: '1F', type: 'INDOOR' });
+      loadSites();
+    } catch (err) {
+      console.error(err);
+      alert('구역 추가에 실패했습니다.');
+    }
+  };
 
   const loadProject = async () => {
     try {
@@ -294,10 +370,131 @@ const ProjectDetail = () => {
           )}
 
           {activeTab === 'sites' && (
-            <div className="placeholder-content">
-              <h3>🏗️ 현장 관리</h3>
-              <p>이 프로젝트의 현장(Site) 및 구역(Zone)을 관리합니다.</p>
-              <button className="btn-action">+ 현장 추가</button>
+            <div className="sites-tab-content" style={{ padding: '1rem 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3>🏗️ 현장 관리</h3>
+                <button className="btn-action" onClick={() => setAddSiteModal(true)}>
+                  <Plus size={18} style={{ verticalAlign: 'middle', marginRight: '4px' }} /> 현장 추가
+                </button>
+              </div>
+              <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                위치와 1개 층 도면을 올린 뒤, 그 위에 구역(Zone)을 정의하면 중간관리자가 해당 구역에 작업을 배치하고 근로자가 나의 작업으로 볼 수 있습니다.
+              </p>
+              {sites.length === 0 ? (
+                <div style={{ padding: '3rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#94a3b8' }}>
+                  등록된 현장이 없습니다. 현장 추가 후 도면을 올리고 구역을 정의하세요.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {sites.map((site) => (
+                    <div key={site.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                        <MapPin size={20} color="#3b82f6" />
+                        <div>
+                          <strong style={{ fontSize: '1.1rem', color: '#1e293b' }}>{site.name}</strong>
+                          {site.address && <div style={{ fontSize: '0.9rem', color: '#64748b' }}>{site.address}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>도면 (1개 층)</div>
+                          {site.floor_plan_url ? (
+                            <div style={{ marginBottom: '8px' }}>
+                              <img
+                                src={`${apiClient.defaults.baseURL}${site.floor_plan_url}`}
+                                alt="도면"
+                                style={{ maxWidth: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                              />
+                            </div>
+                          ) : null}
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', background: '#f1f5f9', borderRadius: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                            <Upload size={16} />
+                            {uploadingSiteId === site.id ? '업로드 중...' : '도면 올리기'}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: 'none' }}
+                              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFloorPlanUpload(site.id, f); e.target.value = ''; }}
+                              disabled={uploadingSiteId !== null}
+                            />
+                          </label>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>구역(Zone) 정의</div>
+                          <form onSubmit={handleAddZone} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1rem' }}>
+                            <input
+                              type="text"
+                              placeholder="구역명 (예: A구역, 2층 동측)"
+                              value={zoneForm.siteId === site.id ? zoneForm.name : ''}
+                              onChange={(e) => setZoneForm(prev => ({ ...prev, siteId: site.id, name: e.target.value }))}
+                              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <select
+                                value={zoneForm.siteId === site.id ? zoneForm.level : '1F'}
+                                onChange={(e) => setZoneForm(prev => ({ ...prev, siteId: site.id, level: e.target.value }))}
+                                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1 }}
+                              >
+                                <option value="1F">1F</option>
+                                <option value="2F">2F</option>
+                                <option value="B1">B1</option>
+                                <option value="ROOF">ROOF</option>
+                              </select>
+                              <select
+                                value={zoneForm.siteId === site.id ? zoneForm.type : 'INDOOR'}
+                                onChange={(e) => setZoneForm(prev => ({ ...prev, siteId: site.id, type: e.target.value }))}
+                                style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', flex: 1 }}
+                              >
+                                <option value="INDOOR">실내</option>
+                                <option value="OUTDOOR">실외</option>
+                                <option value="ROOF">옥상</option>
+                                <option value="PIT">PIT</option>
+                                <option value="DANGER">위험구역</option>
+                              </select>
+                            </div>
+                            <button type="submit" style={{ padding: '8px 14px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
+                              구역 추가
+                            </button>
+                          </form>
+                          <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                            {zonesBySiteId[site.id]?.length > 0 ? (
+                              <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                                {(zonesBySiteId[site.id] || []).map(z => (
+                                  <li key={z.id} style={{ marginBottom: '4px' }}>[{z.level}] {z.name} ({z.type})</li>
+                                ))}
+                              </ul>
+                            ) : '등록된 구역이 없습니다.'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {addSiteModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                  <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                      <h3 style={{ margin: 0 }}>현장 추가</h3>
+                      <button onClick={() => setAddSiteModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
+                    </div>
+                    <form onSubmit={handleAddSite}>
+                      <label style={{ display: 'block', marginBottom: '1rem' }}>
+                        <span style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#475569' }}>현장명</span>
+                        <input type="text" value={newSiteName} onChange={e => setNewSiteName(e.target.value)} placeholder="예: 본관 현장" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }} required />
+                      </label>
+                      <label style={{ display: 'block', marginBottom: '1rem' }}>
+                        <span style={{ display: 'block', marginBottom: '4px', fontWeight: '600', color: '#475569' }}>주소 (선택)</span>
+                        <input type="text" value={newSiteAddress} onChange={e => setNewSiteAddress(e.target.value)} placeholder="상세 주소" style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                      </label>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={() => setAddSiteModal(false)} style={{ padding: '10px 20px', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>취소</button>
+                        <button type="submit" style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>추가</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

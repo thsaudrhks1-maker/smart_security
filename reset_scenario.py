@@ -21,7 +21,8 @@ async def reset_and_seed():
             "attendance", "project_members", "project_participants", 
             "worker_allocations", "daily_work_plans", "safety_logs", 
             "daily_danger_zones", "zones", "sites", "projects", 
-            "users", "companies", "notices", "weather", "emergency_alerts", "safety_violations"
+            "users", "companies", "notices", "weather", "emergency_alerts", 
+            "safety_violations", "work_templates", "daily_safety_info"
         ]
         for table in tables:
             await conn.execute(text(f"DROP TABLE IF EXISTS {table} CASCADE"))
@@ -319,4 +320,5 @@ async def reset_and_seed():
         await db.commit()
         print("✅ 3일치 작업 계획 생성 완료!")
 
-    # ----------------------------------------------------------------------------------
+if __name__ == "__main__":
+    asyncio.run(reset_and_seed())

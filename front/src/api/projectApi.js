@@ -79,3 +79,23 @@ export const approveProjectMembers = async (projectId, userIds, action = 'APPROV
   return response.data;
 };
 
+/** 프로젝트 현장(Site) 및 도면 */
+export const getProjectSites = async (projectId) => {
+  const response = await api.get(`/api/projects/${projectId}/sites`);
+  return response.data;
+};
+
+export const createProjectSite = async (projectId, { name, address }) => {
+  const response = await api.post(`/api/projects/${projectId}/sites`, { name, address: address || '' });
+  return response.data;
+};
+
+export const uploadSiteFloorPlan = async (projectId, siteId, file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post(`/api/projects/${projectId}/sites/${siteId}/floor-plan`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+

@@ -15,6 +15,8 @@ class Site(Base):
     name = Column(String, nullable=False, comment="현장명")
     address = Column(String, nullable=True, comment="주소")
     safety_manager_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="안전관리자 User ID")
+    # 1개 층 도면 (예: /static/blueprints/{uuid}.png)
+    floor_plan_url = Column(String, nullable=True, comment="도면 이미지 URL (1개 층 기준)")
     
     # 관계
     project = relationship("Project")

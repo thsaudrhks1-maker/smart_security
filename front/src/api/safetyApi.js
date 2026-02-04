@@ -1,16 +1,19 @@
 import apiClient from './client';
 
-// 아직 구체적인 기능이 프론트에 구현되지 않았을 수 있지만, 미리 구조 잡아둠
 export const safetyApi = {
-    // 안전 구역 목록
-    getZones: async () => {
-        const response = await apiClient.get('/safety/zones');
+    /** 구역 목록 (site_id 있으면 해당 현장만) */
+    getZones: async (siteId = null) => {
+        const params = siteId != null ? { site_id: siteId } : {};
+        const response = await apiClient.get('/safety/zones', { params });
         return response.data;
     },
-    
-    // (추후 확장) 안전 로그 조회 등
+    /** 구역 생성 (도면 위에서 정의한 Zone DB 저장) */
+    createZone: async (data) => {
+        const response = await apiClient.post('/safety/zones', data);
+        return response.data;
+    },
     getLogs: async () => {
-         const response = await apiClient.get('/safety/logs');
-         return response.data;
-    }
-}
+        const response = await apiClient.get('/safety/logs');
+        return response.data;
+    },
+};

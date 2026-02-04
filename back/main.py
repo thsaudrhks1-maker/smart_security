@@ -46,6 +46,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 도면 등 정적 파일 서빙 (업로드된 도면 이미지)
+import os as _os
+_static_path = _os.path.join(_os.path.dirname(__file__), "static")
+if _os.path.isdir(_static_path):
+    app.mount("/static", StaticFiles(directory=_static_path), name="static")
+
 # 라우터 등록
 app.include_router(auth_router)
 app.include_router(project_router)
