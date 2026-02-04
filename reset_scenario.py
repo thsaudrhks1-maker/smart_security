@@ -104,7 +104,7 @@ async def reset_and_seed():
             name="강남 스마트 오피스 신축공사",
             code="PJ-2026-001",
             location_name="서울시 강남구 테헤란로 123",
-            location_lat=37.56650,
+            location_lat=37.56600,
             location_lng=126.97800,
             start_date=date(2026, 1, 1),
             end_date=date(2026, 12, 31),
@@ -175,8 +175,8 @@ async def reset_and_seed():
         
         # 5억~10억 규모 리모델링/인테리어 현장 가정 (1개 층 구획)
         # 주출입구, 메인홀, 사무실, 회의실, 탕비실, 화장실, 외부, 옥상 + 1층 작업공간 = 8개
-        # 서울광장 중심 기준 가로·세로 동일 간격(step) 2x4 균일 그리드 → 작업위치 정렬 균등하게
-        center_lat, center_lng = 37.56650, 126.97800
+        # 좌표 앵커를 서울광장(시청광장) 중심으로 (배열대열 유지, step 동일)
+        center_lat, center_lng = 37.56600, 126.97800
         step = 0.00025  # 가로·세로 동일 간격 (정사각형 칸)
         # 2열: 중심 좌우
         lng0 = round(center_lng - step / 2, 6)

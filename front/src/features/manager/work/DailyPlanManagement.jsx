@@ -8,7 +8,7 @@ import { safetyApi } from '../../../api/safetyApi';
 import { getManagerDashboard } from '../../../api/managerApi';
 import { getProjectById, getProjectSites } from '../../../api/projectApi';
 import apiClient from '../../../api/client';
-import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, X, ShieldAlert, Trash2, Map } from 'lucide-react';
+import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, X, ShieldAlert, Trash2, Map } from 'lucide-react';
 
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
 
@@ -31,6 +31,8 @@ const DailyPlanManagement = () => {
   const [project, setProject] = useState(null);
   const [sites, setSites] = useState([]);
   const [siteId, setSiteId] = useState(null);
+  const [openWorkAreas, setOpenWorkAreas] = useState(true);
+  const [openDangerZones, setOpenDangerZones] = useState(true);
 
   const loadPlans = async () => {
     try {
@@ -186,130 +188,115 @@ const DailyPlanManagement = () => {
         </div>
       </div>
 
-      {/* 오늘의 위험 구역 (작업자에게 데일리로 전달) */}
-      <div style={{ marginBottom: '1.5rem', padding: '1.25rem', background: '#fef3c7', borderRadius: '12px', border: '1px solid #fcd34d' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', fontWeight: '700', color: '#92400e' }}>
-          <ShieldAlert size={20} /> 그날 위험 구역 (날짜별)
-        </div>
-        <p style={{ fontSize: '0.85rem', color: '#b45309', marginBottom: '1rem' }}>
-          선택한 날짜에 특정 구역에서만 발생하는 위험(중장비, 화재 등)을 등록하면 작업자 앱에 표시됩니다.
-        </p>
-        <form onSubmit={handleAddDangerZone} style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'flex-end', marginBottom: '1rem' }}>
-          <label style={{ minWidth: '140px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>구역</span>
-            <select
-              value={dangerForm.zone_id}
-              onChange={e => setDangerForm({ ...dangerForm, zone_id: e.target.value })}
-              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
-              required
-            >
-              <option value="">선택</option>
-              {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
-            </select>
-          </label>
-          <label style={{ minWidth: '100px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>유형</span>
-            <select
-              value={dangerForm.risk_type}
-              onChange={e => setDangerForm({ ...dangerForm, risk_type: e.target.value })}
-              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
-            >
-              {RISK_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </label>
-          <label style={{ flex: '1', minWidth: '200px' }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>설명</span>
-            <input
-              type="text"
-              value={dangerForm.description}
-              onChange={e => setDangerForm({ ...dangerForm, description: e.target.value })}
-              placeholder="예: 이동식 크레인 인양 작업 중 (접근 금지)"
-              style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}
-              required
-            />
-          </label>
-          <button type="submit" disabled={dangerSubmitting} style={{ padding: '8px 16px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: dangerSubmitting ? 'not-allowed' : 'pointer' }}>
-            {dangerSubmitting ? '등록 중...' : '추가'}
-          </button>
-        </form>
-        {dangerZones.length > 0 ? (
-          <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.9rem', color: '#78350f', listStyle: 'none' }}>
-            {dangerZones.map(d => (
-              <li key={d.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ flex: 1 }}>
-                  <strong>{RISK_TYPES.find(r => r.value === d.risk_type)?.label || d.risk_type}</strong> — {d.description}
-                  {zones.find(z => z.id === d.zone_id) && <span style={{ color: '#92400e' }}> (구역: {zones.find(z => z.id === d.zone_id).name})</span>}
-                </span>
-                <button
-                  type="button"
-                  onClick={async () => { if (window.confirm('이 위험 구역을 삭제할까요?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }}
-                  title="삭제"
-                  style={{ padding: '4px 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <Trash2 size={14} /> 삭제
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다.</div>
-        )}
-      </div>
-
-      {/* 작업 구역 지도 (좌표 기반, 색깔별 작업·위험 구역 표기) */}
-      {project && siteId && (
-        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem', fontWeight: '700', color: '#334155' }}>
-            <Map size={20} /> 작업 구역 지도 (날짜·현장 기준)
-          </div>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.75rem' }}>
-            선택한 현장의 구역 좌표로 작업 위치와 그날 위험 구역이 표시됩니다. 색상은 작업(공종)별, 빨간 마커는 위험 구역입니다.
-          </p>
-          <div
-            style={{
-              height: '480px',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              border: '1px solid #e2e8f0',
-              background: '#f1f5f9',
-            }}
-            className="daily-plan-map-wrapper"
-          >
-            <MapContainer
-              center={mapCenter}
-              zoom={15}
-              style={{ height: '100%', width: '100%', background: 'transparent' }}
-              scrollWheelZoom={true}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                opacity={1.00}
-              />
-              <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
-            </MapContainer>
-          </div>
-          <DailyPlanMapLegend plans={filteredPlans} />
-        </div>
-      )}
-
-      {/* 작업 리스트 (Kanban Card Style) */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>데이터 로딩 중...</div>
-        ) : filteredPlans.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem', border: '2px dashed #cbd5e1', borderRadius: '12px', color: '#94a3b8' }}>
-                <HardHat size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                <p>등록된 작업 계획이 없습니다.</p>
-                <p>상단의 버튼을 눌러 작업을 추가하세요.</p>
+      {/* 본문: 왼쪽 지도 | 오른쪽 일일작업구역·위험구역 (토글) */}
+      <div style={{ flex: 1, display: 'flex', gap: '1.5rem', minHeight: 0 }}>
+        {/* 왼쪽: 지도 */}
+        {project && siteId && (
+          <div style={{ width: '56%', minWidth: 360, display: 'flex', flexDirection: 'column', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e2e8f0', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Map size={20} /> 작업 구역 지도 (날짜·현장 기준)
             </div>
-        ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                {filteredPlans.map(plan => (
-                    <PlanCard key={plan.id} plan={plan} onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }} />
-                ))}
+            <div style={{ flex: 1, minHeight: 400 }}>
+              <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%', background: 'transparent' }} scrollWheelZoom={true}>
+                <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={1.00} />
+                <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
+              </MapContainer>
             </div>
+            <DailyPlanMapLegend plans={filteredPlans} />
+          </div>
         )}
+
+        {/* 오른쪽: 일일 작업 구역 / 위험 구역 (토글) */}
+        <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
+          {/* 토글: 일일 작업 구역 */}
+          <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <button
+              type="button"
+              onClick={() => setOpenWorkAreas(!openWorkAreas)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: '#f8fafc', cursor: 'pointer', fontWeight: '700', color: '#1e293b', textAlign: 'left' }}
+            >
+              {openWorkAreas ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+              <HardHat size={20} color="#3b82f6" /> 일일 작업 구역
+              <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#64748b' }}>{filteredPlans.length}건</span>
+            </button>
+            {openWorkAreas && (
+              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', maxHeight: '360px', overflowY: 'auto' }}>
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>로딩 중...</div>
+                ) : filteredPlans.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+                    등록된 작업 계획이 없습니다. 상단 <strong>작업 등록</strong>으로 추가하세요.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {filteredPlans.map(plan => (
+                      <PlanCard key={plan.id} plan={plan} onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 토글: 위험 구역 (날짜별) */}
+          <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #fcd34d', overflow: 'hidden' }}>
+            <button
+              type="button"
+              onClick={() => setOpenDangerZones(!openDangerZones)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: '#fef3c7', cursor: 'pointer', fontWeight: '700', color: '#92400e', textAlign: 'left' }}
+            >
+              {openDangerZones ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+              <ShieldAlert size={20} /> 위험 구역 (날짜별)
+              <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#b45309' }}>{dangerZonesInSite.length}건</span>
+            </button>
+            {openDangerZones && (
+              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #fcd34d', background: '#fffbeb' }}>
+                <p style={{ fontSize: '0.85rem', color: '#b45309', marginBottom: '1rem' }}>
+                  선택한 날짜에 특정 구역에서만 발생하는 위험을 등록하면 작업자 앱에 표시됩니다.
+                </p>
+                <form onSubmit={handleAddDangerZone} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
+                  <label>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>구역</span>
+                    <select value={dangerForm.zone_id} onChange={e => setDangerForm({ ...dangerForm, zone_id: e.target.value })} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }} required>
+                      <option value="">선택</option>
+                      {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>유형</span>
+                    <select value={dangerForm.risk_type} onChange={e => setDangerForm({ ...dangerForm, risk_type: e.target.value })} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}>
+                      {RISK_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>설명</span>
+                    <input type="text" value={dangerForm.description} onChange={e => setDangerForm({ ...dangerForm, description: e.target.value })} placeholder="예: 이동식 크레인 인양 작업 중 (접근 금지)" style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }} required />
+                  </label>
+                  <button type="submit" disabled={dangerSubmitting} style={{ padding: '8px 16px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: dangerSubmitting ? 'not-allowed' : 'pointer' }}>
+                    {dangerSubmitting ? '등록 중...' : '추가'}
+                  </button>
+                </form>
+                {dangerZonesInSite.length > 0 ? (
+                  <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.9rem', color: '#78350f', listStyle: 'none' }}>
+                    {dangerZonesInSite.map(d => (
+                      <li key={d.id} style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ flex: 1 }}>
+                          <strong>{RISK_TYPES.find(r => r.value === d.risk_type)?.label || d.risk_type}</strong> — {d.description}
+                          {zones.find(z => z.id === d.zone_id) && <span style={{ color: '#92400e' }}> ({zones.find(z => z.id === d.zone_id).name})</span>}
+                        </span>
+                        <button type="button" onClick={async () => { if (window.confirm('삭제할까요?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} title="삭제" style={{ padding: '4px 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', color: '#dc2626', cursor: 'pointer', fontSize: '0.8rem' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다.</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {showModal && (
