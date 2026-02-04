@@ -73,35 +73,25 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
     # 배정된 구역 조회 (잠재적 위험 구역)
     zones = await get_assigned_zones(worker["id"], today)
     
-    # [NEW] 각 구역별 일일 변동 위험 체크
-    # 원래는 Zone 정보만 줬지만, 일일 위험(DailyDangerZone)이 있으면 description 업그레이드
+    # 작업 위치(구역)와 그날 설정된 데일리 위험존이 일치하는 구역만 반환
     result = []
     for z in zones:
         danger_zones = await get_daily_danger_zones(z["id"], today)
-        
-        # 기본 description
-        desc = f"{z['level']} - 기본 위험 구역"
-        
-        # 일일 위험이 있으면 모든 위험 요소를 합쳐서 표시
-        if danger_zones:
-            descriptions = []
-            for dz in danger_zones:
-                # [오늘의 위험] 문구 제거, 원본 설명만 사용
-                descriptions.append(dz['description'])
-            
-            # 위험 요소가 여러 개일 경우 줄바꿈으로 연결하여 가독성 확보
-            desc = "\n".join(descriptions)
-            
+        if not danger_zones:
+            continue
+        descriptions = [dz["description"] for dz in danger_zones]
+        desc = "\n".join(descriptions)
+        # 배지용 위험 수준: 첫 번째 데일리 위험의 risk_type 또는 구역 레벨
+        level = (danger_zones[0].get("risk_type") or z.get("level") or "CAUTION")
         result.append({
             "id": z["id"],
             "name": z["name"],
-            "type": z["type"],
-            "level": z["level"],
-            "lat": z["lat"],
-            "lng": z["lng"],
+            "type": z.get("type"),
+            "level": level,
+            "lat": z.get("lat"),
+            "lng": z.get("lng"),
             "description": desc
         })
-    
     return result
 
 

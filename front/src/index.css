@@ -176,6 +176,31 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; }
   background: rgba(0, 0, 0, 0.15); 
 }
 
+/* 일일 작업 계획: 라우터 전체·카드 내부 모두 최대한 얇은 투명 스크롤 */
+.daily-plan-body-scroll,
+.daily-plan-thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+.daily-plan-body-scroll::-webkit-scrollbar,
+.daily-plan-thin-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.daily-plan-body-scroll::-webkit-scrollbar-track,
+.daily-plan-thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.daily-plan-body-scroll::-webkit-scrollbar-thumb,
+.daily-plan-thin-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+}
+.daily-plan-body-scroll::-webkit-scrollbar-thumb:hover,
+.daily-plan-thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
 /* Dark mode scrollbar support */
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {

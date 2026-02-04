@@ -11,6 +11,7 @@ from sqlalchemy import delete as sql_delete
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.work.schema import WorkTemplateRead, DailyWorkPlanCreate, DailyWorkPlanRead, WorkerAllocationRead
 from back.safety.model import Zone
+from back.worker.repository import get_daily_danger_zones
 
 router = APIRouter(tags=["work"])
 
@@ -107,19 +108,28 @@ async def get_my_today_plans(
     result = await db.execute(query)
     plans = result.scalars().all()
 
-    # Response Mapping (Duplicate logic... should refactor later)
+    # Response Mapping + 일일 위험구역(DailyDangerZone) 병합
     response = []
     for p in plans:
         alloc_list = []
         for a in p.allocations:
             worker_name_str = a.worker.full_name if a.worker else "Unknown"
             alloc_list.append(WorkerAllocationRead(
-                id=a.id, 
-                worker_id=a.worker_id, 
+                id=a.id,
+                worker_id=a.worker_id,
                 role=a.role,
                 worker_name=worker_name_str
             ))
-            
+
+        # 해당 구역·날짜의 데일리 위험존을 조회해 daily_hazards에 병합
+        daily_hazards = list(p.daily_hazards or [])
+        try:
+            danger_zones = await get_daily_danger_zones(p.zone_id, plan_date)
+            for dz in danger_zones:
+                daily_hazards.append(f"🚧 {dz.get('risk_type', '')}: {dz.get('description', '')}")
+        except Exception:
+            pass
+
         response.append(DailyWorkPlanRead(
             id=p.id,
             site_id=p.site_id,
@@ -128,7 +138,7 @@ async def get_my_today_plans(
             date=p.date,
             description=p.description,
             equipment_flags=p.equipment_flags,
-            daily_hazards=p.daily_hazards or [],
+            daily_hazards=daily_hazards,
             status=p.status,
             calculated_risk_score=p.calculated_risk_score if p.calculated_risk_score else 0,
             created_at=p.created_at,

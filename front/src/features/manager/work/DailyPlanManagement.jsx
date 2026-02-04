@@ -26,13 +26,12 @@ const DailyPlanManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [zones, setZones] = useState([]);
   const [dangerZones, setDangerZones] = useState([]);
-  const [dangerForm, setDangerForm] = useState({ zone_id: '', risk_type: 'HEAVY_EQUIPMENT', description: '' });
-  const [dangerSubmitting, setDangerSubmitting] = useState(false);
   const [project, setProject] = useState(null);
   const [sites, setSites] = useState([]);
   const [siteId, setSiteId] = useState(null);
   const [openWorkAreas, setOpenWorkAreas] = useState(true);
   const [openDangerZones, setOpenDangerZones] = useState(true);
+  const [showDangerModal, setShowDangerModal] = useState(false);
 
   const loadPlans = async () => {
     try {
@@ -103,29 +102,6 @@ const DailyPlanManagement = () => {
     ? [project.location_lat, project.location_lng]
     : [37.5665, 126.978];
 
-  const handleAddDangerZone = async (e) => {
-    e.preventDefault();
-    if (!dangerForm.zone_id || !dangerForm.description.trim()) {
-      alert('구역과 위험 설명을 입력해주세요.');
-      return;
-    }
-    setDangerSubmitting(true);
-    try {
-      await safetyApi.createDailyDangerZone({
-        date: selectedDate,
-        zone_id: parseInt(dangerForm.zone_id),
-        risk_type: dangerForm.risk_type,
-        description: dangerForm.description.trim(),
-      });
-      setDangerForm({ zone_id: '', risk_type: 'HEAVY_EQUIPMENT', description: '' });
-      loadDangerZones();
-    } catch (err) {
-      alert('등록 실패: ' + (err.response?.data?.detail || err.message));
-    } finally {
-      setDangerSubmitting(false);
-    }
-  };
-
   // 날짜 이동
   const handleDateChange = (days) => {
     const date = new Date(selectedDate);
@@ -134,7 +110,7 @@ const DailyPlanManagement = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -174,58 +150,57 @@ const DailyPlanManagement = () => {
             />
             <button onClick={() => handleDateChange(1)} style={{ border: 'none', background: 'transparent', padding: '8px', cursor: 'pointer', color: '#64748b' }}><ChevronRight size={20}/></button>
           </div>
-
-          <button 
-            onClick={() => setShowModal(true)}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: '8px', 
-              background: '#3b82f6', color: 'white', padding: '10px 20px', 
-              borderRadius: '8px', border: 'none', fontWeight: '700', cursor: 'pointer' 
-            }}
-          >
-            <Plus size={20} /> 작업 등록
-          </button>
         </div>
       </div>
 
-      {/* 본문: 왼쪽 지도 | 오른쪽 일일작업구역·위험구역 (토글) */}
-      <div style={{ flex: 1, display: 'flex', gap: '1.5rem', minHeight: 0 }}>
-        {/* 왼쪽: 지도 */}
-        {project && siteId && (
-          <div style={{ width: '56%', minWidth: 360, display: 'flex', flexDirection: 'column', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e2e8f0', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Map size={20} /> 작업 구역 지도 (날짜·현장 기준)
+      {/* 본문: 라우터 전체가 잘리면 투명 얇은 스크롤로 지도·오른쪽 패널 모두 스크롤 */}
+      <div className="daily-plan-body-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', minHeight: 'min-content', paddingBottom: '1rem' }}>
+          {/* 왼쪽: 지도 */}
+          {project && siteId && (
+            <div style={{ width: '56%', minWidth: 360, display: 'flex', flexDirection: 'column', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', flexShrink: 0 }}>
+              <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e2e8f0', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Map size={20} /> 작업 구역 지도 (날짜·현장 기준)
+              </div>
+              <div style={{ height: 560, minHeight: 440 }}>
+                <MapContainer center={mapCenter} zoom={16} maxZoom={19} style={{ height: '100%', width: '100%', background: 'transparent' }} scrollWheelZoom={true}>
+                  <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={1.00} />
+                  <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
+                </MapContainer>
+              </div>
+              <DailyPlanMapLegend plans={filteredPlans} />
             </div>
-            <div style={{ flex: 1, minHeight: 400 }}>
-              <MapContainer center={mapCenter} zoom={15} style={{ height: '100%', width: '100%', background: 'transparent' }} scrollWheelZoom={true}>
-                <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={1.00} />
-                <DailyPlanMapMarkers zones={zones} plans={filteredPlans} dangerZones={dangerZonesInSite} />
-              </MapContainer>
-            </div>
-            <DailyPlanMapLegend plans={filteredPlans} />
-          </div>
-        )}
+          )}
 
-        {/* 오른쪽: 일일 작업 구역 / 위험 구역 (토글) */}
-        <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
-          {/* 토글: 일일 작업 구역 */}
+          {/* 오른쪽: 일일 작업 구역 / 위험 구역 (토글) */}
+          <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: '0.75rem', flexShrink: 0 }}>
+          {/* 토글: 일일 작업 구역 (작업 등록 버튼은 카드 안 헤더에) */}
           <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-            <button
-              type="button"
-              onClick={() => setOpenWorkAreas(!openWorkAreas)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: '#f8fafc', cursor: 'pointer', fontWeight: '700', color: '#1e293b', textAlign: 'left' }}
-            >
-              {openWorkAreas ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-              <HardHat size={20} color="#3b82f6" /> 일일 작업 구역
-              <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#64748b' }}>{filteredPlans.length}건</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.25rem 0 0', background: '#f8fafc', borderBottom: openWorkAreas ? '1px solid #e2e8f0' : 'none' }}>
+              <button
+                type="button"
+                onClick={() => setOpenWorkAreas(!openWorkAreas)}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '700', color: '#1e293b', textAlign: 'left' }}
+              >
+                {openWorkAreas ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                <HardHat size={20} color="#3b82f6" /> 일일 작업 구역
+                <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#64748b' }}>{filteredPlans.length}건</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '0.5rem', padding: '8px 14px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                <Plus size={18} /> 작업 등록
+              </button>
+            </div>
             {openWorkAreas && (
-              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', maxHeight: '360px', overflowY: 'auto' }}>
+              <div className="daily-plan-thin-scroll" style={{ padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0', maxHeight: '360px', overflowY: 'auto', overflowX: 'hidden' }}>
                 {loading ? (
                   <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>로딩 중...</div>
                 ) : filteredPlans.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.9rem' }}>
-                    등록된 작업 계획이 없습니다. 상단 <strong>작업 등록</strong>으로 추가하세요.
+                    등록된 작업 계획이 없습니다. 위 <strong>작업 등록</strong> 버튼으로 추가하세요.
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -238,44 +213,31 @@ const DailyPlanManagement = () => {
             )}
           </div>
 
-          {/* 토글: 위험 구역 (날짜별) */}
+          {/* 토글: 위험 구역 (날짜별) — 추가는 모달, 펼치면 리스트만 */}
           <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #fcd34d', overflow: 'hidden' }}>
-            <button
-              type="button"
-              onClick={() => setOpenDangerZones(!openDangerZones)}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: '#fef3c7', cursor: 'pointer', fontWeight: '700', color: '#92400e', textAlign: 'left' }}
-            >
-              {openDangerZones ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-              <ShieldAlert size={20} /> 위험 구역 (날짜별)
-              <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#b45309' }}>{dangerZonesInSite.length}건</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.25rem 0 0', background: '#fef3c7', borderBottom: openDangerZones ? '1px solid #fcd34d' : 'none' }}>
+              <button
+                type="button"
+                onClick={() => setOpenDangerZones(!openDangerZones)}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', padding: '1rem 1.25rem', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: '700', color: '#92400e', textAlign: 'left' }}
+              >
+                {openDangerZones ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                <ShieldAlert size={20} /> 위험 구역 (날짜별)
+                <span style={{ marginLeft: 'auto', fontSize: '0.9rem', fontWeight: '600', color: '#b45309' }}>{dangerZonesInSite.length}건</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setShowDangerModal(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '0.5rem', padding: '8px 14px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                <Plus size={18} /> 추가
+              </button>
+            </div>
             {openDangerZones && (
-              <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #fcd34d', background: '#fffbeb' }}>
+              <div className="daily-plan-thin-scroll" style={{ padding: '1rem 1.25rem', background: '#fffbeb', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }}>
                 <p style={{ fontSize: '0.85rem', color: '#b45309', marginBottom: '1rem' }}>
                   선택한 날짜에 특정 구역에서만 발생하는 위험을 등록하면 작업자 앱에 표시됩니다.
                 </p>
-                <form onSubmit={handleAddDangerZone} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
-                  <label>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>구역</span>
-                    <select value={dangerForm.zone_id} onChange={e => setDangerForm({ ...dangerForm, zone_id: e.target.value })} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }} required>
-                      <option value="">선택</option>
-                      {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>유형</span>
-                    <select value={dangerForm.risk_type} onChange={e => setDangerForm({ ...dangerForm, risk_type: e.target.value })} style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }}>
-                      {RISK_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                    </select>
-                  </label>
-                  <label>
-                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#92400e', display: 'block', marginBottom: '4px' }}>설명</span>
-                    <input type="text" value={dangerForm.description} onChange={e => setDangerForm({ ...dangerForm, description: e.target.value })} placeholder="예: 이동식 크레인 인양 작업 중 (접근 금지)" style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #fcd34d', width: '100%' }} required />
-                  </label>
-                  <button type="submit" disabled={dangerSubmitting} style={{ padding: '8px 16px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: dangerSubmitting ? 'not-allowed' : 'pointer' }}>
-                    {dangerSubmitting ? '등록 중...' : '추가'}
-                  </button>
-                </form>
                 {dangerZonesInSite.length > 0 ? (
                   <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.9rem', color: '#78350f', listStyle: 'none' }}>
                     {dangerZonesInSite.map(d => (
@@ -291,11 +253,12 @@ const DailyPlanManagement = () => {
                     ))}
                   </ul>
                 ) : (
-                  <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다.</div>
+                  <div style={{ fontSize: '0.85rem', color: '#a16207' }}>해당 날짜에 등록된 위험 구역이 없습니다. <strong>추가</strong> 버튼으로 등록하세요.</div>
                 )}
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 
@@ -305,6 +268,15 @@ const DailyPlanManagement = () => {
             currDate={selectedDate}
             zones={zones}
             onSuccess={() => { setShowModal(false); loadPlans(); }} 
+        />
+      )}
+
+      {showDangerModal && (
+        <DangerZoneModal
+          selectedDate={selectedDate}
+          zones={zones}
+          onClose={() => setShowDangerModal(false)}
+          onSuccess={() => { loadDangerZones(); setShowDangerModal(false); }}
         />
       )}
     </div>
@@ -461,6 +433,75 @@ const PlanCard = ({ plan, onDelete }) => {
             </div>
         </div>
     );
+};
+
+// 위험 구역 추가 모달 (작업 등록과 동일한 패턴)
+const DangerZoneModal = ({ selectedDate, zones, onClose, onSuccess }) => {
+  const [form, setForm] = useState({ zone_id: '', risk_type: 'HEAVY_EQUIPMENT', description: '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.zone_id || !form.description.trim()) {
+      alert('구역과 위험 설명을 입력해주세요.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await safetyApi.createDailyDangerZone({
+        date: selectedDate,
+        zone_id: parseInt(form.zone_id),
+        risk_type: form.risk_type,
+        description: form.description.trim(),
+      });
+      onSuccess();
+    } catch (err) {
+      alert('등록 실패: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+      <div style={{ background: 'white', borderRadius: '12px', width: '420px', padding: '1.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldAlert size={22} color="#b45309" /> 위험 구역 추가
+          </h2>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}><X size={22} /></button>
+        </div>
+        <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem' }}>
+          선택한 날짜({selectedDate})에 특정 구역의 위험을 등록합니다.
+        </p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <label>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>구역</span>
+            <select value={form.zone_id} onChange={e => setForm({ ...form, zone_id: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} required>
+              <option value="">선택</option>
+              {zones.map(z => <option key={z.id} value={z.id}>[{z.level}] {z.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>유형</span>
+            <select value={form.risk_type} onChange={e => setForm({ ...form, risk_type: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              {RISK_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#475569', display: 'block', marginBottom: '4px' }}>설명</span>
+            <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="예: 이동식 크레인 인양 작업 중 (접근 금지)" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} required />
+          </label>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontWeight: '600' }}>취소</button>
+            <button type="submit" disabled={submitting} style={{ flex: 1, padding: '10px', background: '#b45309', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+              {submitting ? '등록 중...' : '추가'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 // 작업 등록 모달 (zones 부모에서 넘기면 사용, 없으면 자체 로드)
