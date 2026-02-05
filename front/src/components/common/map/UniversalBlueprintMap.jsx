@@ -113,7 +113,7 @@ const UniversalBlueprintMap = ({
           if (role === 'WORKER') {
             if (isOverlap) pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: '#ef4444', weight: 3 };
             else if (hasWork) pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
-            else if (hasDanger) pathOptions = { fillColor: '#ef4444', fillOpacity: 0.6, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
+            else if (hasDanger) pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
           } else {
             if (isOverlap) {
                 const baseColor = hasWork ? WORK_TYPE_COLORS[plans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] : '#3b82f6';
@@ -122,7 +122,7 @@ const UniversalBlueprintMap = ({
                 const workColor = WORK_TYPE_COLORS[plans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] || '#3b82f6';
                 pathOptions = { fillColor: workColor, fillOpacity: 0.65, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
             } else if (hasDanger) {
-                pathOptions = { fillColor: '#ef4444', fillOpacity: 0.6, color: '#dc2626', weight: 2 };
+                pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
             }
           }
 

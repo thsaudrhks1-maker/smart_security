@@ -65,6 +65,9 @@ async def get_my_work_today(user_id: int) -> Dict[str, Any] | None:
 
 
 async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
+    """
+    [DEPRECATED] 내가 배정된 구역의 위험만 조회 (기존 로직)
+    """
     worker = await get_worker_by_user_id(user_id)
     if not worker:
         return []
@@ -94,6 +97,50 @@ async def get_my_risks_today(user_id: int) -> List[Dict[str, Any]]:
             "lng": z.get("lng"),
             "description": desc
         })
+    return result
+
+
+async def get_all_project_risks_today(user_id: int) -> List[Dict[str, Any]]:
+    """
+    [NEW] 현장 전체의 모든 위험 구역 조회
+    - 작업자가 속한 프로젝트의 모든 사이트의 모든 구역 중
+    - 금일 daily_danger_zones가 설정된 구역만 반환
+    """
+    from back.safety.repository import SafetyRepository
+    
+    # 1. 작업자가 속한 프로젝트 조회
+    worker_detail = await get_worker_with_info(user_id)
+    if not worker_detail or not worker_detail.get("project_id"):
+        return []
+    
+    project_id = worker_detail["project_id"]
+    today = date_utils.get_today()
+    
+    # 2. Repository를 통해 프로젝트의 모든 사이트 구역 조회
+    all_zones = await SafetyRepository.get_zones_by_project_id(project_id)
+    
+    # 3. 금일 위험이 설정된 구역만 필터링
+    result = []
+    for z in all_zones:
+        danger_zones = await get_daily_danger_zones(z["id"], today)
+        if not danger_zones:
+            continue
+        
+        descriptions = [dz["description"] for dz in danger_zones]
+        desc = "\n".join(descriptions)
+        level = (danger_zones[0].get("risk_type") or z.get("level") or "CAUTION")
+        
+        result.append({
+            "id": z["id"],
+            "zone_id": z["id"],
+            "name": z["name"],
+            "type": z.get("type"),
+            "level": level,
+            "lat": z.get("lat"),
+            "lng": z.get("lng"),
+            "description": desc
+        })
+    
     return result
 
 

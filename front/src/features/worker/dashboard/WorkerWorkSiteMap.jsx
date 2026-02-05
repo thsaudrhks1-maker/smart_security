@@ -62,12 +62,12 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
             const hasDanger = riskZoneIds.has(zone.id);
             const isOverlap = hasWork && hasDanger;
             const pathOptions = isOverlap
-              ? { fillColor: '#3b82f6', fillOpacity: 0.75, color: '#dc2626', weight: 4 }
+              ? { fillColor: '#3b82f6', fillOpacity: 0.85, color: '#dc2626', weight: 4 }
               : hasWork
-                ? { fillColor: '#3b82f6', fillOpacity: 0.75, color: 'rgba(0,0,0,0.4)', weight: 2 }
+                ? { fillColor: '#3b82f6', fillOpacity: 0.85, color: 'rgba(0,0,0,0.45)', weight: 2 }
                 : hasDanger
-                  ? { fillColor: '#dc2626', fillOpacity: 0.7, color: 'rgba(0,0,0,0.4)', weight: 2 }
-                  : { fillColor: '#ffffff', fillOpacity: 0.5, color: 'rgba(0,0,0,0.35)', weight: 1.5 };
+                  ? { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 }
+                  : { fillColor: '#f8fafc', fillOpacity: 0.7, color: 'rgba(0,0,0,0.4)', weight: 1.5 };
 
             const positions = getZoneSquarePositions(Number(zone.lat), Number(zone.lng));
             const popupText = [
@@ -79,31 +79,52 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
               .filter(Boolean)
               .join(' · ');
 
-            // 상시 라벨 (투명 텍스트 스타일)
-            // 사용자 요청: 나의 작업 위치와 위험 구역 정보만 표시하여 도면 가시성 확보
+            // 상시 라벨 (투명 텍스트 스타일 - 중간관리자 스타일)
+            // 사용자 요청: 투명도 적용 + 지도 확대/축소에 따라 움직이는 라벨
             const labelContent = (hasWork || hasDanger) ? (
               <div style={{ 
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '0px',
+                  gap: '1px',
                   pointerEvents: 'none',
                   zIndex: 1000,
-                  textShadow: '0 0 2px white, 0 0 2px white, 0 0 2px white'
+                  background: isOverlap 
+                    ? 'rgba(239, 68, 68, 0.15)' 
+                    : hasWork 
+                      ? 'rgba(59, 130, 246, 0.15)' 
+                      : 'rgba(220, 38, 38, 0.15)',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: `1px solid ${isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#dc2626'}`,
+                  backdropFilter: 'blur(2px)'
               }}>
                    <span style={{ 
                        color: isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#dc2626', 
-                       fontSize: '0.65rem',
+                       fontSize: '0.7rem',
                        fontWeight: '900',
-                       marginBottom: '-2px'
+                       textShadow: '0 0 3px white, 0 0 3px white'
                    }}>
                        {zone.id}
                    </span>
-                   <span style={{ fontSize: '0.55rem', fontWeight: '800', color: '#1e293b', opacity: 0.9 }}>
+                   <span style={{ 
+                       fontSize: '0.6rem', 
+                       fontWeight: '800', 
+                       color: '#1e293b',
+                       textShadow: '0 0 3px white, 0 0 3px white'
+                   }}>
                        {zone.name}
                    </span>
                    {hasWork && (
-                       <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.6)', padding: '0 2px', borderRadius: '2px', marginTop: '1px' }}>
+                       <span style={{ 
+                           fontSize: '0.5rem', 
+                           color: '#fff', 
+                           fontWeight: '900', 
+                           background: '#3b82f6', 
+                           padding: '1px 4px', 
+                           borderRadius: '3px',
+                           boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                       }}>
                            내 작업
                        </span>
                    )}
@@ -131,7 +152,7 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: '#dc2626' }} />
-            위험 구역
+            위험 구역 (전체 현장)
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '12px', height: '12px', borderRadius: '2px', background: '#3b82f6', border: '2px solid #dc2626', boxSizing: 'border-box' }} />
@@ -143,6 +164,18 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
           </span>
         </div>
       )}
+      
+      <style>{`
+        .worker-clean-tooltip {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+        }
+        .worker-clean-tooltip::before {
+          display: none !important;
+        }
+      `}</style>
     </div>
   );
 };

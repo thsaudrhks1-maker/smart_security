@@ -8,6 +8,7 @@ from back.auth.model import User
 from back.worker.service import (
     get_my_work_today,
     get_my_risks_today,
+    get_all_project_risks_today,
     get_dashboard_info
 )
 
@@ -29,9 +30,20 @@ async def api_get_my_risks_today(
     current_user: User = Depends(get_current_user)
 ):
     """
-    금일 나의 위험지역 조회
+    [DEPRECATED] 금일 나의 위험지역 조회 (내가 배정된 구역만)
     """
     return await get_my_risks_today(current_user.id)
+
+
+@router.get("/all-project-risks/today")
+async def api_get_all_project_risks_today(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    [NEW] 금일 현장 전체 위험지역 조회
+    - 작업자가 속한 프로젝트의 모든 사이트의 모든 위험 구역 반환
+    """
+    return await get_all_project_risks_today(current_user.id)
 
 
 @router.get("/dashboard-info")

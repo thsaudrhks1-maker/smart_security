@@ -56,7 +56,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
         const [plansRes, dashboardRes, risksRes] = await Promise.all([
           workApi.getMyTodayWork(),
           apiClient.get('/worker/dashboard-info'),
-          apiClient.get('/worker/my-risks/today')
+          apiClient.get('/worker/all-project-risks/today') // 🔥 NEW: 전체 현장 위험 구역 조회
         ]);
         setMyPlans(plansRes || []);
         setDashboardInfo(dashboardRes.data);

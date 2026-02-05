@@ -77,3 +77,17 @@ class SafetyRepository:
         sql = "DELETE FROM daily_danger_zones WHERE id = :danger_zone_id"
         result = await execute(sql, {"danger_zone_id": danger_zone_id})
         return result.rowcount > 0
+
+    @staticmethod
+    async def get_zones_by_project_id(project_id: int) -> List[Dict[str, Any]]:
+        """프로젝트에 속한 모든 사이트의 구역 조회 (좌표 있는 것만)"""
+        sql = """
+            SELECT z.*
+            FROM zones z
+            JOIN sites s ON z.site_id = s.id
+            WHERE s.project_id = :project_id
+              AND z.lat IS NOT NULL
+              AND z.lng IS NOT NULL
+            ORDER BY z.id
+        """
+        return await fetch_all(sql, {"project_id": project_id})
