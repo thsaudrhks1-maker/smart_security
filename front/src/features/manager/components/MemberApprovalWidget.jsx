@@ -42,8 +42,8 @@ const MemberApprovalWidget = ({ projectId }) => {
       return (
           <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', minHeight: '200px' }}>
               <CheckCircle size={40} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-              <p style={{ margin: 0, fontWeight: '500' }}>승인 대기 인원이 없습니다.</p>
-              <span style={{ fontSize: '0.85rem', marginTop: '4px' }}>모든 근로자가 작업 투입 가능 상태입니다.</span>
+              <p style={{ margin: 0, fontWeight: '700', color: '#1e293b' }}>승인 대기 인원이 없습니다.</p>
+              <span style={{ fontSize: '0.85rem', marginTop: '4px', color: '#1e293b' }}>모든 근로자가 작업 투입 가능 상태입니다.</span>
           </div>
       );
   }
@@ -59,11 +59,11 @@ const MemberApprovalWidget = ({ projectId }) => {
         {members.map(member => (
           <div key={member.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
             <div>
-              <div style={{ fontWeight: '600', color: '#1e293b' }}>{member.full_name} <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '400' }}>({member.username})</span></div>
+              <div style={{ fontWeight: '800', color: '#000000' }}>{member.full_name} <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '500' }}>({member.username})</span></div>
               <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '2px' }}>
                 <span style={{ fontWeight: '600', color: '#3b82f6' }}>{member.role_name}</span> | {member.company_name}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.8rem', color: '#1e293b', marginTop: '2px' }}>
                  신청일: {new Date(member.joined_at).toLocaleDateString()}
               </div>
             </div>

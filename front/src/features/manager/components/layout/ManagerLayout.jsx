@@ -58,8 +58,8 @@ const ManagerLayout = () => {
             <HardHat size={28} color="#f59e0b" /> {/* 안전모 아이콘 유지 */}
             Smart Site
           </h1>
-          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '6px', paddingLeft: '36px', letterSpacing: '0.05em' }}>
-            PROJECT MANAGER
+          <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f59e0b', marginTop: '6px', paddingLeft: '36px', letterSpacing: '0.02em' }}>
+            현장 관리자
           </div>
         </div>
 

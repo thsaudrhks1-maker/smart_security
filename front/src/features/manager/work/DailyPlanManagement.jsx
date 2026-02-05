@@ -119,10 +119,10 @@ const DailyPlanManagement = () => {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#000000', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Calendar color="#3b82f6" size={28} /> 일일 작업 계획
           </h1>
-          <p style={{ color: '#64748b', marginTop: '5px' }}>작업 위치(구역)를 선택해 근무자에게 배정합니다.</p>
+          <p style={{ color: '#1e293b', marginTop: '5px', fontWeight: '600' }}>작업 위치(구역)를 선택해 근무자에게 배정합니다.</p>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -199,7 +199,7 @@ const DailyPlanManagement = () => {
                 {dangerZonesInSite.map(d => (
                   <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', padding: '8px', borderLeft: '4px solid #ea580c', background: '#fffaf5' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{zones.find(z => z.id === d.zone_id)?.name}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#000000' }}>{zones.find(z => z.id === d.zone_id)?.name}</div>
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>{d.description}</div>
                     </div>
                     <button onClick={async () => { if (window.confirm('삭제하시겠습니까?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer' }}><X size={16} /></button>
@@ -223,11 +223,11 @@ const DailyPlanMapLegend = ({ plans, dangerZones }) => {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', padding: '10px 16px', fontSize: '0.85rem', background: 'white' }}>
       {workTypes.map((wt, i) => (
-        <span key={wt} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span key={wt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#000000', fontWeight: '600' }}>
           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: WORK_TYPE_COLORS[i % WORK_TYPE_COLORS.length] }} /> {wt}
         </span>
       ))}
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} /> 위험 구역</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#000000', fontWeight: '600' }}><span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} /> 위험 구역</span>
     </div>
   );
 };
@@ -241,8 +241,8 @@ const PlanCard = ({ plan, dangerZones, onEdit, onDelete }) => (
         <button onClick={onDelete} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
       </div>
     </div>
-    <div style={{ fontWeight: '800', marginBottom: '0.5rem' }}>{plan.work_type}</div>
-    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{plan.description}</div>
+    <div style={{ fontWeight: '800', marginBottom: '0.5rem', color: '#000000' }}>{plan.work_type}</div>
+    <div style={{ fontSize: '0.85rem', color: '#000000', fontWeight: '500' }}>{plan.description}</div>
     <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
       {plan.allocations?.map(a => <span key={a.id} style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>{a.worker_name}</span>)}
     </div>

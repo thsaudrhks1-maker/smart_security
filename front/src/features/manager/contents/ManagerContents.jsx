@@ -5,7 +5,7 @@ import { workApi } from '../../../api/workApi';
 const TAB = { PROCESS: '공정', RULES: '안전수칙', EQUIPMENT: '안전공구' };
 
 /**
- * 중간관리자 - 콘텐츠 열람 (최고관리자가 등록한 공정·안전장비·안전수칙)
+ * 현장 관리자 - 콘텐츠 열람 (최고관리자가 등록한 공정·안전장비·안전수칙)
  * 일일 작업 계획 및 작업자 배치 시 참고
  */
 const ManagerContents = () => {

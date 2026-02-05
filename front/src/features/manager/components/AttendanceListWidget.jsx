@@ -198,7 +198,7 @@ const AttendanceListWidget = ({ projectId }) => {
                         color: '#64748b' 
                       }}>{item.job_type}</span>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '0.85rem', color: '#1e293b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <MapPin size={12} /> {item.company_name}
                     </div>
                   </div>

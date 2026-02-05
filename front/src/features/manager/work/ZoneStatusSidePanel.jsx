@@ -55,7 +55,7 @@ const ZoneStatusSidePanel = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: '700', fontSize: '0.7rem', color: isExpanded ? '#3b82f6' : '#334155' }}>
+                    <span style={{ fontWeight: '800', fontSize: '0.75rem', color: isExpanded ? '#3b82f6' : '#000000' }}>
                       {zone.id}. {zone.name}
                     </span>
                   </div>
@@ -71,7 +71,7 @@ const ZoneStatusSidePanel = ({
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {zonePlans.map(p => (
                           <div key={p.id} style={{ fontSize: '0.7rem' }}>
-                            <div style={{ fontWeight: '700', color: '#64748b', marginBottom: '2px', fontSize: '0.65rem' }}>• {p.work_type}</div>
+                            <div style={{ fontWeight: '800', color: '#1e293b', marginBottom: '2px', fontSize: '0.65rem' }}>• {p.work_type}</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', paddingLeft: '8px' }}>
                               {p.allocations?.map((a, idx) => (
                                 <span key={idx} style={{ 

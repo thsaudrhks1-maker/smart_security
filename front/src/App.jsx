@@ -15,7 +15,7 @@ import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CompanyList from './features/admin/companies/CompanyList';
 import AdminContents from './features/admin/contents/AdminContents';
 
-// 중간 관리자 (현장 소장)
+// 현장 관리자 (현장 소장)
 import ManagerLayout from './features/manager/components/layout/ManagerLayout';
 import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import PartnerManagement from './features/manager/partners/PartnerManagement';
@@ -64,7 +64,7 @@ function App() {
             <Route path="contents" element={<AdminContents />} />
           </Route>
           
-          {/* 2. 중간 관리자 (현장 소장) - MANAGER & ADMIN */}
+          {/* 2. 현장 관리자 (현장 소장) - MANAGER & ADMIN */}
           <Route 
             path="/manager/*" 
             element={

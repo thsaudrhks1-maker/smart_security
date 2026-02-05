@@ -379,7 +379,7 @@ const ProjectDetail = () => {
                 </button>
               </div>
               <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-                위치와 1개 층 도면을 올린 뒤, 그 위에 구역(Zone)을 정의하면 중간관리자가 해당 구역에 작업을 배치하고 근로자가 나의 작업으로 볼 수 있습니다.
+                위치와 1개 층 도면을 올린 뒤, 그 위에 구역(Zone)을 정의하면 현장 관리자가 해당 구역에 작업을 배치하고 근로자가 나의 작업으로 볼 수 있습니다.
               </p>
               {sites.length === 0 ? (
                 <div style={{ padding: '3rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#94a3b8' }}>
