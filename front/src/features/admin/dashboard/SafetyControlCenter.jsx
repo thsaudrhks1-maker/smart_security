@@ -11,7 +11,7 @@ import { mapApi } from '../../../api/mapApi';
 import { safetyApi } from '../../../api/safetyApi';
 import { workApi } from '../../../api/workApi';
 import { useAuth } from '../../../context/AuthContext';
-import { ZoneSquareStyled } from '../../manager/work/ZoneSquareLayer';
+import UniversalBlueprintMap from '../../../components/common/map/UniversalBlueprintMap';
 
 // --- Sub Components ---
 
@@ -235,57 +235,13 @@ const SafetyControlCenter = () => {
       {/* Map Section */}
       {showMap && (
         <div style={{ height: '520px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', position: 'relative', marginBottom: '1.5rem', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)' }}>
-          <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '100%', width: '100%', background: '#f8fafc' }}>
-            <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
-            
-            {/* 구역 그리드 및 작업자 정보 */}
-            {zones.filter(z => z.lat && z.lng).map(zone => {
-                const zonePlans = plans.filter(p => p.zone_id === zone.id);
-                const hasWork = zonePlans.length > 0;
-                const hasDanger = risks.some(r => r.zone_id === zone.id); // 위험 목록 연동 여부 확인 필요하나 여기서는 단순 ID 비교
-                const isOverlap = hasWork && hasDanger;
-
-                const pathOptions = isOverlap
-                    ? { fillColor: '#3b82f6', fillOpacity: 0.7, color: '#ef4444', weight: 4 }
-                    : hasWork
-                        ? { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
-                        : hasDanger
-                            ? { fillColor: '#ef4444', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
-                            : { fillColor: '#ffffff', fillOpacity: 0.5, color: 'rgba(0,0,0,0.2)', weight: 1.5 };
-
-                const labelContent = showWorkerLabels && (
-                    <div style={{ 
-                        background: 'rgba(255, 255, 255, 0.98)', 
-                        border: `1.5px solid ${hasWork ? '#3b82f6' : '#94a3b8'}`, 
-                        borderRadius: '6px', padding: '4px 8px', 
-                        fontSize: '0.75rem', fontWeight: '900', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
-                        pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '90px'
-                    }}>
-                        <div style={{ borderBottom: hasWork ? '1px solid #eee' : 'none', pb: '2px', mb: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ background: hasWork ? '#3b82f6' : '#64748b', color: 'white', padding: '0 4px', borderRadius: '3px', fontSize: '0.65rem' }}>#{zone.id}</span>
-                            <span>{zone.name}</span>
-                        </div>
-                        {hasWork && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px', justifyContent: 'center' }}>
-                                {zonePlans.flatMap(p => p.allocations || []).map((a, idx) => (
-                                    <span key={idx} style={{ color: '#1e40af', background: '#eff6ff', padding: '1px 4px', borderRadius: '3px', fontSize: '0.65rem' }}>{a.worker_name}</span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                );
-
-                return (
-                    <ZoneSquareStyled
-                        key={zone.id}
-                        zone={zone}
-                        pathOptions={pathOptions}
-                        tooltipContent={labelContent}
-                        tooltipOptions={{ permanent: true, direction: 'center', opacity: 1, offset: [0, 0] }}
-                    />
-                );
-            })}
-          </MapContainer>
+          <UniversalBlueprintMap 
+            role="MANAGER"
+            zones={zones}
+            plans={plans}
+            risks={risks}
+            height="520px"
+          />
           
           <button 
             onClick={() => setShowRiskPanel(!showRiskPanel)}

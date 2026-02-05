@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Circle, SVGOverlay, Tooltip, useMapEvents } from 'react-leaflet';
+import { Marker, Popup, Circle, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/WorkerDashboard.css';
 import { mapApi } from '../../../api/mapApi';
 import { safetyApi } from '../../../api/safetyApi';
-import { ZoneSquareStyled } from '../../manager/work/ZoneSquareLayer';
+import UniversalBlueprintMap from '../../../components/common/map/UniversalBlueprintMap';
 
 // --- 아이콘 리소스 설정 ---
 const createIcon = (colorUrl) => new L.Icon({
@@ -216,37 +216,16 @@ const SafetyMap = () => {
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           {/* 지도 영역 */}
           <div style={{ flex: 0.75, position: 'relative', borderRight: '2px solid #ddd', background:'#f0f0f0' }}>
-              <MapContainer center={center} zoom={zoom} style={{height: '100%', width: '100%'}}>
-                  {showMap && <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />}
-                  
+              <UniversalBlueprintMap
+                  role="MANAGER"
+                  zones={zones}
+                  center={center}
+                  zoom={zoom}
+                  height="100%"
+                  blueprintUrl={floorPlanUrl}
+                  blueprintConfig={plan}
+              >
                   <MapClickHandler onMapClick={handleMapClick} isEditMode={isEditMode} />
-
-                  {/* 도면 오버레이 */}
-                  {floorPlanUrl && (
-                      <SVGOverlay attributes={{ viewBox: "0 0 100 100", preserveAspectRatio: "none" }} bounds={svgBounds}>
-                          <image 
-                              href={floorPlanUrl} 
-                              x="0" y="0" width="100%" height="100%" 
-                              style={{ transformBox: 'fill-box', transformOrigin: 'center', transform: `rotate(${plan.rotation}deg)` }}
-                              opacity={opacity}
-                          />
-                      </SVGOverlay>
-                  )}
-
-                  {/* 구역 그리드 */}
-                  {zones.filter(z => z.lat && z.lng).map(zone => (
-                      <ZoneSquareStyled
-                          key={`zone-${zone.id}`}
-                          zone={zone}
-                          pathOptions={{ fillColor: '#ffffff', fillOpacity: 0.1, color: 'rgba(0,0,0,0.2)', weight: 1 }}
-                          tooltipContent={(
-                              <div style={{ background: 'rgba(255,255,255,0.8)', padding: '2px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', color: '#666' }}>
-                                  #{zone.id} {zone.name}
-                              </div>
-                          )}
-                          tooltipOptions={{ permanent: true, direction: 'center', opacity: 0.7 }}
-                      />
-                  ))}
 
                   {/* 편집 핸들 */}
                   {isEditMode && (
@@ -312,7 +291,7 @@ const SafetyMap = () => {
                           </Popup>
                       </Marker>
                   ))}
-              </MapContainer>
+              </UniversalBlueprintMap>
 
               {/* 팝업 모달 */}
               {newRiskPos && (
