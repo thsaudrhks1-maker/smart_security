@@ -79,36 +79,45 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
               .filter(Boolean)
               .join(' · ');
 
-            const labelContent = (
+            // 상시 라벨 (투명 텍스트 스타일)
+            // 사용자 요청: 나의 작업 위치와 위험 구역 정보만 표시하여 도면 가시성 확보
+            const labelContent = (hasWork || hasDanger) ? (
               <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.95)', 
-                  border: `1.5px solid ${isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#94a3b8'}`, 
-                  borderRadius: '6px', padding: '3px 6px', 
-                  fontSize: '0.7rem', 
-                  fontWeight: '800', 
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)', 
-                  pointerEvents: 'none', 
-                  zIndex: 1000,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '0px',
+                  pointerEvents: 'none',
+                  zIndex: 1000,
+                  textShadow: '0 0 2px white, 0 0 2px white, 0 0 2px white'
               }}>
                    <span style={{ 
-                       background: isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#64748b', 
-                       color: 'white', padding: '1px 3px', borderRadius: '3px', fontSize: '0.65rem' 
+                       color: isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#dc2626', 
+                       fontSize: '0.65rem',
+                       fontWeight: '900',
+                       marginBottom: '-2px'
                    }}>
-                       #{zone.id}
+                       {zone.id}
                    </span>
-                   <span>{zone.name}</span>
+                   <span style={{ fontSize: '0.55rem', fontWeight: '800', color: '#1e293b', opacity: 0.9 }}>
+                       {zone.name}
+                   </span>
+                   {hasWork && (
+                       <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.6)', padding: '0 2px', borderRadius: '2px', marginTop: '1px' }}>
+                           내 작업
+                       </span>
+                   )}
               </div>
-            );
+            ) : null;
 
             return (
               <Polygon key={zone.id} positions={positions} pathOptions={pathOptions}>
                 <Popup>{popupText}</Popup>
-                <Tooltip permanent direction="center" className="zone-label-tooltip" opacity={1} offset={[0, 0]}>
-                  {labelContent}
-                </Tooltip>
+                {labelContent && (
+                    <Tooltip permanent direction="center" className="worker-clean-tooltip" opacity={1} offset={[0, 0]}>
+                      {labelContent}
+                    </Tooltip>
+                )}
               </Polygon>
             );
           })}
