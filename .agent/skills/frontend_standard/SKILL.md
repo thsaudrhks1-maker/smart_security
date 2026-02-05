@@ -58,10 +58,13 @@ front/src/features/
 </Routes>
 ```
 
-## 3. 컴포넌트 작성 규칙
-- **함수형 컴포넌트**: `const Component = () => {}` 사용.
-- **스타일**: CSS Modules 또는 SCSS 권장.
-- **API 호출**: 컴포넌트 내 `axios` 직접 사용 금지. `src/api/*.js`에 정의된 함수만 임포트.
+## 3. 컴포넌트 및 모듈 임포트 규칙 (Import Rules)
+
+- **절대 경로 별칭(\`@\`) 사용 필수**: 복잡한 상대 경로(\`../../..\`) 대신 \`src\` 폴더를 가리키는 \`@\` 별칭을 사용합니다.
+  - ✅ 좋아함: \`import { workApi } from '@/api/workApi';\`
+  - ❌ 지양함: \`import { workApi } from '../../../api/workApi';\`
+- **함수형 컴포넌트**: \`const Component = () => {}\` 사용.
+- **API 호출**: 컴포넌트 내 \`axios\` 직접 사용 금지. \`@/api/*.js\`에 정의된 함수만 임포트.
 
 ## 4. 디자인 가이드
 - **관리자/매니저**: 넓은 화면(데스크탑) 기준. Dense한 정보 표시.

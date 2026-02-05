@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjectById, getProjectWorkers, getProjectSites, createProjectSite, uploadSiteFloorPlan } from '../../../api/projectApi';
-import { safetyApi } from '../../../api/safetyApi';
-import apiClient from '../../../api/client';
+import { getProjectById, getProjectWorkers, getProjectSites, createProjectSite, uploadSiteFloorPlan } from '@/api/projectApi';
+import { safetyApi } from '@/api/safetyApi';
+import apiClient from '@/api/client';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';

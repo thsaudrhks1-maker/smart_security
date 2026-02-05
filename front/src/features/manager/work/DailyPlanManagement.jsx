@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ZoneStatusSidePanel from './ZoneStatusSidePanel';
-import UniversalBlueprintMap from '../../../components/common/map/UniversalBlueprintMap';
+import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 import 'leaflet/dist/leaflet.css';
-import { workApi } from '../../../api/workApi';
-import { getMyWorkers } from '../../../api/managerApi';
-import { safetyApi } from '../../../api/safetyApi';
-import { getManagerDashboard } from '../../../api/managerApi';
-import { getProjectById, getProjectSites } from '../../../api/projectApi';
-import apiClient from '../../../api/client';
+import { workApi } from '@/api/workApi';
+import { getMyWorkers } from '@/api/managerApi';
+import { safetyApi } from '@/api/safetyApi';
+import { getManagerDashboard } from '@/api/managerApi';
+import { getProjectById, getProjectSites } from '@/api/projectApi';
+import apiClient from '@/api/client';
 import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, X, ShieldAlert, Trash2, Map, LayoutDashboard } from 'lucide-react';
 
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];

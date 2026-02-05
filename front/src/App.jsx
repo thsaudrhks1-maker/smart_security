@@ -1,39 +1,39 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import RoleRedirect from './components/common/RoleRedirect';
-import ProtectedRoute from './components/common/ProtectedRoute';
-import PagePlaceholder from './components/common/PagePlaceholder';
-import Login from './features/auth/Login';
-import Register from './features/auth/Register';
+import { AuthProvider } from '@/context/AuthContext';
+import RoleRedirect from '@/components/common/RoleRedirect';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import PagePlaceholder from '@/components/common/PagePlaceholder';
+import Login from '@/features/auth/Login';
+import Register from '@/features/auth/Register';
 
 // 관리자 전용 (데스크탑)
-import AdminLayout from './features/admin/components/layout/AdminLayout';
-import AdminDashboard from './features/admin/dashboard/AdminDashboard';
-import ProjectList from './features/admin/projects/ProjectList';
-import CreateProject from './features/admin/projects/CreateProject';
-import ProjectDetail from './features/admin/projects/ProjectDetail';
-import CompanyList from './features/admin/companies/CompanyList';
-import AdminContents from './features/admin/contents/AdminContents';
+import AdminLayout from '@/features/admin/components/layout/AdminLayout';
+import AdminDashboard from '@/features/admin/dashboard/AdminDashboard';
+import ProjectList from '@/features/admin/projects/ProjectList';
+import CreateProject from '@/features/admin/projects/CreateProject';
+import ProjectDetail from '@/features/admin/projects/ProjectDetail';
+import CompanyList from '@/features/admin/companies/CompanyList';
+import AdminContents from '@/features/admin/contents/AdminContents';
 
 // 현장 관리자 (현장 소장)
-import ManagerLayout from './features/manager/components/layout/ManagerLayout';
-import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
-import PartnerManagement from './features/manager/partners/PartnerManagement';
-import WorkerManagement from './features/manager/workers/WorkerManagement'; // [NEW]
-import CompanyManagement from './features/manager/companies/CompanyManagement'; // [NEW]
-import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
-import WorkLocation from './features/manager/work/WorkLocation';
-import ManagerContents from './features/manager/contents/ManagerContents';
-import ManagerAttendance from './features/manager/attendance/ManagerAttendance';
-import ManagerNotice from './features/manager/notice/ManagerNotice';
+import ManagerLayout from '@/features/manager/components/layout/ManagerLayout';
+import ManagerDashboard from '@/features/manager/dashboard/ManagerDashboard';
+import PartnerManagement from '@/features/manager/partners/PartnerManagement';
+import WorkerManagement from '@/features/manager/workers/WorkerManagement'; // [NEW]
+import CompanyManagement from '@/features/manager/companies/CompanyManagement'; // [NEW]
+import DailyPlanManagement from '@/features/manager/work/DailyPlanManagement';
+import WorkLocation from '@/features/manager/work/WorkLocation';
+import ManagerContents from '@/features/manager/contents/ManagerContents';
+import ManagerAttendance from '@/features/manager/attendance/ManagerAttendance';
+import ManagerNotice from '@/features/manager/notice/ManagerNotice';
 
 // 작업자 전용 (모바일)
-import WorkerLayout from './features/worker/components/layout/WorkerLayout';
-import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
-import WorkList from './features/worker/work/WorkList';
-import SafetyMap from './features/worker/safety/SafetyMap';
-import WorkerAttendance from './features/worker/attendance/WorkerAttendance';
-import Emergency from './features/worker/components/Emergency';
+import WorkerLayout from '@/features/worker/components/layout/WorkerLayout';
+import WorkerDashboard from '@/features/worker/dashboard/WorkerDashboard';
+import WorkList from '@/features/worker/work/WorkList';
+import SafetyMap from '@/features/worker/safety/SafetyMap';
+import WorkerAttendance from '@/features/worker/attendance/WorkerAttendance';
+import Emergency from '@/features/worker/components/Emergency';
 
 function App() {
   return (

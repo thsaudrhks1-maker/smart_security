@@ -6,12 +6,12 @@ import {
   Grid, Database, LayoutDashboard, FileText, 
   Users, Briefcase, ShieldAlert, Settings, X, MapPin
 } from 'lucide-react';
-import apiClient from '../../../api/client';
-import { mapApi } from '../../../api/mapApi';
-import { safetyApi } from '../../../api/safetyApi';
-import { workApi } from '../../../api/workApi';
-import { useAuth } from '../../../context/AuthContext';
-import UniversalBlueprintMap from '../../../components/common/map/UniversalBlueprintMap';
+import apiClient from '@/api/client';
+import { mapApi } from '@/api/mapApi';
+import { safetyApi } from '@/api/safetyApi';
+import { workApi } from '@/api/workApi';
+import { useAuth } from '@/context/AuthContext';
+import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 
 // --- Sub Components ---
 

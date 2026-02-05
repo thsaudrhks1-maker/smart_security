@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getManagerDashboard } from '../../../api/managerApi';
-import { useAuth } from '../../../context/AuthContext';
+import { getManagerDashboard } from '@/api/managerApi';
+import { useAuth } from '@/context/AuthContext';
 import { 
   Building2, 
   MapPin, 
@@ -11,8 +11,8 @@ import {
   Megaphone,
   QrCode
 } from 'lucide-react';
-import MemberApprovalWidget from '../components/MemberApprovalWidget';
-import AttendanceListWidget from '../components/AttendanceListWidget';
+import MemberApprovalWidget from '@/features/manager/components/MemberApprovalWidget';
+import AttendanceListWidget from '@/features/manager/components/AttendanceListWidget';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();

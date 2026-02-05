@@ -4,9 +4,9 @@ import { Marker, Popup, Circle, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/WorkerDashboard.css';
-import { mapApi } from '../../../api/mapApi';
-import { safetyApi } from '../../../api/safetyApi';
-import UniversalBlueprintMap from '../../../components/common/map/UniversalBlueprintMap';
+import { mapApi } from '@/api/mapApi';
+import { safetyApi } from '@/api/safetyApi';
+import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 
 // --- 아이콘 리소스 설정 ---
 const createIcon = (colorUrl) => new L.Icon({
