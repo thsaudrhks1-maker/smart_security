@@ -6,9 +6,9 @@ from typing import List, Optional
 router = APIRouter(prefix="/safety", tags=["safety"])
 
 @router.get("/zones", response_model=List[ZoneRead])
-async def get_zones(site_id: int = None):
-    """구역 목록 조회 (site_id 있으면 해당 현장만)"""
-    return await SafetyService.get_zones(site_id)
+async def get_zones(project_id: Optional[int] = None, site_id: Optional[int] = None):
+    """구역 목록 조회 (프로젝트별 또는 현장별 선택)"""
+    return await SafetyService.get_zones(project_id, site_id)
 
 @router.post("/zones", response_model=ZoneRead, status_code=201)
 async def create_zone(zone: ZoneCreate):
@@ -56,3 +56,11 @@ async def delete_daily_danger_zone(danger_zone_id: int):
     if not success:
         raise HTTPException(status_code=404, detail="해당 위험 구역을 찾을 수 없습니다.")
     return None
+
+@router.post("/sites/{site_id}/generate-grid")
+async def generate_site_grid(site_id: int):
+    """프로젝트 설정 기반으로 사이트 그리드(Zone) 대량 생성"""
+    count = await SafetyService.generate_grid_for_site(site_id)
+    if count is None:
+        raise HTTPException(status_code=404, detail="사이트 또는 프로젝트 정보를 찾을 수 없습니다.")
+    return {"status": "success", "generated_count": count}

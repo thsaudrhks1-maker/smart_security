@@ -24,6 +24,15 @@ class ProjectBase(BaseModel):
     
     status: Optional[str] = "PLANNED"
 
+    # 그리드 설정
+    grid_spacing: Optional[float] = 10.0
+    grid_rows: Optional[int] = 10
+    grid_cols: Optional[int] = 10
+    
+    # 층수 설정
+    basement_floors: Optional[int] = 0
+    ground_floors: Optional[int] = 1
+
 class ProjectCreate(ProjectBase):
     """프로젝트 생성 요청"""
     partners: Optional[list[str]] = [] # 협력사 이름 목록 (직접 입력용)

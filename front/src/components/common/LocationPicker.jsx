@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+// Force Rebuild - Grid System Fix
+import { MapContainer, TileLayer, Marker, useMapEvents, Polygon, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './LocationPicker.css';
@@ -46,7 +47,7 @@ function LocationMarker({ onLocationSelect }) {
   return position === null ? null : <Marker position={position} />;
 }
 
-const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
+const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [center, setCenter] = useState([
     initialLat || 37.5665, // 기본값: 서울 시청
@@ -55,6 +56,48 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
   const [selectedCoords, setSelectedCoords] = useState(
     initialLat && initialLng ? [initialLat, initialLng] : null
   );
+
+  // 미터(m) 단위를 위경도(degree)로 변환하고 내부 격자선 생성
+  const getDetailedGrid = () => {
+    if (!selectedCoords || !gridConfig || !gridConfig.grid_rows || !gridConfig.grid_cols) return { boundary: null, lines: [] };
+    
+    const [centerLat, centerLng] = selectedCoords;
+    const { grid_rows, grid_cols, grid_spacing } = gridConfig;
+    
+    const latM = 1 / 111320; 
+    const lngM = 1 / (111320 * Math.cos(centerLat * Math.PI / 180));
+    
+    const totalHeight = (grid_rows * grid_spacing * latM);
+    const totalWidth = (grid_cols * grid_spacing * lngM);
+    
+    const bottom = centerLat - totalHeight / 2;
+    const top = centerLat + totalHeight / 2;
+    const left = centerLng - totalWidth / 2;
+    const right = centerLng + totalWidth / 2;
+
+    const boundary = [
+      [bottom, left],
+      [bottom, right],
+      [top, right],
+      [top, left],
+    ];
+
+    const lines = [];
+    // 세로선 (Vertical)
+    for (let i = 0; i <= grid_cols; i++) {
+      const lng = left + (i * grid_spacing * lngM);
+      lines.push([[bottom, lng], [top, lng]]);
+    }
+    // 가로선 (Horizontal)
+    for (let i = 0; i <= grid_rows; i++) {
+      const lat = bottom + (i * grid_spacing * latM);
+      lines.push([[lat, left], [lat, right]]);
+    }
+
+    return { boundary, lines };
+  };
+
+  const { boundary, lines } = getDetailedGrid();
 
   // 위치 선택 핸들러 (주소 있으면 함께 전달: 지도 클릭 시 역지오코딩 결과)
   const handleLocationSelect = (lat, lng, address = null) => {
@@ -99,18 +142,24 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
 
   return (
     <div className="location-picker">
-      <form className="search-form" onSubmit={handleSearch}>
+      <div className="search-form">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSearch(e);
+            }
+          }}
           placeholder="주소를 검색하거나 지도를 클릭하세요 (예: 서울시 강남구 역삼동)"
           className="search-input"
         />
-        <button type="submit" className="search-btn">
+        <button type="button" className="search-btn" onClick={handleSearch}>
           🔍 검색
         </button>
-      </form>
+      </div>
 
       <MapContainer
         center={center}
@@ -121,10 +170,37 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          opacity={0.20}
+          opacity={0.30}
         />
         <LocationMarker onLocationSelect={handleLocationSelect} />
         {selectedCoords && <Marker position={selectedCoords} />}
+        
+        {/* 그리드 프리뷰 (상세 격자) */}
+        {boundary && (
+          <>
+            <Polygon 
+              positions={boundary}
+              pathOptions={{ 
+                color: '#2563eb', 
+                weight: 5, 
+                fillColor: '#3b82f6', 
+                fillOpacity: 0.12,
+              }}
+            />
+            {lines.map((pos, idx) => (
+              <Polyline 
+                key={idx}
+                positions={pos}
+                pathOptions={{ 
+                  color: '#3b82f6', 
+                  weight: 4, 
+                  opacity: 0.7,
+                  dashArray: '6, 10'
+                }}
+              />
+            ))}
+          </>
+        )}
       </MapContainer>
 
       {selectedCoords && (
@@ -132,6 +208,13 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng }) => {
           <strong>📍 선택된 좌표:</strong>
           <br />
           위도: {selectedCoords[0].toFixed(6)}, 경도: {selectedCoords[1].toFixed(6)}
+          {gridConfig && (
+            <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#1e40af', background: '#eff6ff', padding: '8px', borderRadius: '6px' }}>
+              📏 예상 크기: 약 <b>{(gridConfig.grid_cols * gridConfig.grid_spacing).toFixed(0)}m</b> x <b>{(gridConfig.grid_rows * gridConfig.grid_spacing).toFixed(0)}m</b>
+              <br/>
+              데이터 포인트: <b>{gridConfig.grid_rows * gridConfig.grid_cols}개</b>
+            </div>
+          )}
         </div>
       )}
 

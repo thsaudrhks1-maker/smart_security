@@ -1,6 +1,6 @@
 from back.database import fetch_all, fetch_one, execute, insert_and_return
 from typing import List, Dict, Any
-from datetime import date
+from datetime import date, datetime
 
 class WorkRepository:
     """작업 관리 데이터 접근 계층 (SQL Repository Pattern)"""
@@ -99,9 +99,10 @@ class WorkRepository:
                 equipment_flags, daily_hazards, status, calculated_risk_score, created_at
             ) VALUES (
                 :site_id, :zone_id, :template_id, :date, :description, 
-                :equipment_flags, :daily_hazards, :status, :calculated_risk_score, NOW()
+                :equipment_flags, :daily_hazards, :status, :calculated_risk_score, :created_at
             ) RETURNING *
         """
+        data["created_at"] = datetime.now()
         return await insert_and_return(sql, data)
 
     @staticmethod

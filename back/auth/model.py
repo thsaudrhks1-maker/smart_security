@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from datetime import datetime
 from back.database import Base
 
 # DB 모델 정의 (User)
@@ -12,7 +12,7 @@ class User(Base):
     hashed_password = Column(String)
     full_name = Column(String)
     role = Column(String, default="worker") # admin, manager, safety_manager, worker
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), default=datetime.now)
     
     # [신규] Worker 정보 통합 (User 테이블로 이관)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True, comment="소속 회사 (협력사)")

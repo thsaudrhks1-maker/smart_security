@@ -126,41 +126,50 @@ const UniversalBlueprintMap = ({
             }
           }
 
-          // 역할별 레이블
+          // 역할별 레이블 (통일된 깔끔한 UI)
           let labelContent = null;
           if (showLabels) {
-            const shouldShowWorkerLabel = role === 'WORKER' ? (hasWork || hasDanger) : true;
-            
-            if (shouldShowWorkerLabel) {
-              labelContent = (
+            labelContent = (
+              <div style={{ 
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px',
+                pointerEvents: 'none', zIndex: 1000,
+                textShadow: '0 0 2px white, 0 0 2px white, 0 0 2px white'
+              }}>
+                {/* 구역 번호 */}
                 <div style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px',
-                  pointerEvents: 'none', zIndex: 1000,
-                  textShadow: '0 0 2px white, 0 0 2px white, 0 0 2px white'
+                  color: isOverlap ? '#ef4444' : hasWork ? (role === 'WORKER' ? '#3b82f6' : pathOptions.fillColor) : (hasDanger ? '#ef4444' : '#64748b'),
+                  fontSize: '0.7rem', fontWeight: '900', marginBottom: '-2px'
                 }}>
-                  <div style={{ 
-                    color: isOverlap ? '#ef4444' : hasWork ? (role === 'WORKER' ? '#3b82f6' : pathOptions.fillColor) : (hasDanger ? '#ef4444' : '#64748b'),
-                    fontSize: '0.7rem', fontWeight: '900', marginBottom: '-2px'
-                  }}>
-                    {zone.id}
-                  </div>
-                  <div style={{ fontSize: '0.55rem', fontWeight: '800', color: '#1e293b', opacity: 0.9 }}>
-                    {zone.name}
-                  </div>
-                  
-                  {role === 'MANAGER' && hasWork && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1px', justifyContent: 'center', marginTop: '1px' }}>
-                      {[...new Set(zonePlans.flatMap(p => p.allocations || []).map(a => a.company_name?.slice(0,3)))].map((comp, idx) => (
-                        <span key={idx} style={{ fontSize: '0.42rem', color: '#2563eb', fontWeight: '900', background: 'rgba(255,255,255,0.7)', padding: '0 2px', borderRadius: '2px' }}>{comp}</span>
-                      ))}
-                    </div>
+                  {zone.id}
+                </div>
+                {/* 구역 이름 */}
+                <div style={{ fontSize: '0.55rem', fontWeight: '800', color: '#1e293b', opacity: 0.9 }}>
+                  {zone.name}
+                </div>
+                
+                {/* 배지 영역 */}
+                <div style={{ display: 'flex', gap: '2px', marginTop: '1px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {/* 위험구역 배지 (Worker/Manager 공통) */}
+                  {hasDanger && (
+                    <span style={{ fontSize: '0.45rem', color: '#dc2626', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #dc2626' }}>⚠️위험</span>
                   )}
+                  
+                  {/* 작업 배지 */}
                   {role === 'WORKER' && hasWork && (
-                    <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.7)', padding: '0 2px', borderRadius: '2px', marginTop: '1px' }}>내 작업</span>
+                    <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #3b82f6' }}>내 작업</span>
+                  )}
+                  
+                  {/* 회사명 배지 (Manager만) */}
+                  {role === 'MANAGER' && hasWork && (
+                    <>
+                      {[...new Set(zonePlans.flatMap(p => p.allocations || []).map(a => a.company_name?.slice(0,3)))].map((comp, idx) => (
+                        <span key={idx} style={{ fontSize: '0.42rem', color: '#2563eb', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 3px', borderRadius: '2px', border: '1px solid #3b82f6' }}>{comp}</span>
+                      ))}
+                    </>
                   )}
                 </div>
-              );
-            }
+              </div>
+            );
           }
 
           return (

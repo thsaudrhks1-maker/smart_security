@@ -8,19 +8,28 @@ class Zone(Base):
     __tablename__ = "zones"
 
     id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True) # 신중을 기해 일단 nullable
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False)
     
-    level = Column(String, nullable=False, comment="층/구역 (예: 1F, B1, ROOF)")
+    level = Column(String, nullable=False, comment="층/구역 표시명 (예: 1F, B1, ROOF)")
     name = Column(String, nullable=False, comment="상세 구역명 (예: A구역, E/V홀)")
     type = Column(String, nullable=False, default="INDOOR", comment="타입: INDOOR, OUTDOOR, ROOF, PIT, DANGER")
     
-    # 좌표 (옵션, 지도 표시용)
-    lat = Column(Float, nullable=True)
-    lng = Column(Float, nullable=True)
+    # 실제 GPS 좌표 (지도 표시용)
+    lat = Column(Float, nullable=True, comment="위도 (실제 GPS 좌표)")
+    lng = Column(Float, nullable=True, comment="경도 (실제 GPS 좌표)")
+    
+    # 3D 그리드 좌표 (상대적 위치, 0-based)
+    grid_x = Column(Integer, nullable=True, comment="그리드 X 좌표 (0부터 시작, 가로 칸 번호)")
+    grid_y = Column(Integer, nullable=True, comment="그리드 Y 좌표 (0부터 시작, 세로 칸 번호)")
+    grid_z = Column(Integer, nullable=True, comment="그리드 Z 좌표 (층수, 0=B1, 1=1F, 2=2F, ...)")
     
     # 구역별 고정 위험 요소 (예: ["추락위험", "환기불량"])
     default_hazards = Column(JSON, nullable=True, comment="해당 구역의 고정 위험 요소 목록")
     
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
     site = relationship("Site", back_populates="zones")
     daily_plans = relationship("DailyWorkPlan", back_populates="zone")
 

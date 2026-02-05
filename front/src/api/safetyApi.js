@@ -2,8 +2,10 @@ import apiClient from './client';
 
 export const safetyApi = {
     /** 구역 목록 (site_id 있으면 해당 현장만) */
-    getZones: async (siteId = null) => {
-        const params = siteId != null ? { site_id: siteId } : {};
+    getZones: async (siteId = null, projectId = null) => {
+        const params = {};
+        if (siteId != null) params.site_id = siteId;
+        if (projectId != null) params.project_id = projectId;
         const response = await apiClient.get('/safety/zones', { params });
         return response.data;
     },
@@ -36,5 +38,10 @@ export const safetyApi = {
     /** 일일 변동 위험 구역 삭제 */
     deleteDailyDangerZone: async (id) => {
         await apiClient.delete(`/safety/daily-danger-zones/${id}`);
+    },
+    /** 사이트 그리드 대량 생성 */
+    generateSiteGrid: async (siteId) => {
+        const response = await apiClient.post(`/safety/sites/${siteId}/generate-grid`);
+        return response.data;
     },
 };

@@ -8,7 +8,7 @@ import apiClient from '@/api/client';
 import { useAuth } from '@/context/AuthContext';
 import WorkerSettingsModal from './WorkerSettingsModal';
 import AttendanceCard from './AttendanceCard';
-import WorkerWorkSiteMap from './WorkerWorkSiteMap';
+import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 import { workApi } from '@/api/workApi';
 import { safetyApi } from '@/api/safetyApi';
 
@@ -132,7 +132,18 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Map size={20} color="#3b82f6" /> 나의 작업 현장 지도</span>
             {mapExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
-          {mapExpanded && <div style={{ padding: '0 0.75rem 0.75rem' }}><WorkerWorkSiteMap plans={myPlans} risks={myRisks} allZones={allZones} height={240} showLegend /></div>}
+          {mapExpanded && (
+            <div style={{ padding: '0 0.75rem 0.75rem' }}>
+              <UniversalBlueprintMap 
+                role="WORKER"
+                zones={allZones}
+                plans={myPlans}
+                risks={myRisks}
+                height="240px"
+                showLabels={true}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div style={{ marginBottom: '1rem' }}>

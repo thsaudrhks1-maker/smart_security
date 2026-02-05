@@ -45,6 +45,11 @@ export default function WorkLocation() {
   });
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState('ALL');
+
+  const filteredZones = selectedLevel === 'ALL' 
+    ? zones 
+    : zones.filter(z => z.level === selectedLevel);
 
   const centerLat = project?.location_lat != null ? project.location_lat : 37.5665;
   const centerLng = project?.location_lng != null ? project.location_lng : 126.978;
@@ -208,6 +213,43 @@ export default function WorkLocation() {
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
+
+        {siteId && (
+          <button
+            onClick={async () => {
+              if (window.confirm('기존 그리드 구역에 덮어씌워질 수 있습니다. 프로젝트 설정 기반으로 그리드를 자동 생성하시겠습니까?')) {
+                try {
+                  setLoading(true);
+                  await safetyApi.generateSiteGrid(siteId);
+                  alert('그리드 생성이 완료되었습니다.');
+                  const data = await safetyApi.getZones(siteId);
+                  setZones(data || []);
+                } catch (e) {
+                  alert('생성 실패: ' + e.message);
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #3b82f6', background: 'white', color: '#3b82f6', fontWeight: '600', cursor: 'pointer' }}
+          >
+            🔄 그리드 자동 생성
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '8px' }}>
+        <button 
+          onClick={() => setSelectedLevel('ALL')}
+          style={{ padding: '6px 16px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedLevel === 'ALL' ? '#1e293b' : 'white', color: selectedLevel === 'ALL' ? 'white' : '#64748b', fontSize: '0.9rem', cursor: 'pointer' }}
+        >전체</button>
+        {LEVELS.map(l => (
+          <button 
+            key={l}
+            onClick={() => setSelectedLevel(l)}
+            style={{ padding: '6px 16px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedLevel === l ? '#1e293b' : 'white', color: selectedLevel === l ? 'white' : '#64748b', fontSize: '0.9rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >{l}</button>
+        ))}
       </div>
 
       {!siteId && (
@@ -223,7 +265,7 @@ export default function WorkLocation() {
               <Map size={18} /> 현재 프로젝트 위치 (지도)
             </div>
             <div style={{ height: '480px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-              <MapOnly center={[centerLat, centerLng]} zones={zones} />
+              <MapOnly center={[centerLat, centerLng]} zones={filteredZones} />
             </div>
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '6px' }}>
               좌표: {centerLat.toFixed(5)}, {centerLng.toFixed(5)} (구역 등록 시 지도에서 클릭해 좌표를 넣을 수 있습니다)
@@ -231,7 +273,7 @@ export default function WorkLocation() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#334155', margin: 0 }}>작업 구역 목록</h2>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#334155', margin: 0 }}>작업 구역 목록 ({selectedLevel})</h2>
             <button
               type="button"
               onClick={() => { resetForm(); setShowForm(true); }}
@@ -241,15 +283,15 @@ export default function WorkLocation() {
             </button>
           </div>
 
-          {zones.length === 0 && !showForm && (
+          {filteredZones.length === 0 && !showForm && (
             <div style={{ padding: '2rem', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', color: '#64748b' }}>
-              등록된 작업 구역이 없습니다. "구역 추가"로 층·구역명·좌표·타입을 등록하세요.
+              해당 층에 등록된 작업 구역이 없습니다.
             </div>
           )}
 
-          {zones.length > 0 && (
+          {filteredZones.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-              {zones.map((z) => (
+              {filteredZones.map((z) => (
                 <div
                   key={z.id}
                   style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}

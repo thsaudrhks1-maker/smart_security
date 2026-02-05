@@ -45,3 +45,11 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
   - **백엔드**: `back/main.py`에서 `include_router(..., prefix="/api")`를 통해 일괄 적용한다. 개별 라우터 파일의 `prefix`에는 `/api`를 붙이지 않는다.
   - **프론트엔드**: `src/api/client.js`의 `baseURL`에 `/api`를 포함시킨다. 개별 API 라이브러리(예: `workApi.js`)에서는 `/api`를 생략하고 하위 경로만 작성한다.
 
+## 3. 데이터 처리 및 날짜 표준 (Data & Date Standards)
+
+### A. 날짜 및 시간 생성 (Application-Level Timestamps)
+- **DB 자동 생성 금지**: `NOW()`, `CURRENT_TIMESTAMP`, `DEFAULT NOW()` 등 DB 엔진에서 자동으로 시간을 생성하는 기능을 지양한다.
+- **애플리케이션 계층 생성**: 모든 날짜와 시간은 백엔드(Service/Repository) 또는 프론트엔드에서 명시적으로 생성하여 데이터베이스에 전달한다.
+- **이유**: 시점의 일관성 유지, 비즈니스 로직에서의 시간 제어권 확보, 테스트 용이성을 위함이다.
+- **파이썬 기준**: `datetime.now()`를 사용하여 전달한다.
+

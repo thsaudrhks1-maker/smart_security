@@ -7,10 +7,14 @@ class ZoneBase(BaseModel):
     type: str  # INDOOR, OUTDOOR, ROOF, PIT, DANGER
     lat: Optional[float] = None
     lng: Optional[float] = None
+    grid_x: Optional[int] = None
+    grid_y: Optional[int] = None
+    grid_z: Optional[int] = None
     default_hazards: Optional[list] = None
 
 
 class ZoneCreate(ZoneBase):
+    project_id: int
     site_id: int
 
 
@@ -21,11 +25,15 @@ class ZoneUpdate(BaseModel):
     type: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None
+    grid_x: Optional[int] = None
+    grid_y: Optional[int] = None
+    grid_z: Optional[int] = None
     default_hazards: Optional[list] = None
 
 
 class ZoneRead(ZoneBase):
     id: int
+    project_id: Optional[int] = None
     site_id: int
 
     class Config:

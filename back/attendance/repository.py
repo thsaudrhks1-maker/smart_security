@@ -22,8 +22,8 @@ class AttendanceRepository:
     @staticmethod
     async def get_today_attendance(user_id: int) -> Dict[str, Any] | None:
         """오늘 날짜의 출근 기록 조회"""
-        sql = "SELECT * FROM attendance WHERE user_id = :user_id AND date = CURRENT_DATE"
-        return await fetch_one(sql, {"user_id": user_id})
+        sql = "SELECT * FROM attendance WHERE user_id = :user_id AND date = :today"
+        return await fetch_one(sql, {"user_id": user_id, "today": date.today()})
 
     @staticmethod
     async def create_attendance(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -44,11 +44,15 @@ class AttendanceRepository:
         """퇴근 처리"""
         sql = """
             UPDATE attendance 
-            SET check_out_time = NOW() 
+            SET check_out_time = :check_out_time 
             WHERE id = :attendance_id AND user_id = :user_id 
             RETURNING *
         """
-        return await insert_and_return(sql, {"attendance_id": attendance_id, "user_id": user_id})
+        return await insert_and_return(sql, {
+            "attendance_id": attendance_id, 
+            "user_id": user_id,
+            "check_out_time": datetime.now()
+        })
 
     @staticmethod
     async def get_project_attendance_list(project_id: int, target_date: str = None) -> List[Dict[str, Any]]:

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Date, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
 from back.database import Base
+from datetime import datetime
 
 class Project(Base):
     __tablename__ = "projects"
@@ -16,6 +16,15 @@ class Project(Base):
     location_lat = Column(Float, nullable=True, comment="위도")
     location_lng = Column(Float, nullable=True, comment="경도")
     location_address = Column(String, nullable=True, comment="상세 주소")
+    
+    # 그리드 설정 (안전 구역 그리드 시스템)
+    grid_spacing = Column(Float, nullable=True, default=10.0, comment="그리드 간격 (미터)")
+    grid_rows = Column(Integer, nullable=True, default=10, comment="세로 격자 수")
+    grid_cols = Column(Integer, nullable=True, default=10, comment="가로 격자 수")
+    
+    # 층수 설정
+    basement_floors = Column(Integer, nullable=True, default=0, comment="지하 층수")
+    ground_floors = Column(Integer, nullable=True, default=1, comment="지상 층수")
 
     # 기간 및 상태
     start_date = Column(Date, nullable=True, comment="착공일")
@@ -30,8 +39,8 @@ class Project(Base):
     client_company = Column(String, nullable=True, comment="발주처명 (표시용)")
     constructor_company = Column(String, nullable=True, comment="시공사명 (표시용)")
 
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_at = Column(DateTime(timezone=True), default=datetime.now)
+    updated_at = Column(DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)
 
     # 관계 (New)
     # 1. 참여 멤버 (관리자, 작업자 모두 포함)
@@ -55,7 +64,7 @@ class ProjectMember(Base):
     
     # 상태
     status = Column(String, default="PENDING", comment="상태 (PENDING:승인대기, ACTIVE:근무중, LEAVE:퇴사)")
-    joined_at = Column(DateTime(timezone=True), server_default=func.now(), comment="투입일")
+    joined_at = Column(DateTime(timezone=True), default=datetime.now, comment="투입일")
     
     # 관계
     project = relationship("Project", back_populates="members")

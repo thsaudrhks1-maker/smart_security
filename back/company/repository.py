@@ -1,3 +1,4 @@
+from datetime import datetime
 from back.database import fetch_all, fetch_one, execute, insert_and_return
 from typing import List, Dict, Any
 
@@ -23,10 +24,16 @@ class CompanyRepository:
     async def create_company(name: str, trade_type: str = "미지정") -> Dict[str, Any]:
         sql = """
             INSERT INTO companies (name, trade_type, created_at, updated_at)
-            VALUES (:name, :trade_type, NOW(), NOW())
+            VALUES (:name, :trade_type, :created_at, :updated_at)
             RETURNING *
         """
-        return await insert_and_return(sql, {"name": name, "trade_type": trade_type})
+        now = datetime.now()
+        return await insert_and_return(sql, {
+            "name": name, 
+            "trade_type": trade_type,
+            "created_at": now,
+            "updated_at": now
+        })
 
     @staticmethod
     async def get_company_workers(company_id: int = None) -> List[Dict[str, Any]]:

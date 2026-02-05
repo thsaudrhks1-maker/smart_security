@@ -21,7 +21,7 @@ const CreateProject = () => {
   
   // 폼 데이터 (착공일=오늘, 준공예정일=6개월 뒤 기본값)
   const [formData, setFormData] = useState({
-    name: '',
+    name: '스마트 시큐리티 통합 관제 센터',
     location_address: '',
     location_lat: null,
     location_lng: null,
@@ -32,10 +32,17 @@ const CreateProject = () => {
     start_date: todayStr(),
     end_date: sixMonthsLaterStr(),
     project_type: '건축',   
-    budget_amount: 0,
+    budget_amount: 50000000,
     partner_ids: [], // 협력사 ID 목록 추가
     manager_id: '', // [NEW] 현장소장
-    safety_manager_id: '' // [NEW] 안전관리자
+    safety_manager_id: '', // [NEW] 안전관리자
+    // 그리드 설정
+    grid_spacing: 10, // 이제 '미터(m)' 단위로 관리
+    grid_rows: 10,
+    grid_cols: 10,
+    // 층수 설정
+    basement_floors: 0,
+    ground_floors: 1
   });
 
   // 회사 목록 상태
@@ -161,7 +168,13 @@ const CreateProject = () => {
         partners: partners, // 수동 입력 협력사 명칭
         // 빈 문자열이면 null로 전송
         manager_id: formData.manager_id ? parseInt(formData.manager_id) : null,
-        safety_manager_id: formData.safety_manager_id ? parseInt(formData.safety_manager_id) : null
+        safety_manager_id: formData.safety_manager_id ? parseInt(formData.safety_manager_id) : null,
+        // 자료형 명시적 변환
+        grid_spacing: parseFloat(formData.grid_spacing),
+        grid_rows: parseInt(formData.grid_rows),
+        grid_cols: parseInt(formData.grid_cols),
+        basement_floors: parseInt(formData.basement_floors),
+        ground_floors: parseInt(formData.ground_floors)
       };
 
       await createProject(payload);
@@ -500,10 +513,92 @@ const CreateProject = () => {
               onLocationSelect={handleMapClick} 
               initialLat={formData.location_lat}
               initialLng={formData.location_lng}
+              gridConfig={{
+                grid_rows: formData.grid_rows,
+                grid_cols: formData.grid_cols,
+                grid_spacing: formData.grid_spacing
+              }}
             />
           </div>
           <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.75rem' }}>
             GPS 기반 도면은 프로젝트 저장 후 [프로젝트 상세 → 현장 관리]에서 업로드할 수 있습니다. 작업 구역·위험 구역 표시는 추후 도면 위 영역 지정 기능으로 확장 예정입니다.
+          </p>
+        </div>
+
+        {/* 4. 프로젝트 그리드 설정 (Advanced) */}
+        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', marginTop: '2rem', display:'flex', alignItems:'center', gap:'8px' }}>
+          <Building2 size={20} /> 프로젝트 그리드 설정
+        </h3>
+        <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+          <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1.25rem' }}>
+            현장을 바둑판 모양의 격자(Grid)로 구분하여 작업 위치를 할당하고 위험 구역을 관리합니다. 설정값에 따라 구역(Zone)이 자동 생성됩니다.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '0.85rem' }}>가로 칸 수 (Cols)</label>
+              <input
+                type="number"
+                name="grid_cols"
+                value={formData.grid_cols}
+                onChange={handleChange}
+                min="1" max="100"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              />
+            </div>
+            <div className="form-group">
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '0.85rem' }}>세로 칸 수 (Rows)</label>
+              <input
+                type="number"
+                name="grid_rows"
+                value={formData.grid_rows}
+                onChange={handleChange}
+                min="1" max="100"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              />
+            </div>
+            <div className="form-group">
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '0.85rem' }}>격자 간격 (미터)</label>
+              <select
+                name="grid_spacing"
+                value={formData.grid_spacing}
+                onChange={handleChange}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              >
+                <option value={1}>1m (매우 정밀)</option>
+                <option value={5}>5m (정밀)</option>
+                <option value={10}>10m (보통)</option>
+                <option value={20}>20m (넓음)</option>
+                <option value={50}>50m (매우 넓음)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+            <div className="form-group">
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '0.85rem' }}>지하 층수</label>
+              <input
+                type="number"
+                name="basement_floors"
+                value={formData.basement_floors}
+                onChange={handleChange}
+                min="0" max="10"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              />
+            </div>
+            <div className="form-group">
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#475569', fontSize: '0.85rem' }}>지상 층수</label>
+              <input
+                type="number"
+                name="ground_floors"
+                value={formData.ground_floors}
+                onChange={handleChange}
+                min="1" max="100"
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+              />
+            </div>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '1rem' }}>
+            * 지도 위에 파란색 점선으로 표시되는 영역이 생성될 프로젝트 그리드 범위입니다.
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>

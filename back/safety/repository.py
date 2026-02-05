@@ -6,13 +6,17 @@ class SafetyRepository:
     """안전 관리 데이터 접근 계층 (SQL Repository Pattern)"""
     
     @staticmethod
-    async def get_zones(site_id: int = None) -> List[Dict[str, Any]]:
+    async def get_zones(project_id: int = None, site_id: int = None) -> List[Dict[str, Any]]:
         params = {}
-        filter_clause = ""
+        filters = []
+        if project_id:
+            filters.append("project_id = :project_id")
+            params["project_id"] = project_id
         if site_id:
-            filter_clause = "WHERE site_id = :site_id"
+            filters.append("site_id = :site_id")
             params["site_id"] = site_id
             
+        filter_clause = "WHERE " + " AND ".join(filters) if filters else ""
         sql = f"SELECT * FROM zones {filter_clause} ORDER BY id"
         return await fetch_all(sql, params)
 
@@ -20,12 +24,37 @@ class SafetyRepository:
     async def create_zone(data: Dict[str, Any]) -> Dict[str, Any]:
         sql = """
             INSERT INTO zones (
-                site_id, name, level, type, lat, lng, default_hazards, created_at, updated_at
+                project_id, site_id, name, level, type, lat, lng, 
+                grid_x, grid_y, grid_z, default_hazards, created_at, updated_at
             ) VALUES (
-                :site_id, :name, :level, :type, :lat, :lng, :default_hazards, NOW(), NOW()
+                :project_id, :site_id, :name, :level, :type, :lat, :lng, 
+                :grid_x, :grid_y, :grid_z, :default_hazards, :created_at, :updated_at
             ) RETURNING *
         """
         return await insert_and_return(sql, data)
+
+    @staticmethod
+    async def bulk_create_zones(zones_list: List[Dict[str, Any]]):
+        """다수의 구역 한꺼번에 생성"""
+        if not zones_list:
+            return
+            
+        sql = """
+            INSERT INTO zones (
+                project_id, site_id, name, level, type, lat, lng, 
+                grid_x, grid_y, grid_z, created_at, updated_at
+            ) VALUES (
+                :project_id, :site_id, :name, :level, :type, :lat, :lng, 
+                :grid_x, :grid_y, :grid_z, :created_at, :updated_at
+            )
+        """
+        # executemany 가 없어서 반복문 돌리거나 한방 쿼리로 만들어야함
+        # fetch_all 등으로 다중 밸류 처리는 가능하지만 일단 루프 + execute
+        # 실제로는 executemany가 성능상 좋음 (SQLAlchemy asyncpg는 지원함)
+        from back.database import engine
+        from sqlalchemy import text
+        async with engine.begin() as conn:
+            await conn.execute(text(sql), zones_list)
 
     @staticmethod
     async def get_zone_by_id(zone_id: int) -> Dict[str, Any] | None:
@@ -42,7 +71,7 @@ class SafetyRepository:
         
         sql = f"""
             UPDATE zones 
-            SET {set_clause}, updated_at = NOW() 
+            SET {set_clause}, updated_at = :updated_at 
             WHERE id = :zone_id 
             RETURNING *
         """

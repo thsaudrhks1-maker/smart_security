@@ -13,17 +13,25 @@ class ProjectService:
         """프로젝트 생성 및 관련 데이터(참여업체, 멤버) 연계"""
         data = project_data.dict()
         
-        # 1. 특정 필드 추출 및 변환
+        # 1. 특정 필드 추출 및 변환 (DB 테이블에 없는 필드들 제거)
+        partners = data.pop("partners", [])
         partner_ids = data.pop("partner_ids", [])
         client_id = data.pop("client_id", None)
         constructor_id = data.pop("constructor_id", None)
         manager_id = data.pop("manager_id", None)
         safety_manager_id = data.pop("safety_manager_id", None)
 
+        # 날짜 문자열 변환
         if data.get("start_date") and isinstance(data["start_date"], str):
-            data["start_date"] = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            try:
+                data["start_date"] = datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            except ValueError:
+                data["start_date"] = None
         if data.get("end_date") and isinstance(data["end_date"], str):
-            data["end_date"] = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+            try:
+                data["end_date"] = datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+            except ValueError:
+                data["end_date"] = None
 
         # 2. 프로젝트 기본 생성
         project = await ProjectRepository.create(data)
@@ -44,7 +52,12 @@ class ProjectService:
         if safety_manager_id:
             await ProjectRepository.add_member(project_id, safety_manager_id, "안전관리자")
 
-        # 5. 최종 결과 조회
+        # 5. 기본 현장(Site) 자동 생성 및 그리드 초기화
+        default_site = await ProjectRepository.create_site(project_id, "본현장", data.get("location_address"))
+        from back.safety.service import SafetyService
+        await SafetyService.generate_grid_for_site(default_site["id"])
+
+        # 6. 최종 결과 조회
         return await ProjectRepository.get_by_id(project_id)
 
     @staticmethod

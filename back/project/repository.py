@@ -1,3 +1,4 @@
+from datetime import datetime
 from back.database import fetch_all, fetch_one, execute, insert_and_return
 from typing import List, Dict, Any
 
@@ -10,13 +11,29 @@ class ProjectRepository:
         sql = """
             INSERT INTO projects (
                 name, description, start_date, end_date, 
-                location, status, created_at, updated_at
+                location_lat, location_lng, location_address,
+                grid_spacing, grid_rows, grid_cols,
+                basement_floors, ground_floors,
+                client_company, constructor_company, project_type, budget_amount,
+                status, created_at, updated_at
             ) VALUES (
                 :name, :description, :start_date, :end_date, 
-                :location, :status, NOW(), NOW()
-            ) RETURNING id, name, description, start_date, end_date, location, status
+                :location_lat, :location_lng, :location_address,
+                :grid_spacing, :grid_rows, :grid_cols,
+                :basement_floors, :ground_floors,
+                :client_company, :constructor_company, :project_type, :budget_amount,
+                :status, :created_at, :updated_at
+            ) RETURNING *
         """
+        now = datetime.now()
+        project_data.update({"created_at": now, "updated_at": now})
         return await insert_and_return(sql, project_data)
+
+    @staticmethod
+    async def get_site_by_id(site_id: int) -> Dict[str, Any] | None:
+        """사이트 상세 조회"""
+        sql = "SELECT * FROM sites WHERE id = :site_id"
+        return await fetch_one(sql, {"site_id": site_id})
 
     @staticmethod
     async def add_participant(project_id: int, company_id: int, role: str):
@@ -24,7 +41,7 @@ class ProjectRepository:
         sql = """
             INSERT INTO project_participants (project_id, company_id, role)
             VALUES (:project_id, :company_id, :role)
-            ON CONFLICT (project_id, company_id) DO NOTHING
+            ON CONFLICT ON CONSTRAINT uq_project_company DO NOTHING
         """
         await execute(sql, {"project_id": project_id, "company_id": company_id, "role": role})
 
@@ -33,13 +50,14 @@ class ProjectRepository:
         """핵심 인력(ProjectMember) 배정"""
         sql = """
             INSERT INTO project_members (project_id, user_id, role_name, status, joined_at)
-            VALUES (:project_id, :user_id, :role_name, :status, CURRENT_DATE)
+            VALUES (:project_id, :user_id, :role_name, :status, :joined_at)
         """
         await execute(sql, {
             "project_id": project_id, 
             "user_id": user_id, 
             "role_name": role_name, 
-            "status": status
+            "status": status,
+            "joined_at": datetime.now().date()
         })
 
     @staticmethod
@@ -113,10 +131,11 @@ class ProjectRepository:
         
         sql = f"""
             UPDATE projects 
-            SET {set_clause}, updated_at = NOW() 
+            SET {set_clause}, updated_at = :updated_at 
             WHERE id = :project_id 
             RETURNING *
         """
+        update_data["updated_at"] = datetime.now()
         return await insert_and_return(sql, update_data)
 
     @staticmethod

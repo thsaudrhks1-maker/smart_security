@@ -7,12 +7,12 @@ import uuid
 
 router = APIRouter(prefix="/projects", tags=["Projects"])
 
-@router.post("/", response_model=ProjectResponse, status_code=201)
+@router.post("", response_model=ProjectResponse, status_code=201)
 async def create_project(project_data: ProjectCreate):
     """프로젝트 생성 (관리자 전용)"""
     return await ProjectService.create_project(project_data)
 
-@router.get("/", response_model=List[ProjectResponse])
+@router.get("", response_model=List[ProjectResponse])
 async def get_all_projects():
     """모든 프로젝트 목록 조회"""
     return await ProjectService.get_all_projects()

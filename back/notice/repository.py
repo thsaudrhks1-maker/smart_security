@@ -1,12 +1,13 @@
 from back.notice.schema import NoticeCreate, NoticeUpdate
 from back.database import execute, fetch_all, fetch_one, insert_and_return
+from datetime import datetime
 
 class NoticeRepository:
     @staticmethod
     async def create(author_id: int, notice: NoticeCreate):
         query = """
             INSERT INTO notices (project_id, author_id, title, content, is_important, image_url, created_at)
-            VALUES (:project_id, :author_id, :title, :content, :is_important, :image_url, NOW())
+            VALUES (:project_id, :author_id, :title, :content, :is_important, :image_url, :created_at)
             RETURNING id, project_id, author_id, title, content, is_important, image_url, created_at
         """
         params = {
@@ -15,7 +16,8 @@ class NoticeRepository:
             "title": notice.title,
             "content": notice.content,
             "is_important": notice.is_important,
-            "image_url": notice.image_url
+            "image_url": notice.image_url,
+            "created_at": datetime.now()
         }
         return await insert_and_return(query, params)
 
@@ -50,12 +52,13 @@ class NoticeRepository:
                 content = COALESCE(:content, content),
                 is_important = COALESCE(:is_important, is_important),
                 image_url = COALESCE(:image_url, image_url),
-                updated_at = NOW()
+                updated_at = :updated_at
             WHERE id = :notice_id
             RETURNING *
         """
         params = notice.model_dump()
         params["notice_id"] = notice_id
+        params["updated_at"] = datetime.now()
         return await insert_and_return(query, params)
 
     @staticmethod
