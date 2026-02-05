@@ -23,6 +23,7 @@ import {
   EmergencyAlertModal, SafetyInfoModal 
 } from './DashboardModals';
 import DangerReportModal from './DangerReportModal';
+import DangerZoneDetailModal from './DangerZoneDetailModal';
 
 const STORAGE_SHOW_MAP = 'worker_home_show_map';
 const STORAGE_MAP_EXPANDED = 'worker_home_map_expanded';
@@ -44,6 +45,8 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedZoneForReport, setSelectedZoneForReport] = useState(null);
+  const [showDangerDetailModal, setShowDangerDetailModal] = useState(false);
+  const [selectedDangerZone, setSelectedDangerZone] = useState(null);
 
   // 홈 지도 상태
   const [showMapOnHome, setShowMapOnHome] = useState(() => {
@@ -101,10 +104,20 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
     ? allZones 
     : allZones.filter(z => z.level === selectedLevel);
 
-  // Zone 클릭 핸들러 (위험 신고)
+  // Zone 클릭 핸들러 (위험 구역 상세 or 신고)
   const handleZoneClick = (zone) => {
-    setSelectedZoneForReport(zone);
-    setShowReportModal(true);
+    // 해당 Zone에 위험이 있는지 확인
+    const dangerZone = myRisks.find(r => r.zone_id === zone.id);
+    
+    if (dangerZone) {
+      // 위험 구역이 있으면 → 상세 모달
+      setSelectedDangerZone(dangerZone);
+      setShowDangerDetailModal(true);
+    } else {
+      // 위험 구역이 없으면 → 신고 모달
+      setSelectedZoneForReport(zone);
+      setShowReportModal(true);
+    }
   };
 
   // 신고 성공 후 데이터 새로고침
@@ -298,6 +311,13 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
         zone={selectedZoneForReport}
         projectId={projectId}
         onSuccess={handleReportSuccess}
+      />
+      
+      {/* 위험 구역 상세 모달 */}
+      <DangerZoneDetailModal 
+        open={showDangerDetailModal}
+        onClose={() => setShowDangerDetailModal(false)}
+        risk={selectedDangerZone}
       />
 
     </div>

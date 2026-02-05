@@ -113,22 +113,38 @@ const UniversalBlueprintMap = ({
           const hasWork = zonePlans.length > 0;
           const hasDanger = zoneRisks.length > 0;
           const isOverlap = hasWork && hasDanger;
+          
+          // 위험 구역 상태 확인 (PENDING: 주황, APPROVED: 빨강)
+          const dangerStatus = zoneRisks.length > 0 ? zoneRisks[0].status : null;
+          const isPending = dangerStatus === 'PENDING';
+          const isApproved = dangerStatus === 'APPROVED' || (!dangerStatus && hasDanger);
 
           // 역할별 스타일
           let pathOptions = { fillColor: '#ffffff', fillOpacity: 0.15, color: 'rgba(0,0,0,0.15)', weight: 1 };
 
           if (role === 'WORKER') {
-            if (isOverlap) pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: '#ef4444', weight: 3 };
-            else if (hasWork) pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
-            else if (hasDanger) pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
-          } else {
             if (isOverlap) {
-                const baseColor = hasWork ? WORK_TYPE_COLORS[plans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] : '#3b82f6';
-                pathOptions = { fillColor: baseColor, fillOpacity: 0.7, color: '#ef4444', weight: 4 };
+                pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: '#ef4444', weight: 3 };
             } else if (hasWork) {
-                const workColor = WORK_TYPE_COLORS[plans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] || '#3b82f6';
+                pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
+            } else if (isPending) {
+                // PENDING: 주황색 테두리 (신고 대기 중)
+                pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#f97316', weight: 3.5 };
+            } else if (isApproved) {
+                // APPROVED: 빨간색 테두리 (승인됨)
+                pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
+            }
+          } else {
+            const workColor = zonePlans.length > 0 ? WORK_TYPE_COLORS[plans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] : '#3b82f6';
+            if (isOverlap) {
+                pathOptions = { fillColor: workColor, fillOpacity: 0.7, color: '#ef4444', weight: 4 };
+            } else if (hasWork) {
                 pathOptions = { fillColor: workColor, fillOpacity: 0.65, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
-            } else if (hasDanger) {
+            } else if (isPending) {
+                // PENDING: 주황색 테두리
+                pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#f97316', weight: 3.5 };
+            } else if (isApproved) {
+                // APPROVED: 빨간색 테두리
                 pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
             }
           }

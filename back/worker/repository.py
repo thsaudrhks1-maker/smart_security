@@ -103,7 +103,22 @@ async def get_daily_safety_infos(date: str) -> list[dict]:
     return await fetch_all(sql, {"date": _to_date_str(date)})
 
 async def get_daily_danger_zones(zone_id: int, date: str) -> list[dict]:
-    sql = "SELECT * FROM daily_danger_zones WHERE zone_id = :zone_id AND date = :date"
+    """특정 구역의 금일 위험 구역 조회 (status, danger_zone_id 포함)"""
+    sql = """
+        SELECT 
+            id as danger_zone_id,
+            zone_id,
+            date,
+            risk_type,
+            description,
+            status,
+            reported_by,
+            approved_by,
+            created_at
+        FROM daily_danger_zones 
+        WHERE zone_id = :zone_id AND date = :date
+        ORDER BY created_at DESC
+    """
     return await fetch_all(sql, {"zone_id": zone_id, "date": _to_date(date)})
 
 async def get_attendance(user_id: int, date: str) -> dict | None:

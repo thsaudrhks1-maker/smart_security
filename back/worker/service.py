@@ -130,15 +130,21 @@ async def get_all_project_risks_today(user_id: int) -> List[Dict[str, Any]]:
         desc = "\n".join(descriptions)
         level = (danger_zones[0].get("risk_type") or z.get("level") or "CAUTION")
         
+        # 첫 번째 위험 구역 정보 사용 (가장 최근)
+        first_danger = danger_zones[0]
+        
         result.append({
             "id": z["id"],
             "zone_id": z["id"],
+            "danger_zone_id": first_danger.get("danger_zone_id"),  # 위험 구역 ID 추가
             "name": z["name"],
             "type": z.get("type"),
             "level": level,
             "lat": z.get("lat"),
             "lng": z.get("lng"),
-            "description": desc
+            "description": desc,
+            "status": first_danger.get("status", "APPROVED"),  # 신고 상태 추가
+            "risk_type": first_danger.get("risk_type")
         })
     
     return result
