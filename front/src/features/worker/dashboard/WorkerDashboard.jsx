@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import WorkerSettingsModal from './WorkerSettingsModal';
 import AttendanceCard from './AttendanceCard';
 import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
+import BuildingSectionView from '@/features/manager/work/BuildingSectionView';
 import { workApi } from '@/api/workApi';
 import { safetyApi } from '@/api/safetyApi';
 import { workerApi } from '@/api/workerApi';
@@ -34,6 +35,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const [myRisks, setMyRisks] = useState([]);
   const [allZones, setAllZones] = useState([]);
   const [dashboardInfo, setDashboardInfo] = useState(null);
+  const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // 모달 상태
@@ -50,6 +52,10 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const [mapExpanded, setMapExpanded] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_MAP_EXPANDED) ?? 'false'); } catch { return false; }
   });
+  
+  // 층별 보기 상태
+  const [selectedLevel, setSelectedLevel] = useState('ALL'); // 'ALL', 'B1', '1F', '2F'
+  const [showBuildingSection, setShowBuildingSection] = useState(false);
 
   useEffect(() => {
     const loadWorkerData = async () => {
@@ -73,10 +79,24 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   }, []);
 
   const siteId = myPlans.length > 0 ? myPlans[0].site_id : null;
+  const projectId = dashboardInfo?.user_info?.project_id;
+  
   useEffect(() => {
     if (siteId == null) { setAllZones([]); return; }
     safetyApi.getZones(siteId).then((data) => setAllZones(data || [])).catch(() => setAllZones([]));
   }, [siteId]);
+  
+  useEffect(() => {
+    if (!projectId) return;
+    apiClient.get(`/api/projects/${projectId}`)
+      .then(res => setProject(res.data))
+      .catch(err => console.error('프로젝트 정보 로드 실패:', err));
+  }, [projectId]);
+  
+  // 층별 필터링된 zones
+  const filteredZones = selectedLevel === 'ALL' 
+    ? allZones 
+    : allZones.filter(z => z.level === selectedLevel);
 
   const handleViewLocation = (risk) => {
     navigate('/worker/safety', { state: { focusZone: risk } });
@@ -134,15 +154,85 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
             {mapExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
           {mapExpanded && (
-            <div style={{ padding: '0 0.75rem 0.75rem' }}>
-              <UniversalBlueprintMap 
-                role="WORKER"
-                zones={allZones}
-                plans={myPlans}
-                risks={myRisks}
-                height="240px"
-                showLabels={true}
-              />
+            <div style={{ padding: '0.75rem' }}>
+              {/* 층별 보기 컨트롤 */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => { setSelectedLevel('ALL'); setShowBuildingSection(false); }}
+                  style={{ 
+                    padding: '0.4rem 0.8rem', 
+                    background: selectedLevel === 'ALL' ? '#3b82f6' : '#f1f5f9',
+                    color: selectedLevel === 'ALL' ? 'white' : '#64748b',
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  전체보기
+                </button>
+                <button 
+                  onClick={() => setShowBuildingSection(!showBuildingSection)}
+                  style={{ 
+                    padding: '0.4rem 0.8rem', 
+                    background: showBuildingSection ? '#3b82f6' : '#f1f5f9',
+                    color: showBuildingSection ? 'white' : '#64748b',
+                    border: 'none', 
+                    borderRadius: '6px', 
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  층별보기
+                </button>
+                {selectedLevel !== 'ALL' && (
+                  <span style={{ padding: '0.4rem 0.8rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600' }}>
+                    {selectedLevel}
+                  </span>
+                )}
+              </div>
+
+              {/* 단면도 + 지도 (층별보기 모드: 좌우 배치) */}
+              {showBuildingSection ? (
+                <div style={{ display: 'flex', gap: '0.75rem', minHeight: '280px' }}>
+                  {/* 단면도 (왼쪽) */}
+                  <div style={{ flexShrink: 0 }}>
+                    <BuildingSectionView
+                      project={project}
+                      allZones={allZones}
+                      allPlans={myPlans}
+                      allRisks={myRisks}
+                      selectedLevel={selectedLevel}
+                      onLevelSelect={(level) => setSelectedLevel(level)}
+                      compact={true}
+                    />
+                  </div>
+                  
+                  {/* 평면도 (오른쪽) */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <UniversalBlueprintMap 
+                      role="WORKER"
+                      zones={filteredZones}
+                      plans={myPlans}
+                      risks={myRisks}
+                      height="280px"
+                      showLabels={true}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* 전체보기 모드: 지도만 */
+                <UniversalBlueprintMap 
+                  role="WORKER"
+                  zones={filteredZones}
+                  plans={myPlans}
+                  risks={myRisks}
+                  height="240px"
+                  showLabels={true}
+                />
+              )}
             </div>
           )}
         </div>

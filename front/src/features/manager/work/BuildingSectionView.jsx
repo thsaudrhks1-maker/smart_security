@@ -11,22 +11,43 @@ const BuildingSectionView = ({
   onLevelSelect,
   allZones = [],
   allPlans = [],
-  allRisks = []
+  allRisks = [],
+  compact = false  // 근로자 앱용 컴팩트 모드
 }) => {
   // 층 리스트 생성 (B2, B1, 1F, 2F...)
   const levels = React.useMemo(() => {
-    if (!project) return ['1F'];
-    const res = [];
-    // 지상층 (역순으로 쌓아야 위에서 아래로 보임)
-    for (let i = project.ground_floors; i >= 1; i--) {
-      res.push(`${i}F`);
+    if (project && project.ground_floors !== undefined && project.basement_floors !== undefined) {
+      const res = [];
+      // 지상층 (역순으로 쌓아야 위에서 아래로 보임)
+      for (let i = project.ground_floors; i >= 1; i--) {
+        res.push(`${i}F`);
+      }
+      // 지하층
+      for (let i = 1; i <= project.basement_floors; i++) {
+        res.push(`B${i}`);
+      }
+      return res;
     }
-    // 지하층
-    for (let i = 1; i <= project.basement_floors; i++) {
-      res.push(`B${i}`);
+    
+    // project 정보가 없으면 zones에서 고유한 level 추출
+    if (allZones && allZones.length > 0) {
+      const uniqueLevels = [...new Set(allZones.map(z => z.level).filter(Boolean))];
+      // 정렬: 숫자F (내림차순), B숫자 (오름차순)
+      return uniqueLevels.sort((a, b) => {
+        const aIsGround = a.includes('F');
+        const bIsGround = b.includes('F');
+        if (aIsGround && bIsGround) {
+          return parseInt(b) - parseInt(a); // 2F, 1F
+        }
+        if (!aIsGround && !bIsGround) {
+          return parseInt(a.replace('B', '')) - parseInt(b.replace('B', '')); // B1, B2
+        }
+        return aIsGround ? -1 : 1; // 지상층이 위에
+      });
     }
-    return res;
-  }, [project]);
+    
+    return ['1F'];
+  }, [project, allZones]);
 
   // 층별 통계 계산
   const levelStats = React.useMemo(() => {
@@ -40,32 +61,68 @@ const BuildingSectionView = ({
     return stats;
   }, [levels, allZones, allPlans, allRisks]);
 
+  // 컴팩트 모드 스타일 (근로자 앱용)
+  const containerStyle = compact ? {
+    width: '70px',
+    padding: '6px',
+    gap: '3px',
+    borderRadius: '8px',
+    maxHeight: '280px'
+  } : {
+    width: '100px',
+    padding: '8px',
+    gap: '4px',
+    borderRadius: '12px',
+    maxHeight: '100%'
+  };
+
+  const headerStyle = compact ? {
+    fontSize: '0.55rem',
+    marginBottom: '3px',
+    gap: '3px'
+  } : {
+    fontSize: '0.65rem',
+    marginBottom: '4px',
+    gap: '4px'
+  };
+
+  const levelStyle = (isActive) => compact ? {
+    minHeight: '40px',
+    height: '40px',
+    borderRadius: '4px',
+    fontSize: '0.75rem'
+  } : {
+    flex: 1,
+    minHeight: '45px',
+    maxHeight: '60px',
+    borderRadius: '6px',
+    fontSize: '0.85rem'
+  };
+
+  const badgeSize = compact ? '5px' : '6px';
+  const iconSize = compact ? 10 : 12;
+
   return (
     <div style={{ 
-      width: '100px', 
+      ...containerStyle,
       flexShrink: 0,
       display: 'flex', 
-      flexDirection: 'column', 
-      gap: '4px',
+      flexDirection: 'column',
       background: '#f1f5f9',
-      padding: '8px',
-      borderRadius: '12px',
       border: '1px solid #e2e8f0',
-      overflowY: 'auto',
-      maxHeight: '100%'
+      overflowY: 'auto'
     }}>
       <div style={{ 
-        fontSize: '0.65rem', 
+        ...headerStyle,
         fontWeight: '800', 
         color: '#64748b', 
-        textAlign: 'center', 
-        marginBottom: '4px',
+        textAlign: 'center',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '4px'
+        flexShrink: 0
       }}>
-        <Layers size={12} /> 단면도
+        <Layers size={iconSize} /> {compact ? '층' : '단면도'}
       </div>
 
       {levels.map((lvl) => {
@@ -78,12 +135,9 @@ const BuildingSectionView = ({
             key={lvl}
             onClick={() => onLevelSelect(lvl)}
             style={{
-              flex: 1,
-              minHeight: '45px',
-              maxHeight: '60px',
+              ...levelStyle(isActive),
               background: isActive ? '#ffffff' : (isGround ? '#ffffff' : '#e2e8f0'),
               border: isActive ? '2px solid #3b82f6' : '1px solid #cbd5e1',
-              borderRadius: '6px',
               cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
@@ -91,12 +145,13 @@ const BuildingSectionView = ({
               justifyContent: 'center',
               position: 'relative',
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: isActive ? '0 4px 6px -1px rgba(59, 130, 246, 0.2)' : 'none',
-              zIndex: isActive ? 10 : 1
+              boxShadow: isActive ? (compact ? '0 2px 4px rgba(59, 130, 246, 0.2)' : '0 4px 6px -1px rgba(59, 130, 246, 0.2)') : 'none',
+              zIndex: isActive ? 10 : 1,
+              flexShrink: 0
             }}
           >
             <div style={{ 
-              fontSize: '0.85rem', 
+              fontSize: levelStyle(isActive).fontSize,
               fontWeight: '900', 
               color: isActive ? '#2563eb' : '#475569' 
             }}>
@@ -104,17 +159,17 @@ const BuildingSectionView = ({
             </div>
 
             {/* 상태 인디케이터 배지 */}
-            <div style={{ display: 'flex', gap: '3px', marginTop: '2px' }}>
+            <div style={{ display: 'flex', gap: compact ? '2px' : '3px', marginTop: compact ? '1px' : '2px' }}>
               {plansCount > 0 && (
-                <div title={`작업 ${plansCount}건`} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6' }} />
+                <div title={`작업 ${plansCount}건`} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#3b82f6' }} />
               )}
               {risksCount > 0 && (
-                <div title={`위험 ${risksCount}건`} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444' }} />
+                <div title={`위험 ${risksCount}건`} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#ef4444' }} />
               )}
             </div>
 
-            {/* 사이드 라벨 (작업/위험 수) */}
-            {isActive && (plansCount > 0 || risksCount > 0) && (
+            {/* 사이드 라벨 (작업/위험 수) - 관리자 모드에만 표시 */}
+            {!compact && isActive && (plansCount > 0 || risksCount > 0) && (
               <div style={{
                 position: 'absolute',
                 left: '100%',
@@ -139,16 +194,18 @@ const BuildingSectionView = ({
         );
       })}
 
-      <div style={{ marginTop: 'auto', textAlign: 'center' }}>
+      <div style={{ marginTop: compact ? '6px' : 'auto', textAlign: 'center', flexShrink: 0 }}>
         <div style={{ 
-          height: '4px', 
+          height: compact ? '3px' : '4px',
           background: '#94a3b8', 
           borderRadius: '2px', 
-          width: '120%', 
-          marginLeft: '-10%',
-          marginTop: '8px' 
+          width: compact ? '100%' : '120%',
+          marginLeft: compact ? '0' : '-10%',
+          marginTop: compact ? '0' : '8px'
         }} />
-        <div style={{ fontSize: '0.5rem', color: '#94a3b8', marginTop: '4px', fontWeight: 'bold' }}>GROUND</div>
+        <div style={{ fontSize: compact ? '0.45rem' : '0.5rem', color: '#94a3b8', marginTop: compact ? '3px' : '4px', fontWeight: 'bold' }}>
+          {compact ? '지면' : 'GROUND'}
+        </div>
       </div>
     </div>
   );
