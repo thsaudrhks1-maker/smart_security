@@ -88,7 +88,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   
   useEffect(() => {
     if (!projectId) return;
-    apiClient.get(`/api/projects/${projectId}`)
+    apiClient.get(`/projects/${projectId}`)
       .then(res => setProject(res.data))
       .catch(err => console.error('프로젝트 정보 로드 실패:', err));
   }, [projectId]);

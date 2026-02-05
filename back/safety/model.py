@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Text, Float, JSON, Boolean
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Date, Text, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from back.database import Base
@@ -8,7 +8,7 @@ class Zone(Base):
     __tablename__ = "zones"
 
     id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True) # 신중을 기해 일단 nullable
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)  # 신중을 기해 일단 nullable
     site_id = Column(Integer, ForeignKey("sites.id"), nullable=False)
     
     level = Column(String, nullable=False, comment="층/구역 표시명 (예: 1F, B1, ROOF)")
@@ -50,6 +50,19 @@ class SafetyLog(Base):
 
     plan = relationship("DailyWorkPlan", back_populates="logs")
 
+class DailyWorkPlanLog(Base):
+    """일일 작업 계획 로그 (Daily Work Plan Log) - 작업 진행 상태 기록"""
+    __tablename__ = "daily_work_plan_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, ForeignKey("daily_work_plans.id", ondelete="CASCADE"), nullable=False)
+    
+    timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="기록 시각")
+    status = Column(String, nullable=False, comment="NOT_STARTED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED")
+    comment = Column(Text, nullable=True, comment="작업 기록 메모")
+
+    plan = relationship("DailyWorkPlan", back_populates="logs")
+
 class DailyDangerZone(Base):
     """일일 변동 위험 구역 (Daily Active Danger Zone) - 중장비, 화재 등 일시적 위험"""
     __tablename__ = "daily_danger_zones"
@@ -67,7 +80,31 @@ class DailyDangerZone(Base):
     y = Column(Float, nullable=True)
     z = Column(Float, nullable=True)
     
+    # 근로자 신고 기능 (Worker Report System)
+    status = Column(String, nullable=False, default="APPROVED", comment="PENDING(신고 대기), APPROVED(승인됨), REJECTED(반려)")
+    reported_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="신고자 ID (근로자)")
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="승인자 ID (관리자)")
+    approved_at = Column(DateTime, nullable=True, comment="승인 시간")
+    created_at = Column(DateTime, default=datetime.now, comment="신고/등록 시간")
+    
     zone = relationship("Zone")
+    reporter = relationship("User", foreign_keys=[reported_by])
+    approver = relationship("User", foreign_keys=[approved_by])
+    images = relationship("DangerZoneImage", back_populates="danger_zone", cascade="all, delete-orphan")
+
+class DangerZoneImage(Base):
+    """위험 구역 신고 사진 (Danger Zone Report Images)"""
+    __tablename__ = "danger_zone_images"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    danger_zone_id = Column(Integer, ForeignKey("daily_danger_zones.id", ondelete="CASCADE"), nullable=False)
+    
+    image_name = Column(String, nullable=False, comment="파일명 (예: danger_zone_15_1.jpg)")
+    uploaded_at = Column(DateTime, default=datetime.now, comment="업로드 시간")
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="업로드한 사용자")
+    
+    danger_zone = relationship("DailyDangerZone", back_populates="images")
+    uploader = relationship("User")
 
 class EmergencyAlert(Base):
     """긴급 알림 (지진, 화재 등)"""
@@ -93,5 +130,3 @@ class SafetyViolation(Base):
     created_at = Column(DateTime, default=datetime.now)
 
     worker = relationship("User")
-
-

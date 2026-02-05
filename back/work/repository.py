@@ -26,14 +26,15 @@ class WorkRepository:
         
         # 2. 모든 템플릿-리소스 매핑 한 번에 조회
         template_ids = [t["id"] for t in templates]
-        mappings_sql = """
+        template_ids_str = ",".join(map(str, template_ids))
+        mappings_sql = f"""
             SELECT trm.template_id, r.*
             FROM template_resource_map trm
             JOIN safety_resources r ON trm.resource_id = r.id
-            WHERE trm.template_id = ANY(:template_ids)
+            WHERE trm.template_id IN ({template_ids_str})
             ORDER BY trm.template_id, r.type, r.name
         """
-        mappings = await fetch_all(mappings_sql, {"template_ids": template_ids})
+        mappings = await fetch_all(mappings_sql)
         
         # 3. Python에서 그룹핑 (훨씬 읽기 쉽고, 디버깅도 편함)
         resource_map = {}
