@@ -8,7 +8,7 @@ import { safetyApi } from '../../../api/safetyApi';
 import { getManagerDashboard } from '../../../api/managerApi';
 import { getProjectById, getProjectSites } from '../../../api/projectApi';
 import apiClient from '../../../api/client';
-import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, X, ShieldAlert, Trash2, Map } from 'lucide-react';
+import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, X, ShieldAlert, Trash2, Map, LayoutDashboard } from 'lucide-react';
 
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
 
@@ -19,16 +19,26 @@ const RISK_TYPES = [
   { value: 'ETC', label: '기타' },
 ];
 
-// 툴팁 배경 제거를 위한 글로벌 스타일 주입
-const tooltipStyles = `
-  .transparent-tooltip {
+// 툴팁 배경 제거 및 투명 스크롤바 글로벌 스타일 주입 (Worker 스타일 통합)
+const globalStyles = `
+  .transparent-tooltip, .worker-clean-tooltip {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
   }
-  .transparent-tooltip::before {
+  .transparent-tooltip::before, .worker-clean-tooltip::before {
     display: none !important;
+  }
+  .thin-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .thin-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
   }
 `;
 
@@ -131,7 +141,7 @@ const DailyPlanManagement = () => {
 
   return (
     <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-      <style>{tooltipStyles}</style>
+      <style>{globalStyles}</style>
       
       {/* 헤더 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -189,20 +199,10 @@ const DailyPlanManagement = () => {
           <strong>배정 인원</strong> <span style={{ color: '#475569', fontWeight: '800' }}>{filteredPlans.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}명</span>
         </span>
 
-        <button 
-          onClick={() => setShowWorkerLabels(!showWorkerLabels)}
-          style={{ 
-            marginLeft: 'auto', padding: '8px 16px', borderRadius: '24px', fontSize: '0.8rem', fontWeight: '700',
-            background: showWorkerLabels ? '#3b82f6' : '#f8fafc',
-            color: showWorkerLabels ? 'white' : '#64748b',
-            border: '1px solid',
-            borderColor: showWorkerLabels ? '#2563eb' : '#e2e8f0',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s',
-            boxShadow: showWorkerLabels ? '0 4px 6px -1px rgba(59, 130, 246, 0.3)' : 'none'
-          }}
-        >
-          <Users size={16} /> 지도 작업자 표시 {showWorkerLabels ? '온' : '오프'}
-        </button>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#334155' }}>
+          <Users size={18} color="#64748b" />
+          <strong>배정 인원</strong> <span style={{ color: '#475569', fontWeight: '800' }}>{filteredPlans.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}명</span>
+        </span>
       </div>
 
       {/* 본문: 스크롤 영역 */}
@@ -222,7 +222,7 @@ const DailyPlanManagement = () => {
               flexShrink: 0,
               position: 'relative'
             }}>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ height: '420px', position: 'relative', overflow: 'hidden' }}>
                 <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '420px', width: '100%', background: '#f1f5f9' }}>
                   <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
                   <DailyPlanMapMarkers 
@@ -249,7 +249,7 @@ const DailyPlanManagement = () => {
                     <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>📍 구역별 현황 리스트</span>
                     <button onClick={() => setIsSidePanelOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={16} /></button>
                   </div>
-                  <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+                  <div className="thin-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {zones.map(zone => {
                         const zonePlans = filteredPlans.filter(p => p.zone_id === zone.id);
@@ -582,8 +582,12 @@ function DailyPlanMapMarkers({ zones, plans, dangerZones, onZoneClick, showLabel
         // 상시 라벨 (배경 완전 제거 및 업체명 추가)
         const labelContent = (showLabels) ? (
             <div style={{ 
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px',
-                pointerEvents: 'none', zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0px',
+                pointerEvents: 'none',
+                zIndex: 1000,
                 textShadow: '0 0 2px white, 0 0 2px white, 0 0 2px white'
             }}>
                 <div style={{ 
