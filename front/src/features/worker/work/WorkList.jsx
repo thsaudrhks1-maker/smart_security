@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '../../../context/AuthContext';
-import { workApi } from '../../../api/workApi';
-import { safetyApi } from '../../../api/safetyApi';
+import { useAuth } from '@/context/AuthContext';
+import { workApi } from '@/api/workApi';
+import { safetyApi } from '@/api/safetyApi';
 import { Plus, Trash2, Calendar, MapPin, User, AlertTriangle, X } from 'lucide-react';
 
 const WorkList = () => {

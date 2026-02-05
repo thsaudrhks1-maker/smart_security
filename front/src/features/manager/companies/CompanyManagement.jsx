@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMyCompanies } from '../../../api/managerApi';
+import { getMyCompanies } from '@/api/managerApi';
 import { Building2, Search, Briefcase } from 'lucide-react';
 
 const CompanyManagement = () => {

@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Briefcase, AlertTriangle, CheckCircle, Clock, MapPin, HardHat,
-  ArrowLeft, Map, Cloud, Bell, FileText, Shield, Calendar, ChevronRight,
+  HardHat, ArrowLeft, Map, ChevronRight,
   ChevronDown, ChevronUp, Settings
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../../api/client';
-import { useAuth } from '../../../context/AuthContext';
-import SimpleModal from '../components/common/SimpleModal';
-import WorkerSettingsModal from '../components/common/WorkerSettingsModal';
-import AttendanceCard from '../components/dashboard/AttendanceCard';
-import WorkerWorkSiteMap from '../components/dashboard/WorkerWorkSiteMap';
-import { workApi } from '../../../api/workApi';
-import { safetyApi } from '../../../api/safetyApi';
+import apiClient from '@/api/client';
+import { useAuth } from '@/context/AuthContext';
+import WorkerSettingsModal from './WorkerSettingsModal';
+import AttendanceCard from './AttendanceCard';
+import WorkerWorkSiteMap from './WorkerWorkSiteMap';
+import { workApi } from '@/api/workApi';
+import { safetyApi } from '@/api/safetyApi';
+
+import { 
+  WorkCard, WeatherCard, EmergencyAlertCard, RiskCard, 
+  SafetyInfoCard, NoticeBar, StatCards 
+} from './DashboardCards';
+import { 
+  WorkDetailModal, RiskDetailModal, NoticeModal, 
+  EmergencyAlertModal, SafetyInfoModal 
+} from './DashboardModals';
 
 const STORAGE_SHOW_MAP = 'worker_home_show_map';
 const STORAGE_MAP_EXPANDED = 'worker_home_map_expanded';
@@ -28,11 +35,11 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const [dashboardInfo, setDashboardInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 모달 상태 (작업 상세에서 여러 건 중 선택)
+  // 모달 상태
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
 
-  // 홈 지도: localStorage에서 읽어서 초기화
+  // 홈 지도 상태
   const [showMapOnHome, setShowMapOnHome] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STORAGE_SHOW_MAP) ?? 'true'); } catch { return true; }
   });
@@ -51,12 +58,9 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
           apiClient.get('/worker/dashboard-info'),
           apiClient.get('/worker/my-risks/today')
         ]);
-
         setMyPlans(plansRes || []);
         setDashboardInfo(dashboardRes.data);
-        // 나의 작업 구역 중 그날 설정된 데일리 위험존이 있는 구역만 표시
         setMyRisks(Array.isArray(risksRes?.data) ? risksRes.data : []);
-
         setLoading(false);
       } catch (err) {
         console.error('데이터 로드 실패:', err);
@@ -69,17 +73,9 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
 
   const siteId = myPlans.length > 0 ? myPlans[0].site_id : null;
   useEffect(() => {
-    if (siteId == null) {
-      setAllZones([]);
-      return;
-    }
+    if (siteId == null) { setAllZones([]); return; }
     safetyApi.getZones(siteId).then((data) => setAllZones(data || [])).catch(() => setAllZones([]));
   }, [siteId]);
-
-  // 대시보드 메인 표시용 첫 번째 작업
-  const mainPlan = myPlans.length > 0 ? myPlans[0] : null;
-  // 상세 모달에서 선택한 작업 (여러 건일 때 전환)
-  const detailPlan = myPlans.length > 0 ? myPlans[selectedPlanIndex] ?? myPlans[0] : null;
 
   const handleViewLocation = (risk) => {
     navigate('/worker/safety', { state: { focusZone: risk } });
@@ -98,9 +94,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const openModal = (type) => setActiveModal(type);
   const closeModal = () => setActiveModal(null);
 
-  if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>데이터 로딩 중...</div>;
-  }
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>데이터 로딩 중...</div>;
 
   return (
     <div style={{ padding: '0.75rem', background: '#f1f5f9', minHeight: '100%', paddingBottom: '0.5rem' }}>
@@ -117,630 +111,62 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
               </span>
             )}
           </h1>
-          <div style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '2rem' }}>
-             오늘도 안전한 하루 되세요!
-          </div>
+          <div style={{ fontSize: '0.8rem', color: '#64748b', marginLeft: '2rem' }}>오늘도 안전한 하루 되세요!</div>
         </div>
-        
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {isAdminView && onBackToAdmin && (
             <button onClick={onBackToAdmin} style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
               <ArrowLeft size={18} />
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => openModal('settings')}
-            style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            title="환경설정"
-          >
+          <button onClick={() => openModal('settings')} style={{ padding: '0.5rem', background: 'white', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
             <Settings size={18} color="#64748b" />
           </button>
         </div>
       </div>
 
-      {/* 나의 작업 현장 지도 (접었다 펼치기) */}
+      {/* 지도 영역 (접었다 펼치기) */}
       {showMapOnHome ? (
         <div style={{ marginBottom: '1rem', background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-          <button
-            type="button"
-            onClick={() => setMapExpanded((v) => !v)}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#f8fafc',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.95rem',
-              fontWeight: '700',
-              color: '#1e293b'
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Map size={20} color="#3b82f6" />
-              나의 작업 현장 지도
-            </span>
+          <button onClick={() => setMapExpanded((v) => !v)} style={{ width: '100%', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', border: 'none', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '700', color: '#1e293b' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Map size={20} color="#3b82f6" /> 나의 작업 현장 지도</span>
             {mapExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
-          {mapExpanded && (
-            <div style={{ padding: '0 0.75rem 0.75rem' }}>
-              <WorkerWorkSiteMap plans={myPlans} risks={myRisks} allZones={allZones} height={240} showLegend />
-            </div>
-          )}
+          {mapExpanded && <div style={{ padding: '0 0.75rem 0.75rem' }}><WorkerWorkSiteMap plans={myPlans} risks={myRisks} allZones={allZones} height={240} showLegend /></div>}
         </div>
       ) : (
         <div style={{ marginBottom: '1rem' }}>
-          <button
-            type="button"
-            onClick={() => { saveShowMapOnHome(true); setMapExpanded(true); }}
-            style={{
-              width: '100%',
-              padding: '0.6rem',
-              background: 'white',
-              border: '1px dashed #cbd5e1',
-              borderRadius: '8px',
-              color: '#64748b',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              cursor: 'pointer'
-            }}
-          >
+          <button onClick={() => { saveShowMapOnHome(true); setMapExpanded(true); }} style={{ width: '100%', padding: '0.6rem', background: 'white', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#64748b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}>
             <Map size={18} /> 지도 보기
           </button>
         </div>
       )}
 
-      {/* 메인 그리드 레이아웃 (2열 구조) */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 1fr', 
-        gap: '0.35rem', 
-        gridAutoRows: 'minmax(100px, auto)'
-      }}>
-        
-        {/* [좌측 1] 금일 나의 작업 (파란색, 세로로 김) */}
-        <div 
-          onClick={() => openModal('work')}
-          className="dashboard-card"
-          style={{ 
-            gridColumn: '1 / 2',
-            gridRow: 'span 2',
-            background: '#3b82f6', 
-            color: 'white',
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Briefcase size={18} /> 금일 나의 작업
-            </div>
-            {mainPlan ? (
-              <>
-                <div style={{ 
-                  background: 'rgba(255,255,255,0.2)', 
-                  padding: '4px 8px', 
-                  borderRadius: '12px', 
-                  display: 'inline-block', 
-                  fontSize: '0.75rem', 
-                  marginBottom: '0.5rem' 
-                }}>
-                  {mainPlan.work_type}
-                </div>
-                <div style={{ fontSize: '1.1rem', fontWeight: '800', lineHeight: '1.35', wordBreak: 'keep-all' }}>
-                  {mainPlan.description || ''}
-                </div>
-                {/* 위험도 표시 (High/Medium) */}
-                {mainPlan.calculated_risk_score >= 50 && (
-                  <div style={{ 
-                    marginTop: '6px', 
-                    fontSize: '0.75rem', 
-                    background: mainPlan.calculated_risk_score >= 80 ? 'rgba(255,50,50,0.4)' : 'rgba(255,165,0,0.4)', 
-                    border: '1px solid rgba(255,255,255,0.4)', 
-                    color: '#fff', 
-                    padding: '2px 6px', 
-                    borderRadius: '4px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <AlertTriangle size={12} /> 위험도 {mainPlan.calculated_risk_score}
-                  </div>
-                )}
-                <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '0.5rem' }}>
-                  <MapPin size={12} style={{ display: 'inline' }} /> {mainPlan.zone_name}
-                </div>
-                {myPlans.length > 1 && (
-                    <div style={{ fontSize: '0.75rem', marginTop: '6px', opacity: 0.8 }}>
-                        + 외 {myPlans.length - 1}건
-                    </div>
-                )}
-              </>
-            ) : (
-              <div style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '1rem' }}>배정된 작업이 없습니다.</div>
-            )}
-          </div>
-          <div style={{ alignSelf: 'flex-end' }}>
-             <ChevronRight size={20} style={{ opacity: 0.7 }} />
-          </div>
-        </div>
-
-        {/* [우측 1] 날씨 (하늘색) */}
-        <div style={{ background: '#60a5fa', color: 'white' }} className="dashboard-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-            <div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                {dashboardInfo?.weather?.temperature || '-'}
-              </div>
-              <div style={{ fontSize: '0.8rem' }}>
-                {dashboardInfo?.weather?.condition || '정보없음'}
-              </div>
-            </div>
-            <Cloud size={24} style={{ opacity: 0.8 }} />
-          </div>
-        </div>
-
-        {/* [우측 2] 긴급알림 (빨간색) */}
-        <div 
-          onClick={() => openModal('alert')}
-          style={{ background: '#ef4444', color: 'white' }} 
-          className="dashboard-card"
-        >
-          <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Bell size={14} /> 긴급알림
-          </div>
-          <div style={{ fontSize: '0.9rem', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {dashboardInfo?.emergency_alert?.title || '알림 없음'}
-          </div>
-           {/* 깜빡이는 효과 */}
-           {dashboardInfo?.emergency_alert && (
-            <div style={{ 
-              width: '8px', height: '8px', background: 'white', borderRadius: '50%', 
-              position: 'absolute', top: '10px', right: '10px',
-              animation: 'blink 1s infinite'
-            }} />
-          )}
-        </div>
-
-        {/* [좌측 2] 금일 나의 위험지역 (주황색, 세로로 김) */}
-        <div 
-          onClick={() => openModal('risk')}
-          className="dashboard-card"
-          style={{ 
-            gridColumn: '1 / 2',
-            gridRow: 'span 2',
-            background: '#f97316', 
-            color: 'white',
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <AlertTriangle size={18} /> 위험지역
-            </div>
-            {myRisks.length > 0 ? (
-              <div>
-                <div style={{ fontSize: '1.0rem', fontWeight: '800', lineHeight: '1.4', marginBottom: '6px', wordBreak: 'keep-all', whiteSpace: 'pre-wrap' }}>
-                  {myRisks[0].description}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <MapPin size={12} /> {myRisks[0].name}
-                </div>
-                {myRisks.length > 1 && (
-                  <div style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.8 }}>
-                    외 {myRisks.length - 1}건
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
-                <CheckCircle size={20} /> 안전함
-              </div>
-            )}
-          </div>
-           <div style={{ alignSelf: 'flex-end' }}>
-             <Shield size={24} style={{ opacity: 0.3 }} />
-          </div>
-        </div>
-
-        {/* [우측 3] 안전정보 (초록색) */}
-        <div 
-          onClick={() => openModal('safety')}
-           style={{ background: '#10b981', color: 'white' }} 
-           className="dashboard-card"
-        >
-          <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem' }}>일일 안전정보</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-               <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_infos?.length || 0}</span>
-               <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '2px' }}>건</span>
-            </div>
-            <FileText size={20} style={{ opacity: 0.5 }} />
-          </div>
-        </div>
-
-        {/* [우측 4] 출역현황 (노란색) - 기능 연동 */}
-        <AttendanceCard 
-          projectInfo={dashboardInfo?.user_info} 
-        />
-
-        {/* [하단 전체] 공지사항 (회색) */}
-        <div 
-          onClick={() => openModal('notice')}
-          className="dashboard-card"
-          style={{ 
-            gridColumn: '1 / -1', 
-            background: '#64748b', 
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Bell size={18} />
-            <div>
-              <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '2px' }}>공지사항</div>
-              <div style={{ fontSize: '0.9rem' }}>
-                {dashboardInfo?.notices?.[0] 
-                  ? dashboardInfo.notices[0].title 
-                  : '등록된 공지가 없습니다.'}
-              </div>
-            </div>
-          </div>
-          <ChevronRight size={18} style={{ opacity: 0.7 }} />
-        </div>
-
-        {/* [하단] 안전위반 / 무재해 */}
-         <div key="violation" style={{ background: '#8b5cf6', color: 'white', textAlign: 'center' }} className="dashboard-card">
-            <div style={{ fontSize: '0.7rem' }}>안전위반</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.safety_violations_count || 0}건</div>
-         </div>
-         <div key="accident-free" style={{ background: '#6366f1', color: 'white', textAlign: 'center' }} className="dashboard-card">
-            <div style={{ fontSize: '0.7rem' }}>무재해</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{dashboardInfo?.incident_free_days || 0}일</div>
-         </div>
-
+      {/* 대시보드 그리드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', gridAutoRows: 'minmax(100px, auto)' }}>
+        <WorkCard plan={myPlans[0]} count={myPlans.length} onClick={() => openModal('work')} />
+        <WeatherCard weather={dashboardInfo?.weather} />
+        <EmergencyAlertCard alert={dashboardInfo?.emergency_alert} onClick={() => openModal('alert')} />
+        <RiskCard risks={myRisks} onClick={() => openModal('risk')} />
+        <SafetyInfoCard count={dashboardInfo?.safety_infos?.length} onClick={() => openModal('safety')} />
+        <AttendanceCard projectInfo={dashboardInfo?.user_info} />
+        <NoticeBar notice={dashboardInfo?.notices?.[0]} onClick={() => openModal('notice')} />
+        <StatCards violations={dashboardInfo?.safety_violations_count} incidentFreeDays={dashboardInfo?.incident_free_days} />
       </div>
 
       <style>{`
-        .dashboard-card {
-          padding: 1rem;
-          border-radius: 4px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          cursor: pointer;
-          transition: transform 0.2s;
-          position: relative;
-          overflow: hidden;
-        }
-        .dashboard-card:active {
-          transform: scale(0.98);
-        }
-        @keyframes blink {
-          50% { opacity: 0.5; }
-        }
+        .dashboard-card { padding: 1rem; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.2s; position: relative; overflow: hidden; }
+        .dashboard-card:active { transform: scale(0.98); }
+        @keyframes blink { 50% { opacity: 0.5; } }
       `}</style>
       
-      {/* ============== 모달 구현 ============== */}
-      
-      {/* 1. 작업 상세 모달 */}
-      <SimpleModal
-        isOpen={activeModal === 'work'}
-        onClose={() => { closeModal(); setSelectedPlanIndex(0); }}
-        title="📋 금일 작업 상세"
-      >
-        {detailPlan ? (
-          <div>
-            {myPlans.length > 1 && (
-              <div style={{ marginBottom: '1rem', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {myPlans.map((p, idx) => (
-                  <button
-                    key={p.id ?? idx}
-                    type="button"
-                    onClick={() => setSelectedPlanIndex(idx)}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      border: selectedPlanIndex === idx ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                      background: selectedPlanIndex === idx ? '#eff6ff' : '#fff',
-                      color: selectedPlanIndex === idx ? '#1d4ed8' : '#64748b',
-                      fontWeight: selectedPlanIndex === idx ? 600 : 400,
-                      cursor: 'pointer',
-                      fontSize: '0.85rem'
-                    }}
-                  >
-                    {p.zone_name} · {p.work_type}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
-              <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px' }}>작업명</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{detailPlan.description}</div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem' }}>작업 유형</div>
-                <div style={{ fontWeight: '600' }}>{detailPlan.work_type}</div>
-              </div>
-              <div>
-                <div style={{ color: '#64748b', fontSize: '0.8rem' }}>작업 구역</div>
-                <div style={{ fontWeight: '600' }}>{detailPlan.zone_name}</div>
-              </div>
-            </div>
-
-            {/* 🛡️ 필수 보호구 체크리스트 */}
-            {detailPlan.required_resources && detailPlan.required_resources.length > 0 ? (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                   <Shield size={18} /> 필수 보호구 착용 확인
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  {detailPlan.required_resources.map((res, i) => (
-                    <label key={res.id || i} style={{ 
-                      display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer'
-                    }}>
-                      <input type="checkbox" style={{ width: '18px', height: '18px' }} />
-                      <div style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: '600' }}>{res.name}</div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : (
-                detailPlan.required_ppe && detailPlan.required_ppe.length > 0 && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Shield size={18} /> 필수 보호구 확인
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {detailPlan.required_ppe.map((item, i) => (
-                                <span key={i} style={{ background: '#eff6ff', color: '#3b82f6', padding: '6px 12px', borderRadius: '6px', fontSize: '0.85rem', border: '1px solid #bfdbfe', fontWeight: '600' }}>
-                                    {item}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )
-            )}
-
-            {/* ✅ 안전 점검 리스트 */}
-            {detailPlan.checklist_items && detailPlan.checklist_items.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                   <CheckCircle size={18} /> 안전 점검 리스트
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {detailPlan.checklist_items.map((item, i) => (
-                    <label key={i} style={{ 
-                      display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7', cursor: 'pointer'
-                    }}>
-                      <input type="checkbox" style={{ width: '18px', height: '18px', marginTop: '2px' }} />
-                      <div style={{ fontSize: '0.9rem', color: '#166534', fontWeight: '500', lineHeight: '1.4' }}>{item}</div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ⚠️ 주의: 위험 요소 */}
-            {detailPlan.daily_hazards && detailPlan.daily_hazards.length > 0 && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '1.25rem' }}>
-                <div style={{ fontWeight: '800', marginBottom: '0.75rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertTriangle size={20} />
-                  오늘의 위험 요인
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {detailPlan.daily_hazards.map((hazard, i) => (
-                    <div key={i} style={{
-                      background: 'white',
-                      color: '#991b1b',
-                      padding: '10px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.85rem',
-                      fontWeight: '700',
-                      border: '1px solid #fca5a5',
-                      boxShadow: '0 1px 2px rgba(220, 38, 38, 0.05)'
-                    }}>
-                      {hazard}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>금일 배정된 작업이 없습니다.</div>
-        )}
-      </SimpleModal>
-
-      <WorkerSettingsModal
-        isOpen={activeModal === 'settings'}
-        onClose={closeModal}
-        showMapOnHome={showMapOnHome}
-        mapExpandedByDefault={mapExpandedByDefault}
-        onShowMapOnHomeChange={saveShowMapOnHome}
-        onMapExpandedByDefaultChange={saveMapExpandedByDefault}
-      />
-
-      {/* 2. 위험 지역 상세 모달 */}
-      <SimpleModal
-        isOpen={activeModal === 'risk'}
-        onClose={closeModal}
-        title="⚠️ 금일 위험 지역"
-      >
-        {myRisks.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {myRisks.map((risk, idx) => (
-              <div key={idx} style={{ border: '1px solid #fed7aa', background: '#fff7ed', borderRadius: '8px', padding: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                   <span style={{ fontWeight: '700', color: '#c2410c' }}>{risk.name}</span>
-                   <span style={{ background: '#f97316', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px' }}>{risk.level}</span>
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#431407', marginBottom: '0.75rem' }}>
-                  {risk.description || '위험 구역입니다. 접근 시 주의하세요.'}
-                </div>
-                <button 
-                  onClick={() => handleViewLocation(risk)}
-                  style={{ width: '100%', padding: '8px', background: 'white', border: '1px solid #f97316', color: '#f97316', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
-                >
-                  지도에서 위치 보기
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <CheckCircle size={48} color="#10b981" style={{ margin: '0 auto 1rem' }} />
-            <div style={{ color: '#10b981', fontWeight: '700' }}>위험 지역 없음</div>
-            <div style={{ fontSize: '0.9rem', color: '#64748b' }}>안전한 작업 환경입니다.</div>
-          </div>
-        )}
-      </SimpleModal>
-
-      {/* 3. 공지사항 모달 */}
-      <SimpleModal
-        isOpen={activeModal === 'notice'}
-        onClose={closeModal}
-        title="📢 공지사항"
-      >
-        {dashboardInfo?.notices && dashboardInfo.notices.length > 0 ? (
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-             {dashboardInfo.notices.map((notice, idx) => (
-               <div key={idx} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: notice.priority === 'URGENT' ? '1px solid #fecaca' : '1px solid #e2e8f0' }}>
-                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.5rem' }}>
-                   {notice.priority === 'URGENT' && <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 4px', borderRadius: '4px' }}>긴급</span>}
-                   <span style={{ fontWeight: '700', color: '#1e293b' }}>{notice.title}</span>
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.5' }}>
-                    {/* 내용이 없으면 더미 텍스트라도 보여주기 위해 */}
-                    {notice.content || '공지 내용이 없습니다.'}
-                 </div>
-               </div>
-             ))}
-           </div>
-        ) : (
-          <div style={{ textAlign: 'center', color: '#94a3b8' }}>등록된 공지사항이 없습니다.</div>
-        )}
-      </SimpleModal>
-
-       {/* 4. 긴급알림 모달 */}
-       <SimpleModal
-        isOpen={activeModal === 'alert'}
-        onClose={closeModal}
-        title="🚨 긴급 알림"
-      >
-        {dashboardInfo?.emergency_alert ? (
-          <div style={{ textAlign: 'center', padding: '1rem' }}>
-            <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 1.5rem', animation: 'blink 1s infinite' }} />
-            <h2 style={{ color: '#ef4444', margin: '0 0 1rem' }}>{dashboardInfo.emergency_alert.title}</h2>
-            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#1e293b' }}>
-              {dashboardInfo.emergency_alert.message}
-            </p>
-          </div>
-        ) : (
-           <div style={{ textAlign: 'center', color: '#94a3b8' }}>현재 발령된 긴급 알림이 없습니다.</div>
-        )}
-      </SimpleModal>
-
-       {/* 5. 일일 안전정보 모달 */}
-       <SimpleModal
-        isOpen={activeModal === 'safety'}
-        onClose={closeModal}
-        title="📋 금일 안전 정보"
-      >
-        {dashboardInfo?.safety_infos && dashboardInfo.safety_infos.length > 0 ? (
-           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-             {dashboardInfo.safety_infos.map((info, idx) => (
-               <div key={idx} style={{ 
-                 background: info.type === 'TASK_SAFETY' ? '#f0f9ff' : '#f0fdf4', 
-                 border: info.type === 'TASK_SAFETY' ? '1px solid #bae6fd' : '1px solid #86efac', 
-                 borderRadius: '8px', 
-                 padding: '1rem' 
-               }}>
-                 <div style={{ 
-                   fontWeight: '800', 
-                   color: info.type === 'TASK_SAFETY' ? '#0369a1' : '#10b981', 
-                   marginBottom: '0.75rem', 
-                   fontSize: '1rem',
-                   display: 'flex',
-                   alignItems: 'center',
-                   gap: '6px'
-                 }}>
-                   {info.type === 'TASK_SAFETY' ? <Shield size={18} /> : <Bell size={18} />}
-                   {info.title}
-                 </div>
-                 <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
-                   {info.content}
-                 </div>
-               </div>
-             ))}
-           </div>
-        ) : (
-          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>등록된 안전 정보가 없습니다.</div>
-        )}
-
-      </SimpleModal>
-
-       {/* 6. 위험지역 상세 모달 */}
-       <SimpleModal
-        isOpen={activeModal === 'risk'}
-        onClose={closeModal}
-        title="⚠️ 위험 지역 목록"
-      >
-        {myRisks && myRisks.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {myRisks.map((risk, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => handleViewLocation(risk)}
-                style={{ 
-                  background: '#fff7ed', 
-                  border: '1px solid #fdba74', 
-                  borderRadius: '8px', 
-                  padding: '1rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                  <div style={{ fontWeight: '700', color: '#c2410c', fontSize: '1rem' }}>
-                    {risk.name}
-                  </div>
-                  <span style={{ 
-                    background: risk.level === 'HIGH' ? '#fee2e2' : '#ffedd5',
-                    color: risk.level === 'HIGH' ? '#991b1b' : '#9a3412',
-                    fontSize: '0.7rem',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontWeight: '600'
-                  }}>
-                    {risk.level}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#431407', marginBottom: '0.5rem' }}>
-                  {risk.description}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#fdba74', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <MapPin size={14} /> 지도에서 위치 보기
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-            현재 지정된 위험 지역이 없습니다.
-          </div>
-        )}
-      </SimpleModal>
+      {/* 모달 모음 */}
+      <WorkDetailModal isOpen={activeModal === 'work'} onClose={closeModal} plans={myPlans} selectedIndex={selectedPlanIndex} setSelectedIndex={setSelectedPlanIndex} />
+      <RiskDetailModal isOpen={activeModal === 'risk'} onClose={closeModal} risks={myRisks} onFetchLocation={handleViewLocation} />
+      <NoticeModal isOpen={activeModal === 'notice'} onClose={closeModal} notices={dashboardInfo?.notices} />
+      <EmergencyAlertModal isOpen={activeModal === 'alert'} onClose={closeModal} alert={dashboardInfo?.emergency_alert} />
+      <SafetyInfoModal isOpen={activeModal === 'safety'} onClose={closeModal} safetyInfos={dashboardInfo?.safety_infos} />
+      <WorkerSettingsModal isOpen={activeModal === 'settings'} onClose={closeModal} showMapOnHome={showMapOnHome} mapExpandedByDefault={mapExpandedByDefault} onShowMapOnHomeChange={saveShowMapOnHome} onMapExpandedByDefaultChange={saveMapExpandedByDefault} />
 
     </div>
   );

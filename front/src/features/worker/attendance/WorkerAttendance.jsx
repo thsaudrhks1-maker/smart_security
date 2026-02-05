@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ClipboardCheck, Calendar } from 'lucide-react';
-import { getMyAttendance } from '../../../api/attendanceApi';
+import { getMyAttendance } from '@/api/attendanceApi';
 
 /**
  * 작업자 - 나의 출근현황 (기간별)

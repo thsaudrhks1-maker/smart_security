@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { attendanceApi } from '../../../api/attendanceApi';
-import { getManagerDashboard } from '../../../api/managerApi';
+import { attendanceApi } from '@/api/attendanceApi';
+import { getManagerDashboard } from '@/api/managerApi';
 import { Calendar, Users, MapPin, Clock, Search, Filter, Download } from 'lucide-react';
 
 const ManagerAttendance = () => {

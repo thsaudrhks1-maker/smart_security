@@ -38,8 +38,21 @@ description: DB 스키마 의존성 관리, 시딩(Seeding) 순서, 마이그레
    - 배포 스크립트(`deploy_server.ps1`)는 반드시 코드 Pull 이후에 `alembic upgrade head`를 실행해야 함.
 
 ## 3. DB 초기화 및 시딩 (Reset & Seed)
-- **명령어**: `python reset_scenario.py` (개발 환경 전용)
-- **필수 생성 데이터**:
-  1. **Users**: Admin, Manager, Worker, Safety Manager (PW: `0000` 등 통일)
-  2. **Project**: 최소 1개의 활성 프로젝트 (User와 매핑 완료)
-  3. **Site & Zone**: 현장 및 위험구역 데이터
+
+### A. 전체 초기화 (Full Reset)
+- **명령어**: `python reset_scenario.py`
+- **용도**: DB 스키마가 변경되었거나, 데이터를 완전히 깨끗한 상태에서 시작해야 할 때 사용.
+- **특징**: 모든 테이블을 `DROP CASCADE` 하고 재생성하므로 **기존의 모든 데이터가 유실됨.**
+
+### B. 인크리멘탈 시딩 (Incremental Seeding) - ⭐ 권장
+- **원칙**: 기존 데이터를 파괴하지 않고, 특정 기능 테스트를 위해 필요한 데이터만 **추가**함.
+- **구현 방법**:
+  1. `select` 쿼리로 데이터 존재 여부 먼저 확인 (Idempotency 보장).
+  2. `seed/seed_*.py` 형식으로 기능별 시딩 파일을 분리.
+- **예시**: `python seed/seed_extended_historical.py` (과거 출역 데이터만 추가)
+
+### C. 필수 생성 데이터 (Scenario Standard)
+1. **Users**: Admin, Manager, Worker, Safety Manager (PW: `0000` 기본)
+2. **Project**: 최소 1개의 활성 프로젝트 (User와 매핑 완료)
+3. **Site & Zone**: 현물 도면 대응을 위한 구역 데이터
+4. **Member Status**: 승인 대기(PENDING)와 승인 완료(ACTIVE) 상태가 혼합되도록 설정하여 권한 테스트 보장.

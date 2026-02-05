@@ -11,8 +11,8 @@ import {
   Megaphone,
   QrCode
 } from 'lucide-react';
-import MemberApprovalWidget from '@/features/manager/components/MemberApprovalWidget';
-import AttendanceListWidget from '@/features/manager/components/AttendanceListWidget';
+import MemberApprovalWidget from '@/features/manager/dashboard/MemberApprovalWidget';
+import AttendanceListWidget from '@/features/manager/dashboard/AttendanceListWidget';
 
 const ManagerDashboard = () => {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { noticeApi } from '../../../api/noticeApi';
-import { getManagerDashboard } from '../../../api/managerApi';
+import { noticeApi } from '@/api/noticeApi';
+import { getManagerDashboard } from '@/api/managerApi';
 import { Megaphone, Plus, X, Trash2, Edit3, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 
 const ManagerNotice = () => {

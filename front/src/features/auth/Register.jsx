@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, UserPlus, Lock, User, Briefcase, Building2, Phone, Wrench, Calendar } from 'lucide-react';
-import { authApi } from '../../api/authApi';
-import { getAllCompanies } from '../../api/companyApi';
+import { authApi } from '@/api/authApi';
+import { getAllCompanies } from '@/api/companyApi';
 
 const Register = () => {
     const navigate = useNavigate();

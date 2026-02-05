@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getProjectAttendance } from '../../../api/attendanceApi';
+import { getProjectAttendance } from '@/api/attendanceApi';
 import { 
   Users, 
   Search, 

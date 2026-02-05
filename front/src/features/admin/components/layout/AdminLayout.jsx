@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import NavSidebar from '../common/NavSidebar';
+import NavSidebar from '@/features/admin/components/common/NavSidebar';
 
 /**
  * 관리자용 레이아웃 (데스크탑)

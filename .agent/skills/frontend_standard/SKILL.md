@@ -5,12 +5,21 @@ description: 리액트 컴포넌트 구조, 폴더 구조, 라우팅 및 디자�
 
 # 프론트엔드 개발 표준 (Frontend Standard)
 
-## 1. 역할 기반 폴더 구조 (Role-Based Architecture)
+## 1. 컴포넌트 관리 체계 (Flat First Architecture)
 
-이 프로젝트는 사용자 역할(Role)에 따라 UI와 기능을 완전히 분리합니다.
+복잡한 폴더 깊이를 피하고 가독성을 높이기 위해 '납작한(Flat)' 구조를 지향합니다.
 
-- **원칙**: `src/features/<역할>` 형태로 최상위 폴더를 나눕니다.
-- **공유 컴포넌트**: 여러 역할에서 쓰이는 것은 `src/components/shared` 또는 `common`에 둡니다.
+1.  **Global Shared (@/components/common/)**: 전역에서 2회 이상 자주 쓰이는 진짜 공통 컴포넌트만 모읍니다. (예: `SimpleModal.jsx`, `Button.jsx`)
+2.  **Feature Flat (@/features/<role>/<feature>/)**: 특정 기능에 속한 컴포넌트들은 별도 `components` 폴더를 파지 않고 해당 기능 폴더에 파일로 직접 둡니다.
+    *   메인 페이지 파일: `WorkerDashboard.jsx`
+    *   부속 컴포넌트: `DashboardCards.jsx`, `DashboardModals.jsx` 등 (같은 폴더 내 위치)
+
+### 🛠️ 관리 규칙
+*   **시작은 Flat하게**: 폴더를 깊게 파지 말고 해당 기능 폴더에 바로 파일을 만듭니다.
+*   **쪼개기(Splitting)**: 페이지 파일이 너무 커지면(예: 300라인 이상) 같은 폴더 내에서 파일로 분리합니다.
+*   **승격(Promotion)**: 다른 기능에서도 해당 컴포넌트가 필요해지면 그때 `@/components/common/`으로 옮깁니다.
+
+## 2. 라우팅 규칙 및 페이지 구조
 
 ### 디렉토리 구조 (Directory Structure)
 ```

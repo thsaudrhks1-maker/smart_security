@@ -35,3 +35,13 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 ### D. 오류 자가 진단 (Self-Correction)
 - 명령어 실행 후 반드시 **로그를 끝까지 확인**하여 에러(`Fail`, `Traceback`)를 감지하고 수정한다.
 
+## 2. API 및 통신 표준 (API Standards)
+
+### A. URL 경로 구조 (API Prefixing)
+- **`/api` 접두어 필수**: 백엔드 데이터 요청과 프론트엔드 라우팅을 명확히 구분하기 위해 모든 백엔드 엔드포인트는 `/api` 접두어를 사용한다.
+  - ✅ 백엔드 데이터: `GET /api/work/plans`
+  - ✅ 프론트엔드 페이지: `http://localhost:5173/work/plans`
+- **중앙 집중식 관리**:
+  - **백엔드**: `back/main.py`에서 `include_router(..., prefix="/api")`를 통해 일괄 적용한다. 개별 라우터 파일의 `prefix`에는 `/api`를 붙이지 않는다.
+  - **프론트엔드**: `src/api/client.js`의 `baseURL`에 `/api`를 포함시킨다. 개별 API 라이브러리(예: `workApi.js`)에서는 `/api`를 생략하고 하위 경로만 작성한다.
+

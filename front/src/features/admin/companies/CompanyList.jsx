@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Building2, Briefcase } from 'lucide-react';
-import { getAllCompanies, createCompany } from '../../../api/companyApi';
+import { getAllCompanies, createCompany } from '@/api/companyApi';
 
 const CompanyList = () => {
   const [companies, setCompanies] = useState([]);

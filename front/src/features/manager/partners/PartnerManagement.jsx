@@ -6,7 +6,7 @@ import {
   MoreVertical, 
   Briefcase 
 } from 'lucide-react';
-import { getActiveProjects, getProjectParticipants, addProjectParticipant } from '../../../api/projectApi';
+import { getActiveProjects, getProjectParticipants, addProjectParticipant } from '@/api/projectApi';
 
 const PartnerManagement = () => {
   const [projectId, setProjectId] = useState(null); // 내 프로젝트 ID

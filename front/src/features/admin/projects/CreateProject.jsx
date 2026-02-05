@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createProject } from '../../../api/projectApi';
-import { getAllCompanies, createCompany, getCompanyUsers } from '../../../api/companyApi'; // API 연동
+import { createProject } from '@/api/projectApi';
+import { getAllCompanies, createCompany, getCompanyUsers } from '@/api/companyApi'; // API 연동
 import { MapPin, Calendar, Building2, Save, X, Plus, UserPlus } from 'lucide-react';
-import LocationPicker from '../components/common/LocationPicker'; // 지도 컴포넌트 추가
+import LocationPicker from '@/components/common/LocationPicker'; // 지도 컴포넌트 추가
 import './CreateProject.css';
 
 // 오늘 날짜 YYYY-MM-DD

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getMyWorkers } from '../../../api/managerApi';
+import { getMyWorkers } from '@/api/managerApi';
 import { Search, UserCheck, UserX, User } from 'lucide-react';
 
 const WorkerManagement = () => {

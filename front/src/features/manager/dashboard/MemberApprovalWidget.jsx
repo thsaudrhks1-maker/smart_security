@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { UserCheck, CheckCircle } from 'lucide-react';
-import { getProjectMembers, approveProjectMembers } from '../../../api/projectApi';
+import { getProjectMembers, approveProjectMembers } from '@/api/projectApi';
 
 const MemberApprovalWidget = ({ projectId }) => {
   const [members, setMembers] = useState([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, HardHat, Shield, ChevronDown, ChevronRight } from 'lucide-react';
-import { workApi } from '../../../api/workApi';
+import { workApi } from '@/api/workApi';
 
 const TAB = { PROCESS: '공정', RULES: '안전수칙', EQUIPMENT: '안전공구' };
 

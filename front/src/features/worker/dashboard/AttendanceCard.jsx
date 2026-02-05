@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, Smartphone } from 'lucide-react';
-import { getMyTodayAttendance, checkIn, checkOut } from '../../../../api/attendanceApi';
+import { getMyTodayAttendance, checkIn, checkOut } from '@/api/attendanceApi';
 
 const AttendanceCard = ({ projectInfo, onStatusChange }) => {
   const [attendance, setAttendance] = useState(null);

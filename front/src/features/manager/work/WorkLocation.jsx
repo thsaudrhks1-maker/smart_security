@@ -4,11 +4,10 @@ import { ZoneSquare } from './ZoneSquareLayer';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { MapPin, Plus, Pencil, Map, Building2, X } from 'lucide-react';
-import { getManagerDashboard } from '../../../api/managerApi';
-import { getProjectById, getProjectSites } from '../../../api/projectApi';
-import { safetyApi } from '../../../api/safetyApi';
-import LocationPicker from '../../admin/components/common/LocationPicker';
-import '../../admin/components/common/LocationPicker.css';
+import { getManagerDashboard } from '@/api/managerApi';
+import { getProjectById, getProjectSites } from '@/api/projectApi';
+import { safetyApi } from '@/api/safetyApi';
+import LocationPicker from '@/components/common/LocationPicker';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
