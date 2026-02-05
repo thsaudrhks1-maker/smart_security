@@ -13,31 +13,65 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    if (!open || !report?.danger_zone_id) {
+    if (!open || !report) {
       setImages([]);
       return;
     }
 
-    // 신고 사진 조회
+    // 해당 Zone의 모든 PENDING 신고 사진 가져오기
+    const allPendingReports = report.allPendingReports || [report];
+    console.log('🔍 [매니저 모달] 모든 PENDING 신고:', allPendingReports);
+
     setLoading(true);
-    apiClient.get(`/safety/reports/${report.danger_zone_id}/images`)
-      .then(res => setImages(res.data || []))
-      .catch(err => {
-        console.error('사진 로드 실패:', err);
-        setImages([]);
+    
+    // 모든 신고의 사진을 병렬로 가져오기
+    Promise.all(
+      allPendingReports.map(r => {
+        const reportId = r.id || r.danger_zone_id;
+        console.log(`🔍 API 호출: /safety/reports/${reportId}/images`);
+        return apiClient.get(`/safety/reports/${reportId}/images`)
+          .then(res => ({
+            reportId: reportId,
+            reportDesc: r.description,
+            images: res.data || []
+          }))
+          .catch(err => {
+            console.error(`❌ 사진 로드 실패 (신고 ${reportId}):`, err);
+            return { reportId: reportId, reportDesc: r.description, images: [] };
+          });
       })
-      .finally(() => setLoading(false));
+    )
+    .then(results => {
+      // 모든 신고의 사진을 하나의 배열로 통합
+      const allImages = results.flatMap(r => 
+        r.images.map(img => ({ ...img, reportId: r.reportId, reportDesc: r.reportDesc }))
+      );
+      console.log('✅ 전체 사진 로드 성공:', allImages);
+      setImages(allImages);
+    })
+    .finally(() => setLoading(false));
   }, [open, report]);
 
   const handleApprove = async () => {
-    if (!window.confirm('이 신고를 승인하시겠습니까?\n승인 시 해당 구역이 빨간색 위험 구역으로 표시됩니다.')) {
+    const allReports = report.allPendingReports || [report];
+    const reportCount = allReports.length;
+    
+    if (!window.confirm(
+      `이 구역의 ${reportCount}개 신고를 모두 승인하시겠습니까?\n승인 시 해당 구역이 빨간색 위험 구역으로 표시됩니다.`
+    )) {
       return;
     }
 
     setProcessing(true);
     try {
-      await apiClient.post(`/safety/reports/${report.danger_zone_id}/approve`);
-      alert('신고가 승인되었습니다.');
+      // 모든 신고 승인
+      await Promise.all(
+        allReports.map(r => {
+          const reportId = r.id || r.danger_zone_id;
+          return apiClient.post(`/safety/reports/${reportId}/approve`);
+        })
+      );
+      alert(`${reportCount}개 신고가 승인되었습니다.`);
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -49,14 +83,25 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
   };
 
   const handleReject = async () => {
-    if (!window.confirm('이 신고를 반려하시겠습니까?\n반려 시 위험 구역에서 제외됩니다.')) {
+    const allReports = report.allPendingReports || [report];
+    const reportCount = allReports.length;
+    
+    if (!window.confirm(
+      `이 구역의 ${reportCount}개 신고를 모두 반려하시겠습니까?\n반려 시 위험 구역에서 제외됩니다.`
+    )) {
       return;
     }
 
     setProcessing(true);
     try {
-      await apiClient.post(`/safety/reports/${report.danger_zone_id}/reject`);
-      alert('신고가 반려되었습니다.');
+      // 모든 신고 반려
+      await Promise.all(
+        allReports.map(r => {
+          const reportId = r.id || r.danger_zone_id;
+          return apiClient.post(`/safety/reports/${reportId}/reject`);
+        })
+      );
+      alert(`${reportCount}개 신고가 반려되었습니다.`);
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -130,8 +175,20 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             📍 신고 위치
           </div>
           <div style={{ fontSize: '15px', color: '#78350f' }}>
-            {report.name || `구역 #${report.zone_id}`} ({report.level || '-'})
+            {report.zoneName || `구역 #${report.zone_id}`} ({report.zoneLevel || report.level || '-'})
           </div>
+          {report.allPendingReports && report.allPendingReports.length > 1 && (
+            <div style={{ 
+              marginTop: '8px', 
+              padding: '8px', 
+              backgroundColor: '#fef9c3', 
+              borderRadius: '6px',
+              fontSize: '13px',
+              color: '#713f12'
+            }}>
+              ⚠️ 이 구역에 {report.allPendingReports.length}개의 신고가 있습니다
+            </div>
+          )}
         </div>
 
         {/* 위험 유형 */}
@@ -188,7 +245,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             }}>
               {images.map(img => (
                 <div 
-                  key={img.id} 
+                  key={`${img.reportId}_${img.id}`} 
                   style={{ 
                     borderRadius: '10px', 
                     overflow: 'hidden',
@@ -217,6 +274,18 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
                     textAlign: 'center'
                   }}>
                     {new Date(img.uploaded_at).toLocaleString('ko-KR')}
+                    {img.reportDesc && (
+                      <div style={{ 
+                        marginTop: '4px', 
+                        fontSize: '10px', 
+                        color: '#94a3b8',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {img.reportDesc}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

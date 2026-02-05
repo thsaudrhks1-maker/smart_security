@@ -204,11 +204,21 @@ const DailyPlanManagement = () => {
                   zoom={19}
                   onZoneClick={(zone) => { 
                     // Zone에 PENDING 위험이 있는지 확인
-                    const pendingDanger = risksInLevel.find(r => r.zone_id === zone.id && r.status === 'PENDING');
+                    const pendingDangers = risksInLevel.filter(r => r.zone_id === zone.id && r.status === 'PENDING');
+                    console.log('🔍 [매니저] Zone 클릭:', zone.id, '| PENDING 신고:', pendingDangers);
                     
-                    if (pendingDanger) {
+                    if (pendingDangers.length > 0) {
+                      // 해당 Zone의 모든 PENDING 신고를 전달 (사진 통합 표시용)
+                      const reportWithZone = {
+                        ...pendingDangers[0], // 첫 번째 신고의 기본 정보 사용
+                        zoneName: zone.name,
+                        zoneLevel: zone.level,
+                        allPendingReports: pendingDangers // 모든 PENDING 신고 포함
+                      };
+                      console.log('🔍 전달할 데이터:', reportWithZone);
+                      
                       // PENDING 위험 → 승인 모달
-                      setSelectedPendingReport(pendingDanger);
+                      setSelectedPendingReport(reportWithZone);
                       setShowApprovalModal(true);
                     } else {
                       // 일반 Zone → 작업/위험 선택 모달
