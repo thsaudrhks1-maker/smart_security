@@ -10,7 +10,7 @@ class SimpleUserRead(BaseModel):
     id: int
     full_name: str
     role: str
-    position: str | None = None
+    title: str | None = None
 
 @router.get("/workers", response_model=List[WorkerRead])
 async def get_workers(company_id: int = None):

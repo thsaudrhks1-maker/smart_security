@@ -4,8 +4,9 @@ import 'leaflet/dist/leaflet.css';
 
 /**
  * 전역 상수 및 스타일
+ * 그리드 크기에 맞춰 정사각형 크기를 조정합니다. (기존 0.00012 -> 0.000025로 축소하여 약 5m 그리드에 대응)
  */
-const ZONE_SQUARE_HALF = 0.00012;
+const ZONE_SQUARE_HALF = 0.000025;
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
 
 const globalMapStyles = `
@@ -86,8 +87,14 @@ const UniversalBlueprintMap = ({
   return (
     <div style={{ height, width: '100%', position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
       <style>{globalMapStyles}</style>
-      <MapContainer center={mapCenter} zoom={zoom} style={{ height: '100%', width: '100%' }}>
-        <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.15} />
+      <MapContainer center={mapCenter} zoom={zoom} maxZoom={22} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
+        <TileLayer 
+          attribution='&copy; OpenStreetMap' 
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+          opacity={0.15} 
+          maxZoom={22}
+          maxNativeZoom={19}
+        />
         
         {/* 도면 오버레이 */}
         {blueprintUrl && svgBounds && (

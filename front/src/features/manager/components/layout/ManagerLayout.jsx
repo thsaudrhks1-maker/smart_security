@@ -145,7 +145,7 @@ const ManagerLayout = () => {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc' }}>
+      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc', color: '#1e293b' }}>
         <Outlet />
       </main>
     </div>

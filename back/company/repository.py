@@ -45,7 +45,7 @@ class CompanyRepository:
             
         sql = f"""
             SELECT u.id, u.full_name as name, u.company_id, 
-                   COALESCE(u.job_type, '미지정') as trade,
+                   COALESCE(u.job_type, '미지정') as job_type,
                    c.name as company_name
             FROM users u
             LEFT JOIN companies c ON u.company_id = c.id
@@ -57,7 +57,7 @@ class CompanyRepository:
     @staticmethod
     async def get_company_users_by_roles(company_id: int, roles: List[str]) -> List[Dict[str, Any]]:
         sql = """
-            SELECT id, full_name, role, position
+            SELECT id, full_name, role, title
             FROM users
             WHERE company_id = :company_id AND role = ANY(:roles)
             ORDER BY full_name

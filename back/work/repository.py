@@ -17,17 +17,44 @@ class WorkRepository:
 
     @staticmethod
     async def get_templates_with_resources() -> List[Dict[str, Any]]:
-        sql = """
-            SELECT t.*, 
-                   (SELECT json_agg(json_build_object(
-                       'id', r.id, 'name', r.name, 'type', r.type, 
-                       'icon', r.icon, 'description', r.description, 'safety_rules', r.safety_rules
-                   )) FROM template_resource_map trm
-                   JOIN safety_resources r ON trm.resource_id = r.id
-                   WHERE trm.template_id = t.id) as required_resources
-            FROM work_templates t
+        """템플릿 + 연결된 리소스 목록 (2-step 쿼리로 깔끔하게)"""
+        # 1. 모든 템플릿 조회
+        templates = await fetch_all("SELECT * FROM work_templates ORDER BY id")
+        
+        if not templates:
+            return []
+        
+        # 2. 모든 템플릿-리소스 매핑 한 번에 조회
+        template_ids = [t["id"] for t in templates]
+        mappings_sql = """
+            SELECT trm.template_id, r.*
+            FROM template_resource_map trm
+            JOIN safety_resources r ON trm.resource_id = r.id
+            WHERE trm.template_id = ANY(:template_ids)
+            ORDER BY trm.template_id, r.type, r.name
         """
-        return await fetch_all(sql)
+        mappings = await fetch_all(mappings_sql, {"template_ids": template_ids})
+        
+        # 3. Python에서 그룹핑 (훨씬 읽기 쉽고, 디버깅도 편함)
+        resource_map = {}
+        for m in mappings:
+            tid = m["template_id"]
+            if tid not in resource_map:
+                resource_map[tid] = []
+            resource_map[tid].append({
+                "id": m["id"],
+                "name": m["name"],
+                "type": m["type"],
+                "icon": m["icon"],
+                "description": m["description"],
+                "safety_rules": m["safety_rules"]
+            })
+        
+        # 4. 템플릿에 리소스 병합
+        for t in templates:
+            t["required_resources"] = resource_map.get(t["id"], [])
+        
+        return templates
 
     @staticmethod
     async def get_all_safety_resources() -> List[Dict[str, Any]]:

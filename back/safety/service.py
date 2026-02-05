@@ -112,8 +112,8 @@ class SafetyService:
                         "grid_z": z
                     })
         
-        # 3. 기존 해당 프로젝트의 구역들 삭제 (초기화)
-        await execute("DELETE FROM zones WHERE project_id = :project_id", {"project_id": project["id"]})
+        # 3. 해당 현장의 기존 구역들 삭제 (초기화)
+        await execute("DELETE FROM zones WHERE site_id = :site_id", {"site_id": site_id})
         
         # 4. 벌크 생성
         now = datetime.now()

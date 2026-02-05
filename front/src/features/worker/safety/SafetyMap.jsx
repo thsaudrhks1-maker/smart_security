@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Marker, Popup, Circle, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -6,6 +6,9 @@ import 'leaflet/dist/leaflet.css';
 import '../styles/WorkerDashboard.css';
 import { mapApi } from '@/api/mapApi';
 import { safetyApi } from '@/api/safetyApi';
+import { getProjectById } from '@/api/projectApi';
+import { workerApi } from '@/api/workerApi';
+import BuildingSectionView from '@/features/manager/work/BuildingSectionView';
 import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 
 // --- 아이콘 리소스 설정 ---
@@ -26,335 +29,133 @@ const icons = {
     falling: createIcon('marker-icon-orange.png')
 };
 
-// --- 지도 클릭 이벤트 핸들러 (위험요소 추가용) ---
-const MapClickHandler = ({ onMapClick, isEditMode }) => {
-    useMapEvents({
-        click: (e) => {
-            if (isEditMode) {
-                onMapClick(e.latlng);
-            }
-        },
-    });
-    return null;
-};
-
-
-
 const SafetyMap = () => {
     const navigate = useNavigate();
     
-    // --- UI State (from SafeMapViewer) ---
-    const [center] = useState([37.5665, 126.9780]);
-    const [zoom] = useState(19);
+    // --- UI State ---
+    const [project, setProject] = useState(null);
+    const [selectedLevel, setSelectedLevel] = useState('1F');
+    const [loading, setLoading] = useState(true);
+    
     const [showMap, setShowMap] = useState(true); 
     const [floorPlanUrl, setFloorPlanUrl] = useState(null);
     const [opacity, setOpacity] = useState(0.8);
-    const [isEditMode, setIsEditMode] = useState(false);
-    const [newRiskPos, setNewRiskPos] = useState(null); 
     
-    // 도면 상태
-    const [plan, setPlan] = useState({
-        lat: 37.5665,
-        lng: 126.9780,
-        width: 0.001,
-        height: 0.001,
-        rotation: 0
-    });
-
-    // --- Data State (from Smart Security Backend) ---
+    // --- Data State ---
     const [risks, setRisks] = useState([]);
     const [workers, setWorkers] = useState([]);
     const [zones, setZones] = useState([]);
-    const [alertLog, setAlertLog] = useState([]);
 
     // --- 1. Initial Data Load ---
     useEffect(() => {
-        loadInitialData();
+        const init = async () => {
+            try {
+                setLoading(true);
+                // 1. 근로자 대시보드에서 프로젝트 ID 가져오기
+                const dash = await workerApi.getDashboard();
+                const pid = dash?.project?.id;
+                if (!pid) return;
+
+                // 2. 프로젝트 상세 정보 (층수 등)
+                const proj = await getProjectById(pid);
+                setProject(proj);
+
+                // 3. 구역 및 위험 정보
+                const [riskData, zoneData] = await Promise.all([
+                    mapApi.getRisks(),
+                    safetyApi.getZones(null, pid)
+                ]);
+                setRisks(riskData || []);
+                setZones(zoneData || []);
+
+                // 기본 층수 설정 (현재 배정된 작업이 있다면 그 층으로, 없으면 1F)
+                // TODO: 근로자 배정 층 찾기 로직 추가 가능
+            } catch (error) {
+                console.error("데이터 로딩 실패:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        init();
     }, []);
 
-    const loadInitialData = async () => {
-        try {
-            const [riskData, zoneData] = await Promise.all([
-                mapApi.getRisks(),
-                safetyApi.getZones()
-            ]);
-            setRisks(riskData || []);
-            setZones(zoneData || []);
-        } catch (error) {
-            console.error("데이터 로딩 실패:", error);
-        }
-    };
+    // 층수 리스트 생성
+    const levels = useMemo(() => {
+        if (!project) return ['1F'];
+        const res = [];
+        for (let i = project.basement_floors; i >= 1; i--) res.push(`B${i}`);
+        for (let i = 1; i <= project.ground_floors; i++) res.push(`${i}F`);
+        return res;
+    }, [project]);
 
-    // --- Handlers ---
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // 필터링된 구역 (현재 층만)
+    const filteredZones = useMemo(() => {
+        return zones.filter(z => z.level === selectedLevel);
+    }, [zones, selectedLevel]);
 
-        try {
-            const data = await mapApi.uploadBlueprint(file);
-            setFloorPlanUrl(data.url);
-            
-            if (data.lat && data.lng) {
-                setPlan({
-                    lat: data.lat,
-                    lng: data.lng,
-                    width: data.width,
-                    height: data.height,
-                    rotation: data.rotation
-                });
-            }
-        } catch(e) { 
-            console.error(e);
-            alert("업로드 실패"); 
-        }
-    };
+    const center = project ? [project.location_lat, project.location_lng] : [37.5665, 126.9780];
 
-    const handleMapClick = (latlng) => setNewRiskPos(latlng);
-
-    const addRisk = async (type, name) => {
-        if (!newRiskPos) return;
-        try {
-            const newRisk = await mapApi.createRisk({
-                id: 0, name, type, lat: newRiskPos.lat, lng: newRiskPos.lng, radius: 10
-            });
-            setRisks([...risks, newRisk]);
-            setNewRiskPos(null);
-        } catch(e) { alert("추가 실패"); }
-    };
-
-    const deleteRisk = async (id) => {
-        if(!window.confirm("삭제하시겠습니까?")) return;
-        try {
-            await mapApi.deleteRisk(id);
-            setRisks(risks.filter(r => r.id !== id));
-        } catch(e) { alert("삭제 실패"); }
-    };
-
-    // SVG Bounds
-    const svgBounds = [
-        [plan.lat - plan.height/2, plan.lng - plan.width/2],
-        [plan.lat + plan.height/2, plan.lng + plan.width/2]
-    ];
+    if (loading) return <div style={{padding:'20px', textAlign:'center'}}>현장 데이터를 불러오는 중...</div>;
 
     return (
-      <div className="floor-viewer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: 'sans-serif' }}>
+      <div className="floor-viewer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
         
-        {/* 헤더 (SafeMapViewer 스타일 복제) */}
-        <header className="header" style={{ flexShrink: 0, padding:'15px 20px', background:'#2c3e50', color:'white', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap: 'wrap' }}>
-          <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-              <button onClick={() => navigate(-1)} style={{background:'transparent', border:'1px solid #7f8c8d', color:'white', cursor:'pointer', padding:'5px 10px', borderRadius:'4px'}}>◀ 뒤로</button>
-              <div>
-                  <h1 style={{margin:0, fontSize:'1.4rem', color:'white'}}>🏗️ 스마트 안전 관제</h1>
-                  <div style={{fontSize:'12px', color:'#bdc3c7'}}>GPS 기반 작업자 실시간 추적 시스템</div>
-              </div>
-          </div>
-          <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
-              <label style={{cursor:'pointer', background:'#34495e', padding:'6px 10px', borderRadius:'4px', fontSize:'13px', border:'1px solid #7f8c8d'}}>
-                  📂 도면 업로드
-                  <input type="file" onChange={handleFileUpload} style={{display:'none'}} />
-              </label>
-              <label style={{display:'flex', alignItems:'center', gap:'5px', fontSize:'13px', cursor:'pointer', background:'#34495e', padding:'6px', borderRadius:'4px',  border:'1px solid #7f8c8d'}}>
-                  <input type="checkbox" checked={showMap} onChange={e => setShowMap(e.target.checked)} />
-                  🗺️ 지도
-              </label>
-              <div style={{display:'flex', alignItems:'center', gap:'2px', fontSize:'13px'}}>
-                  <span>👁️</span>
-                  <input type="range" min="0" max="1" step="0.1" value={opacity} onChange={e => setOpacity(parseFloat(e.target.value))} style={{width:'40px'}} />
-              </div>
-              <button 
-                  onClick={() => setIsEditMode(!isEditMode)} 
-                  style={{
-                      backgroundColor: isEditMode ? '#e74c3c' : '#3498db', 
-                      color: 'white', padding: '8px 16px', borderRadius: '4px', border:'none', cursor:'pointer', fontWeight:'bold',
-                      boxShadow: isEditMode ? 'inset 0 0 5px rgba(0,0,0,0.5)' : 'none'
-                  }}
-              >
-                  {isEditMode ? "❌ 편집 종료" : "✏️ 편집 모드"}
-              </button>
-          </div>
-        </header>
-
-        {/* 편집 모드 컨트롤 패널 */}
-        {isEditMode && (
-            <div style={{
-                background: '#ecf0f1', padding: '15px', borderBottom: '2px solid #bdc3c7',
-                display: 'flex', gap: '30px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap'
-            }}>
-                <div style={{textAlign:'center'}}>
-                    <div style={{fontWeight:'bold', marginBottom:'5px', color:'#333'}}>🔄 회전 ({Math.round(plan.rotation)}°)</div>
-                    <input 
-                        type="range" min="0" max="360" step="1" 
-                        value={plan.rotation} 
-                        onChange={(e) => setPlan({...plan, rotation: Number(e.target.value)})}
-                        style={{width:'150px', cursor:'pointer'}} 
-                    />
-                </div>
-                <div style={{textAlign:'center'}}>
-                    <div style={{fontWeight:'bold', marginBottom:'5px', color:'#333'}}>↔️ 너비</div>
-                    <input 
-                        type="range" min="0.0001" max="0.005" step="0.00001" 
-                        value={plan.width} 
-                        onChange={(e) => setPlan({...plan, width: Number(e.target.value)})}
-                        style={{width:'150px', cursor:'pointer'}} 
-                    />
-                </div>
-                <div style={{textAlign:'center'}}>
-                    <div style={{fontWeight:'bold', marginBottom:'5px', color:'#333'}}>↕️ 높이</div>
-                    <input 
-                        type="range" min="0.0001" max="0.005" step="0.00001" 
-                        value={plan.height} 
-                        onChange={(e) => setPlan({...plan, height: Number(e.target.value)})}
-                        style={{width:'150px', cursor:'pointer'}} 
-                    />
-                </div>
-                <div style={{fontSize:'12px', color:'#7f8c8d', borderLeft:'1px solid #999', paddingLeft:'15px'}}>
-                    💡 <b>Tip:</b> 지도를 클릭하여 <br/>위험 요소를 추가하세요.
+        {/* 헤더 */}
+        <header style={{ flexShrink: 0, padding:'12px 20px', background:'#1e293b', color:'white', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                <button onClick={() => navigate(-1)} style={{background:'transparent', border:'1px solid #475569', color:'white', padding:'6px 12px', borderRadius:'6px', cursor:'pointer' }}>◀</button>
+                <div>
+                    <h2 style={{margin:0, fontSize:'1.1rem'}}>🛡️ 안전 모니터링</h2>
+                    <div style={{fontSize:'11px', color:'#94a3b8'}}>{project?.name}</div>
                 </div>
             </div>
-        )}
-  
-        <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* 지도 영역 */}
-          <div style={{ flex: 0.75, position: 'relative', borderRight: '2px solid #ddd', background:'#f0f0f0' }}>
-              <UniversalBlueprintMap
-                  role="MANAGER"
-                  zones={zones}
-                  center={center}
-                  zoom={zoom}
-                  height="100%"
-                  blueprintUrl={floorPlanUrl}
-                  blueprintConfig={plan}
-              >
-                  <MapClickHandler onMapClick={handleMapClick} isEditMode={isEditMode} />
+            <div style={{display:'flex', gap:'8px'}}>
+                <span style={{fontSize:'12px', background:'#334155', padding:'4px 8px', borderRadius:'4px'}}>{selectedLevel}</span>
+            </div>
+        </header>
 
-                  {/* 편집 핸들 */}
-                  {isEditMode && (
-                      <Marker 
-                          draggable={true}
-                          position={[plan.lat, plan.lng]}
-                          icon={L.divIcon({ className: 'move-handle', html: '<div style="background:#2c3e50; color:white; padding:5px; border-radius:5px; white-space:nowrap; font-size:12px; font-weight:bold; border:2px solid white;">📍 도면 이동 핸들</div>', iconSize:[100,30], iconAnchor:[50,35] })}
-                          eventHandlers={{
-                              drag: (e) => {
-                                  const { lat, lng } = e.target.getLatLng();
-                                  setPlan(p => ({ ...p, lat, lng }));
-                              }
-                          }}
-                      />
-                  )}
+        {/* 메인 콘텐츠 영역 (단면도 + 지도) */}
+        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+            {project && (
+                <BuildingSectionView 
+                    project={project}
+                    selectedLevel={selectedLevel}
+                    onLevelSelect={setSelectedLevel}
+                    allZones={zones}
+                    allRisks={risks}
+                />
+            )}
 
-                  {/* 위험 요소 */}
-                  {risks.map(r => (
-                      <React.Fragment key={r.id}>
-                          <Circle
-                              center={[r.lat, r.lng]}
-                              radius={r.radius}
-                              pathOptions={{
-                                  color: r.type === 'equipment' ? 'red' : r.type === 'opening' ? 'blue' : 'orange',
-                                  fillColor: r.type === 'equipment' ? 'red' : r.type === 'opening' ? 'blue' : 'orange'
-                              }}
-                          />
-                          <Marker position={[r.lat, r.lng]} icon={icons[r.type] || icons.danger}>
-                              <Popup>
-                                  <div style={{textAlign:'center', minWidth:'120px', color:'black'}}>
-                                      <div style={{fontWeight:'bold', marginBottom:'5px'}}>{r.name}</div>
-                                      {isEditMode && (
-                                          <button 
-                                              onClick={() => deleteRisk(r.id)}
-                                              style={{width:'100%', background:'#ff4444', color:'white', border:'none', borderRadius:'3px', padding:'5px', cursor:'pointer'}}
-                                          >
-                                              🗑️ 삭제하기
-                                          </button>
-                                      )}
-                                  </div>
-                              </Popup>
-                          </Marker>
-                      </React.Fragment>
-                  ))}
+            {/* 지도 영역 */}
+            <div style={{ flex: 1, position: 'relative' }}>
+                <UniversalBlueprintMap
+                    role="WORKER"
+                    zones={filteredZones}
+                    risks={risks.filter(r => filteredZones.some(z => z.id === r.zone_id))}
+                    center={center}
+                    zoom={20}
+                    height="100%"
+                    blueprintUrl={floorPlanUrl}
+                >
+                    {/* 위험 요소 (실시간 마커 등 - 필요시 추가 연동) */}
+                </UniversalBlueprintMap>
 
-                   {/* 작업자 */}
-                  {workers.map(w => (
-                      <Marker
-                          key={w.id}
-                          position={[w.lat, w.lng]}
-                          icon={w.status === 'DANGER' ? icons.danger : icons.safe}
-                      >
-                          <Tooltip permanent direction="top" offset={[0, -10]} opacity={0.9}>
-                               <div style={{ background: 'white', padding: '2px 6px', borderRadius: '4px', border: `1.5px solid ${w.status === 'DANGER' ? 'red' : 'green'}`, fontSize: '11px', fontWeight: 'bold' }}>
-                                   {w.name}
-                               </div>
-                          </Tooltip>
-                          <Popup>
-                              <div style={{color:'black'}}>
-                                  <strong>{w.name}</strong> ({w.role})<br/>
-                                  <span style={{color: w.status==='DANGER'?'red':'green'}}>Status: {w.status}</span>
-                              </div>
-                          </Popup>
-                      </Marker>
-                  ))}
-              </UniversalBlueprintMap>
-
-              {/* 팝업 모달 */}
-              {newRiskPos && (
-                  <div style={{
-                      position:'absolute', top:'50%', left:'50%', transform:'translate(-50%, -50%)',
-                      background:'white', padding:'20px', borderRadius:'10px', boxShadow:'0 5px 15px rgba(0,0,0,0.3)', zIndex:2000,
-                      minWidth:'250px', color:'black'
-                  }}>
-                      <h3 style={{marginTop:0}}>⚠️ 위험 요소 추가</h3>
-                      <div style={{display:'flex', flexDirection:'column', gap:'8px'}}>
-                          <button onClick={() => addRisk('equipment', '신규 중장비')} style={{padding:'8px', background:'#e74c3c', color:'white', border:'none', borderRadius:'4px', cursor:'pointer'}}>🔴 중장비</button>
-                          <button onClick={() => addRisk('opening', '신규 개구부')} style={{padding:'8px', background:'#3498db', color:'white', border:'none', borderRadius:'4px', cursor:'pointer'}}>🔵 개구부</button>
-                          <button onClick={() => addRisk('falling', '신규 낙하물')} style={{padding:'8px', background:'#e67e22', color:'white', border:'none', borderRadius:'4px', cursor:'pointer'}}>🟠 낙하물</button>
-                          <button onClick={() => setNewRiskPos(null)} style={{padding:'8px', background:'#95a5a6', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', marginTop:'5px'}}>취소</button>
-                      </div>
-                  </div>
-              )}
-
-              {/* 위험 알림 오버레이 */}
-              {workers.some(w => w.status === 'DANGER') && (
-                  <div style={{
-                      position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)',
-                      background: 'rgba(255,0,0,0.8)', color: 'white', padding: '10px 20px',
-                      borderRadius: '30px', fontWeight: 'bold', zIndex: 1000,
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-                      animation: 'pulse 1s infinite'
-                  }}>
-                      🚨 위험 상황 발생! 작업자 회피 기동 중!
-                  </div>
-              )}
-          </div>
-          
-          {/* 우측 패널 (정보창) */}
-          <div style={{ flex: 0.25, background: '#2c3e50', color: '#ecf0f1', display: 'flex', flexDirection: 'column', borderLeft:'1px solid #444' }}>
-               <div style={{padding:'20px', overflowY:'auto', flex: 1}}>
-                   <h3 style={{borderBottom:'1px solid #555', paddingBottom:'10px', marginTop:0}}>👷 작업자 현황</h3>
-                   <ul style={{listStyle:'none', padding:0}}>
-                       {workers.map(w => (
-                           <li key={w.id} style={{marginBottom:'10px', padding:'10px', background:'#34495e', borderRadius:'5px', borderLeft:`4px solid ${w.status==='DANGER'?'red':'green'}`, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                               <div>
-                                   <div style={{fontWeight:'bold'}}>{w.name}</div>
-                                   <div style={{fontSize:'12px', color:'#bdc3c7'}}>{w.role}</div>
-                               </div>
-                               <div style={{fontSize:'12px', fontWeight:'bold', color: w.status==='DANGER'?'#ff7675':'#55efc4'}}>
-                                   {w.status}
-                               </div>
-                           </li>
-                       ))}
-                   </ul>
-               </div>
-               
-               {/* 로그 창 */}
-                <div style={{ height: '250px', padding: '15px', background: '#222', color: '#00ff00', overflowY: 'auto', fontFamily: 'monospace', fontSize:'12px', borderTop:'2px solid #555' }}>
-                    <h4 style={{marginTop:0, borderBottom:'1px solid #555', paddingBottom:'5px', color:'white'}}>🖥️ 시스템 로그</h4>
-                    {alertLog.length === 0 ? (
-                        <div style={{color:'#666'}}>(시스템 대기 중...)</div>
-                    ) : (
-                        alertLog.map((log, i) => (
-                            <div key={i} style={{marginBottom:'4px'}}>{log}</div>
-                        ))
-                    )}
+                {/* 하단 정보 배지 */}
+                <div style={{ position:'absolute', bottom:20, left:20, right:20, zIndex:1000, display:'flex', flexDirection:'column', gap:'10px' }}>
+                    <div style={{ background:'rgba(255,255,255,0.95)', padding:'12px 16px', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)', border:'1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div>
+                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>현재 층</div>
+                            <div style={{fontSize:'1rem', fontWeight:'900', color:'#1e293b'}}>{selectedLevel}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>위험 요소</div>
+                            <div style={{fontSize:'0.9rem', fontWeight:'800', color: risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length > 0 ? '#ef4444' : '#10b981'}}>
+                                {risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length}건 감지
+                            </div>
+                        </div>
+                    </div>
                 </div>
-          </div>
+            </div>
         </div>
       </div>
     );

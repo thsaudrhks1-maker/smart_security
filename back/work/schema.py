@@ -69,7 +69,7 @@ class DailyWorkPlanCreate(DailyWorkPlanBase):
 
 class DailyWorkPlanRead(DailyWorkPlanBase):
     id: int
-    calculated_risk_score: int
+    calculated_risk_score: Optional[int] = 0
     created_at: datetime
     date: date  # 응답은 date 객체 → JSON 직렬화 시 "YYYY-MM-DD"로 내려감
     zone_name: Optional[str] = None

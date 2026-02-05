@@ -9,6 +9,7 @@
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  --text-dark: #1e293b;
 
   --glass-bg: rgba(15, 23, 42, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -158,6 +159,41 @@ h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; }
 .text-blue { color: var(--accent-secondary); }
 .text-danger { color: var(--accent-danger); }
 .text-muted { color: var(--text-muted); }
+.text-dark { color: var(--text-dark) !important; }
+
+.card-light {
+  background: white;
+  color: var(--text-dark);
+}
+
+/* Manager 페이지 전용: 밝은 배경에 어두운 텍스트 강제 */
+main[style*="background: #f8fafc"] {
+  color: var(--text-dark);
+}
+
+main[style*="background: #f8fafc"] h1,
+main[style*="background: #f8fafc"] h2,
+main[style*="background: #f8fafc"] h3,
+main[style*="background: #f8fafc"] h4,
+main[style*="background: #f8fafc"] p,
+main[style*="background: #f8fafc"] div,
+main[style*="background: #f8fafc"] span,
+main[style*="background: #f8fafc"] label {
+  color: var(--text-dark);
+}
+
+/* input, select 폼 요소 */
+main[style*="background: #f8fafc"] input:not([type="checkbox"]):not([type="radio"]),
+main[style*="background: #f8fafc"] select,
+main[style*="background: #f8fafc"] textarea {
+  color: var(--text-dark);
+  background: white;
+}
+
+/* 버튼은 제외 (이미 명시적 색상 있음) */
+main[style*="background: #f8fafc"] button[style*="color:"] {
+  /* 버튼은 그대로 유지 */
+}
 
 /* Custom Scrollbar (Slim & Transparent) */
 ::-webkit-scrollbar { 

@@ -56,7 +56,15 @@ async def get_db():
 from sqlalchemy import text
 
 async def execute(query: str, params: dict = None):
+    """INSERT, UPDATE, DELETE 등 실행용 (JSON 자동 직렬화)"""
     try:
+        # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
+        if params:
+            params = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                for k, v in params.items()
+            }
+        
         async with engine.begin() as conn:
             result = await conn.execute(text(query), params or {})
             return result
@@ -65,7 +73,15 @@ async def execute(query: str, params: dict = None):
         raise e
 
 async def fetch_one(query: str, params: dict = None) -> dict | None:
+    """단건 조회 (JSON 자동 직렬화)"""
     try:
+        # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
+        if params:
+            params = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                for k, v in params.items()
+            }
+        
         async with engine.connect() as conn:
             result = await conn.execute(text(query), params or {})
             row = result.mappings().first()
@@ -75,7 +91,15 @@ async def fetch_one(query: str, params: dict = None) -> dict | None:
         raise e
 
 async def fetch_all(query: str, params: dict = None) -> list[dict]:
+    """다건 조회 (JSON 자동 직렬화)"""
     try:
+        # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
+        if params:
+            params = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                for k, v in params.items()
+            }
+        
         async with engine.connect() as conn:
             result = await conn.execute(text(query), params or {})
             rows = result.mappings().all()
@@ -85,7 +109,15 @@ async def fetch_all(query: str, params: dict = None) -> list[dict]:
         raise e
 
 async def insert_and_return(query: str, params: dict = None) -> dict | None:
+    """INSERT/UPDATE ... RETURNING * 쿼리 실행 후 결과 반환 (JSON 자동 직렬화)"""
     try:
+        # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
+        if params:
+            params = {
+                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
+                for k, v in params.items()
+            }
+        
         async with engine.begin() as conn:
             result = await conn.execute(text(query), params or {})
             row = result.mappings().first()

@@ -11,6 +11,7 @@ import AttendanceCard from './AttendanceCard';
 import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 import { workApi } from '@/api/workApi';
 import { safetyApi } from '@/api/safetyApi';
+import { workerApi } from '@/api/workerApi';
 
 import { 
   WorkCard, WeatherCard, EmergencyAlertCard, RiskCard, 
@@ -55,12 +56,12 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
       try {
         const [plansRes, dashboardRes, risksRes] = await Promise.all([
           workApi.getMyTodayWork(),
-          apiClient.get('/worker/dashboard-info'),
-          apiClient.get('/worker/all-project-risks/today') // 🔥 NEW: 전체 현장 위험 구역 조회
+          workerApi.getDashboard(),
+          workerApi.getAllProjectRisks()
         ]);
         setMyPlans(plansRes || []);
-        setDashboardInfo(dashboardRes.data);
-        setMyRisks(Array.isArray(risksRes?.data) ? risksRes.data : []);
+        setDashboardInfo(dashboardRes);
+        setMyRisks(Array.isArray(risksRes) ? risksRes : []);
         setLoading(false);
       } catch (err) {
         console.error('데이터 로드 실패:', err);
