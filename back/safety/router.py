@@ -33,7 +33,7 @@ async def update_zone(zone_id: int, body: ZoneUpdate):
 
 @router.get("/daily-danger-zones", response_model=List[DailyDangerZoneRead])
 async def get_daily_danger_zones(date: str, zone_id: Optional[int] = None):
-    """일일 변동 위험 구역 목록 조회"""
+    """일일 변동 위험 구역 목록 조회 (모든 상태 포함)"""
     rows = await SafetyService.get_daily_danger_zones(date, zone_id)
     return [
         DailyDangerZoneRead(
@@ -41,7 +41,8 @@ async def get_daily_danger_zones(date: str, zone_id: Optional[int] = None):
             zone_id=r["zone_id"], 
             date=str(r["date"]), 
             risk_type=r["risk_type"], 
-            description=r["description"]
+            description=r["description"],
+            status=r.get("status", "APPROVED")
         ) for r in rows
     ]
 

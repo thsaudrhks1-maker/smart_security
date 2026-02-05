@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ZoneStatusSidePanel from './ZoneStatusSidePanel';
 import BuildingSectionView from './BuildingSectionView';
 import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
+import DangerReportApprovalModal from './DangerReportApprovalModal';
 import 'leaflet/dist/leaflet.css';
 import { workApi } from '@/api/workApi';
 import { getMyWorkers } from '@/api/managerApi';
@@ -53,6 +54,8 @@ const DailyPlanManagement = () => {
   const [selectedLevel, setSelectedLevel] = useState('1F');
   const [showZoneActionModal, setShowZoneActionModal] = useState(false);
   const [selectedZoneForAction, setSelectedZoneForAction] = useState(null);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [selectedPendingReport, setSelectedPendingReport] = useState(null);
 
   const filteredZones = useMemo(() => {
     return selectedLevel === 'ALL' 
@@ -200,8 +203,18 @@ const DailyPlanManagement = () => {
                   height="100%"
                   zoom={19}
                   onZoneClick={(zone) => { 
-                    setSelectedZoneForAction(zone); 
-                    setShowZoneActionModal(true); 
+                    // Zone에 PENDING 위험이 있는지 확인
+                    const pendingDanger = risksInLevel.find(r => r.zone_id === zone.id && r.status === 'PENDING');
+                    
+                    if (pendingDanger) {
+                      // PENDING 위험 → 승인 모달
+                      setSelectedPendingReport(pendingDanger);
+                      setShowApprovalModal(true);
+                    } else {
+                      // 일반 Zone → 작업/위험 선택 모달
+                      setSelectedZoneForAction(zone); 
+                      setShowZoneActionModal(true); 
+                    }
                   }}
                 />
                 <ZoneStatusSidePanel 
@@ -269,6 +282,20 @@ const DailyPlanManagement = () => {
       {showModal && <CreatePlanModal onClose={() => { setShowModal(false); setInitialZoneId(''); }} currDate={selectedDate} zones={zones} initialZoneId={initialZoneId} siteId={siteId} onSuccess={() => { setShowModal(false); setInitialZoneId(''); loadPlans(); }} />}
       {showDangerModal && <DangerZoneModal selectedDate={selectedDate} zones={zones} onClose={() => { setShowDangerModal(false); setInitialZoneId(''); }} onSuccess={() => { loadDangerZones(); setShowDangerModal(false); setInitialZoneId(''); }} initialZoneId={initialZoneId} />}
       {editPlanId != null && <EditPlanModal planId={editPlanId} zones={zones} onClose={() => setEditPlanId(null)} onSuccess={() => { setEditPlanId(null); loadPlans(); }} />}
+      
+      {/* 근로자 신고 승인 모달 */}
+      {showApprovalModal && selectedPendingReport && (
+        <DangerReportApprovalModal 
+          open={showApprovalModal}
+          onClose={() => { setShowApprovalModal(false); setSelectedPendingReport(null); }}
+          report={selectedPendingReport}
+          onSuccess={() => {
+            setShowApprovalModal(false);
+            setSelectedPendingReport(null);
+            loadDangerZones();
+          }}
+        />
+      )}
     </div>
   );
 };

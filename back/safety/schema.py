@@ -55,6 +55,7 @@ class DailyDangerZoneRead(BaseResponseSchema):
     date: date  # date 타입 그대로 (자동 변환됨)
     risk_type: str
     description: str
+    status: Optional[str] = "APPROVED"  # PENDING, APPROVED, REJECTED
 
 
 # --- 근로자 위험 신고 (Worker Report System) ---
