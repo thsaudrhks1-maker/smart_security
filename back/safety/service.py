@@ -1,8 +1,11 @@
 from back.safety.repository import SafetyRepository
 from back.database import execute
-from back.safety.schema import ZoneCreate, ZoneUpdate, DailyDangerZoneCreate
+from back.safety.schema import ZoneCreate, ZoneUpdate, DailyDangerZoneCreate, DangerZoneReportCreate
 from datetime import datetime
 from typing import List, Dict, Any
+from fastapi import UploadFile
+from pathlib import Path
+import shutil
 
 class SafetyService:
     @staticmethod
@@ -124,3 +127,77 @@ class SafetyService:
             
         await SafetyRepository.bulk_create_zones(new_zones)
         return len(new_zones)
+
+    # ==========================================
+    # 근로자 위험 신고 (Worker Report System)
+    # ==========================================
+    
+    @staticmethod
+    async def create_danger_zone_report(data: DangerZoneReportCreate, reported_by: int):
+        """근로자 위험 신고 생성"""
+        try:
+            target_date = datetime.strptime(data.date, "%Y-%m-%d").date()
+        except ValueError:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="date must be YYYY-MM-DD")
+        
+        report_data = {
+            "zone_id": data.zone_id,
+            "date": target_date,
+            "risk_type": data.risk_type,
+            "description": data.description.strip(),
+            "reported_by": reported_by
+        }
+        # BaseResponseSchema가 자동으로 날짜 변환하므로 수동 변환 불필요
+        return await SafetyRepository.create_danger_zone_report(report_data)
+    
+    @staticmethod
+    async def save_report_image(report_id: int, file: UploadFile, uploaded_by: int):
+        """신고 사진 저장 (파일 + DB)"""
+        # 1. DB에 메타데이터 먼저 저장
+        image_record = await SafetyRepository.create_danger_zone_image(
+            danger_zone_id=report_id,
+            image_name="",  # 임시, 아래에서 업데이트
+            uploaded_by=uploaded_by
+        )
+        
+        # 2. 파일명 생성: danger_zone_{report_id}_{image_id}.jpg
+        file_ext = Path(file.filename).suffix.lower()
+        image_name = f"danger_zone_{report_id}_{image_record['id']}{file_ext}"
+        
+        # 3. 파일 저장
+        upload_dir = Path("back/static/danger_zone_images")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        file_path = upload_dir / image_name
+        
+        with file_path.open("wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # 4. DB 업데이트 (파일명)
+        await execute(
+            "UPDATE danger_zone_images SET image_name = :image_name WHERE id = :image_id",
+            {"image_name": image_name, "image_id": image_record['id']}
+        )
+        
+        image_record['image_name'] = image_name
+        return image_record
+    
+    @staticmethod
+    async def get_pending_reports(project_id: int = None):
+        """대기 중인 신고 목록"""
+        return await SafetyRepository.get_pending_reports(project_id)
+    
+    @staticmethod
+    async def approve_report(report_id: int, approved_by: int):
+        """신고 승인"""
+        return await SafetyRepository.approve_report(report_id, approved_by)
+    
+    @staticmethod
+    async def reject_report(report_id: int, approved_by: int):
+        """신고 반려"""
+        return await SafetyRepository.reject_report(report_id, approved_by)
+    
+    @staticmethod
+    async def get_report_images(report_id: int):
+        """신고 사진 목록"""
+        return await SafetyRepository.get_report_images(report_id)

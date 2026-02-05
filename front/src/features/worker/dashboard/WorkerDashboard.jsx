@@ -22,6 +22,7 @@ import {
   WorkDetailModal, RiskDetailModal, NoticeModal, 
   EmergencyAlertModal, SafetyInfoModal 
 } from './DashboardModals';
+import DangerReportModal from './DangerReportModal';
 
 const STORAGE_SHOW_MAP = 'worker_home_show_map';
 const STORAGE_MAP_EXPANDED = 'worker_home_map_expanded';
@@ -41,6 +42,8 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   // 모달 상태
   const [activeModal, setActiveModal] = useState(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedZoneForReport, setSelectedZoneForReport] = useState(null);
 
   // 홈 지도 상태
   const [showMapOnHome, setShowMapOnHome] = useState(() => {
@@ -97,6 +100,22 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
   const filteredZones = selectedLevel === 'ALL' 
     ? allZones 
     : allZones.filter(z => z.level === selectedLevel);
+
+  // Zone 클릭 핸들러 (위험 신고)
+  const handleZoneClick = (zone) => {
+    setSelectedZoneForReport(zone);
+    setShowReportModal(true);
+  };
+
+  // 신고 성공 후 데이터 새로고침
+  const handleReportSuccess = async () => {
+    try {
+      const risksRes = await workerApi.getAllProjectRisks();
+      setMyRisks(Array.isArray(risksRes) ? risksRes : []);
+    } catch (err) {
+      console.error('위험 구역 재로드 실패:', err);
+    }
+  };
 
   const handleViewLocation = (risk) => {
     navigate('/worker/safety', { state: { focusZone: risk } });
@@ -219,6 +238,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
                       risks={myRisks}
                       height="280px"
                       showLabels={true}
+                      onZoneClick={handleZoneClick}
                     />
                   </div>
                 </div>
@@ -231,6 +251,7 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
                   risks={myRisks}
                   height="240px"
                   showLabels={true}
+                  onZoneClick={handleZoneClick}
                 />
               )}
             </div>
@@ -269,6 +290,15 @@ const WorkerDashboard = ({ isAdminView = false, onBackToAdmin = null }) => {
       <EmergencyAlertModal isOpen={activeModal === 'alert'} onClose={closeModal} alert={dashboardInfo?.emergency_alert} />
       <SafetyInfoModal isOpen={activeModal === 'safety'} onClose={closeModal} safetyInfos={dashboardInfo?.safety_infos} />
       <WorkerSettingsModal isOpen={activeModal === 'settings'} onClose={closeModal} showMapOnHome={showMapOnHome} mapExpandedByDefault={mapExpandedByDefault} onShowMapOnHomeChange={saveShowMapOnHome} onMapExpandedByDefaultChange={saveMapExpandedByDefault} />
+      
+      {/* 위험 신고 모달 */}
+      <DangerReportModal 
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        zone={selectedZoneForReport}
+        projectId={projectId}
+        onSuccess={handleReportSuccess}
+      />
 
     </div>
   );

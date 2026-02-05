@@ -149,3 +149,42 @@
    - SafetyMap: 근로자용 지도 상단에 층 선택 버튼 바 추가
    - 선택된 층에 해당하는 구역(Zone)만 필터링하여 지도에 표시 (층별 독립적 관제 가능)
    - UniversalBlueprintMap: 층별 데이터 필터링 연동 최적화
+
+===
+[오후 추가 작업 3] - 근로자 위험 신고 시스템 구현 (2026-02-05)
+
+1. DB 스키마 확장 (마이그레이션 5caba27cd3b8)
+   - daily_danger_zones 테이블 확장: status, reported_by, approved_by, approved_at, created_at 컬럼 추가
+   - danger_zone_images 테이블 신규 생성: 위험 구역 사진 참조 테이블 (1:N 관계)
+   - 파일명 규칙: danger_zone_{danger_zone_id}_{image_id}.jpg
+   - 저장 경로: back/static/danger_zone_images/
+
+2. Backend API 구축 (Package by Feature)
+   - SafetyRepository: 신고 생성, 사진 메타데이터 저장, 대기 신고 조회, 승인/반려 메서드 추가
+   - SafetyService: 파일 업로드 처리 및 비즈니스 로직 구현
+   - SafetyRouter: 6개 API 엔드포인트 추가
+     POST   /safety/reports                  # 신고 생성 (status='PENDING')
+     POST   /safety/reports/{id}/images      # 사진 업로드
+     GET    /safety/reports/pending          # 대기 중인 신고 목록
+     POST   /safety/reports/{id}/approve     # 승인 (PENDING → APPROVED)
+     POST   /safety/reports/{id}/reject      # 반려 (PENDING → REJECTED)
+     GET    /safety/reports/{id}/images      # 사진 목록 조회
+
+3. Frontend UI 구현
+   - DangerReportModal.jsx 신규 생성: 근로자 위험 신고 모달
+     - 위험 유형 선택 (낙하물, 중장비, 화재, 감전, 붕괴, 기타)
+     - 상세 설명 입력 (필수)
+     - 사진 첨부 (최대 5장, 다중 업로드 지원)
+   - WorkerDashboard.jsx: Zone 클릭 이벤트 연결 및 신고 모달 통합
+   - UniversalBlueprintMap: onZoneClick prop 활용하여 근로자 Zone 클릭 시 신고 모달 팝업
+
+4. 신고 플로우
+   - 근로자: Zone 클릭 → 신고 모달 → 위험 유형/설명/사진 입력 → 신고 접수 (status='PENDING')
+   - 시스템: 주황색 테두리로 표시 (승인 대기)
+   - 관리자: 신고 목록 조회 → 승인/반려 처리
+   - 승인 시: PENDING → APPROVED (빨간색 테두리로 변경)
+
+[다음 작업]
+1. 관리자 신고 승인 UI 구현 (매니저 앱)
+2. 신고 상태별 지도 색상 구분 (PENDING: 주황, APPROVED: 빨강)
+3. 3D 뷰 (단면도) UI 컴포넌트 개발

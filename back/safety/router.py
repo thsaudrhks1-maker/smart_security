@@ -1,7 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends
-from back.safety.schema import ZoneRead, ZoneCreate, ZoneUpdate, DailyDangerZoneCreate, DailyDangerZoneRead
+from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form
+from back.safety.schema import (
+    ZoneRead, ZoneCreate, ZoneUpdate, 
+    DailyDangerZoneCreate, DailyDangerZoneRead,
+    DangerZoneReportCreate, DangerZoneReportRead, DangerZoneImageRead
+)
 from back.safety.service import SafetyService
+from back.auth.dependencies import get_current_user
+from back.auth.model import User
 from typing import List, Optional
+import shutil
+from pathlib import Path
 
 router = APIRouter(prefix="/safety", tags=["safety"])
 
@@ -64,3 +72,81 @@ async def generate_site_grid(site_id: int):
     if count is None:
         raise HTTPException(status_code=404, detail="사이트 또는 프로젝트 정보를 찾을 수 없습니다.")
     return {"status": "success", "generated_count": count}
+
+
+# ==========================================
+# 근로자 위험 신고 (Worker Report System)
+# ==========================================
+
+@router.post("/reports", response_model=DangerZoneReportRead, status_code=201)
+async def create_danger_report(
+    body: DangerZoneReportCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """근로자 위험 신고 생성 (status='PENDING')"""
+    report = await SafetyService.create_danger_zone_report(body, current_user.id)
+    return report
+
+
+@router.post("/reports/{report_id}/images", status_code=201)
+async def upload_report_image(
+    report_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """신고 사진 업로드"""
+    # 파일 확장자 확인
+    allowed_extensions = [".jpg", ".jpeg", ".png", ".gif"]
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
+    
+    # 사진 저장 (파일명: danger_zone_{report_id}_{image_id}.jpg)
+    image_record = await SafetyService.save_report_image(report_id, file, current_user.id)
+    
+    return {
+        "status": "success",
+        "image_id": image_record["id"],
+        "image_name": image_record["image_name"]
+    }
+
+
+@router.get("/reports/pending", response_model=List[DangerZoneReportRead])
+async def get_pending_reports(
+    project_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """대기 중인 신고 목록 조회 (관리자용)"""
+    reports = await SafetyService.get_pending_reports(project_id)
+    return reports
+
+
+@router.post("/reports/{report_id}/approve", response_model=DangerZoneReportRead)
+async def approve_report(
+    report_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """신고 승인 (PENDING → APPROVED)"""
+    report = await SafetyService.approve_report(report_id, current_user.id)
+    if not report:
+        raise HTTPException(status_code=404, detail="신고를 찾을 수 없습니다.")
+    return report
+
+
+@router.post("/reports/{report_id}/reject", response_model=DangerZoneReportRead)
+async def reject_report(
+    report_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """신고 반려 (PENDING → REJECTED)"""
+    report = await SafetyService.reject_report(report_id, current_user.id)
+    if not report:
+        raise HTTPException(status_code=404, detail="신고를 찾을 수 없습니다.")
+    return report
+
+
+@router.get("/reports/{report_id}/images", response_model=List[DangerZoneImageRead])
+async def get_report_images(report_id: int):
+    """신고 사진 목록 조회"""
+    images = await SafetyService.get_report_images(report_id)
+    return images

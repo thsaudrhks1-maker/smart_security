@@ -120,3 +120,96 @@ class SafetyRepository:
             ORDER BY z.id
         """
         return await fetch_all(sql, {"project_id": project_id})
+
+    # ==========================================
+    # 근로자 위험 신고 (Worker Report System)
+    # ==========================================
+    
+    @staticmethod
+    async def create_danger_zone_report(data: Dict[str, Any]) -> Dict[str, Any]:
+        """근로자가 위험 구역 신고 (status='PENDING')"""
+        sql = """
+            INSERT INTO daily_danger_zones (
+                zone_id, date, risk_type, description, 
+                status, reported_by, created_at
+            ) VALUES (
+                :zone_id, :date, :risk_type, :description, 
+                'PENDING', :reported_by, NOW()
+            ) RETURNING *
+        """
+        return await insert_and_return(sql, data)
+    
+    @staticmethod
+    async def create_danger_zone_image(danger_zone_id: int, image_name: str, uploaded_by: int) -> Dict[str, Any]:
+        """위험 구역 사진 메타데이터 저장"""
+        sql = """
+            INSERT INTO danger_zone_images (danger_zone_id, image_name, uploaded_by, uploaded_at)
+            VALUES (:danger_zone_id, :image_name, :uploaded_by, NOW())
+            RETURNING *
+        """
+        return await insert_and_return(sql, {
+            "danger_zone_id": danger_zone_id,
+            "image_name": image_name,
+            "uploaded_by": uploaded_by
+        })
+    
+    @staticmethod
+    async def get_pending_reports(project_id: int = None) -> List[Dict[str, Any]]:
+        """대기 중인 신고 목록 조회 (관리자용)"""
+        filter_clause = ""
+        params = {}
+        if project_id:
+            filter_clause = "AND z.project_id = :project_id"
+            params["project_id"] = project_id
+        
+        sql = f"""
+            SELECT 
+                ddz.*,
+                z.name as zone_name,
+                z.level as zone_level,
+                u.name as reporter_name
+            FROM daily_danger_zones ddz
+            JOIN zones z ON ddz.zone_id = z.id
+            LEFT JOIN users u ON ddz.reported_by = u.id
+            WHERE ddz.status = 'PENDING' {filter_clause}
+            ORDER BY ddz.created_at DESC
+        """
+        return await fetch_all(sql, params)
+    
+    @staticmethod
+    async def approve_report(danger_zone_id: int, approved_by: int) -> Dict[str, Any]:
+        """신고 승인 (PENDING → APPROVED)"""
+        sql = """
+            UPDATE daily_danger_zones 
+            SET status = 'APPROVED', approved_by = :approved_by, approved_at = NOW()
+            WHERE id = :danger_zone_id
+            RETURNING *
+        """
+        return await insert_and_return(sql, {
+            "danger_zone_id": danger_zone_id,
+            "approved_by": approved_by
+        })
+    
+    @staticmethod
+    async def reject_report(danger_zone_id: int, approved_by: int) -> Dict[str, Any]:
+        """신고 반려 (PENDING → REJECTED)"""
+        sql = """
+            UPDATE daily_danger_zones 
+            SET status = 'REJECTED', approved_by = :approved_by, approved_at = NOW()
+            WHERE id = :danger_zone_id
+            RETURNING *
+        """
+        return await insert_and_return(sql, {
+            "danger_zone_id": danger_zone_id,
+            "approved_by": approved_by
+        })
+    
+    @staticmethod
+    async def get_report_images(danger_zone_id: int) -> List[Dict[str, Any]]:
+        """특정 신고의 사진 목록 조회"""
+        sql = """
+            SELECT * FROM danger_zone_images 
+            WHERE danger_zone_id = :danger_zone_id
+            ORDER BY uploaded_at
+        """
+        return await fetch_all(sql, {"danger_zone_id": danger_zone_id})

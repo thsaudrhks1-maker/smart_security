@@ -50,19 +50,6 @@ class SafetyLog(Base):
 
     plan = relationship("DailyWorkPlan", back_populates="logs")
 
-class DailyWorkPlanLog(Base):
-    """일일 작업 계획 로그 (Daily Work Plan Log) - 작업 진행 상태 기록"""
-    __tablename__ = "daily_work_plan_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    plan_id = Column(Integer, ForeignKey("daily_work_plans.id", ondelete="CASCADE"), nullable=False)
-    
-    timestamp = Column(DateTime, nullable=False, default=datetime.now, comment="기록 시각")
-    status = Column(String, nullable=False, comment="NOT_STARTED, IN_PROGRESS, PAUSED, COMPLETED, CANCELLED")
-    comment = Column(Text, nullable=True, comment="작업 기록 메모")
-
-    plan = relationship("DailyWorkPlan", back_populates="logs")
-
 class DailyDangerZone(Base):
     """일일 변동 위험 구역 (Daily Active Danger Zone) - 중장비, 화재 등 일시적 위험"""
     __tablename__ = "daily_danger_zones"
