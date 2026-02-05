@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const ZONE_SQUARE_HALF = 0.00012;
@@ -79,9 +79,36 @@ const WorkerWorkSiteMap = ({ plans = [], risks = [], allZones = [], height = 240
               .filter(Boolean)
               .join(' · ');
 
+            const labelContent = (
+              <div style={{ 
+                  background: 'rgba(255, 255, 255, 0.95)', 
+                  border: `1.5px solid ${isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#94a3b8'}`, 
+                  borderRadius: '6px', padding: '3px 6px', 
+                  fontSize: '0.7rem', 
+                  fontWeight: '800', 
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.1)', 
+                  pointerEvents: 'none', 
+                  zIndex: 1000,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+              }}>
+                   <span style={{ 
+                       background: isOverlap ? '#ef4444' : hasWork ? '#3b82f6' : '#64748b', 
+                       color: 'white', padding: '1px 3px', borderRadius: '3px', fontSize: '0.65rem' 
+                   }}>
+                       #{zone.id}
+                   </span>
+                   <span>{zone.name}</span>
+              </div>
+            );
+
             return (
               <Polygon key={zone.id} positions={positions} pathOptions={pathOptions}>
                 <Popup>{popupText}</Popup>
+                <Tooltip permanent direction="center" className="zone-label-tooltip" opacity={1} offset={[0, 0]}>
+                  {labelContent}
+                </Tooltip>
               </Polygon>
             );
           })}

@@ -6,9 +6,12 @@ import {
   Grid, Database, LayoutDashboard, FileText, 
   Users, Briefcase, ShieldAlert, Settings, X, MapPin
 } from 'lucide-react';
-import apiClient from '../../../api/client'; // 경로 수정
-import { mapApi } from '../../../api/mapApi'; // 경로 수정
-import { useAuth } from '../../../context/AuthContext'; // 경로 수정
+import apiClient from '../../../api/client';
+import { mapApi } from '../../../api/mapApi';
+import { safetyApi } from '../../../api/safetyApi';
+import { workApi } from '../../../api/workApi';
+import { useAuth } from '../../../context/AuthContext';
+import { ZoneSquareStyled } from '../../manager/work/ZoneSquareLayer';
 
 // --- Sub Components ---
 
@@ -165,7 +168,9 @@ const SafetyControlCenter = () => {
   const [summary, setSummary] = useState({ total_workers: 0, today_plans: 0, active_equipment: 0, safety_accident_free_days: 0 });
   const [plans, setPlans] = useState([]);
   const [risks, setRisks] = useState([]);
+  const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showWorkerLabels, setShowWorkerLabels] = useState(true);
 
   // UI States
   const [showWorkerModal, setShowWorkerModal] = useState(false);
@@ -180,14 +185,17 @@ const SafetyControlCenter = () => {
 
   const loadDashboardData = async () => {
     try {
-        const sumRes = await apiClient.get('/dashboard/summary');
+        const [sumRes, planRes, riskRes, zoneRes] = await Promise.all([
+            apiClient.get('/dashboard/summary'),
+            workApi.getPlans({ date: new Date().toISOString().split('T')[0] }),
+            mapApi.getRisks(),
+            safetyApi.getZones()
+        ]);
+        
         setSummary(sumRes.data || { total_workers: 0, today_plans: 0, active_equipment: 0, safety_accident_free_days: 0 });
-        
-        const planRes = await apiClient.get('/work/plans');
-        setPlans(planRes.data ? planRes.data.filter(p => p.status !== 'DONE') : []);
-        
-        const riskRes = await mapApi.getRisks();
+        setPlans(planRes || []);
         setRisks(riskRes || []);
+        setZones(zoneRes || []);
     } catch (error) {
         console.error("Dashboard data load failed:", error);
     } finally {
@@ -226,16 +234,57 @@ const SafetyControlCenter = () => {
 
       {/* Map Section */}
       {showMap && (
-        <div style={{ height: '450px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', position: 'relative', marginBottom: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}>
-          <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '100%', width: '100%' }}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" opacity={0.20} />
-            {risks.filter(r => r.lat && r.lng).map(r => (
-                <Circle key={r.id} center={[r.lat, r.lng]} radius={r.radius || 20} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.2 }}>
-                     <Popup>
-                        <strong>{r.name}</strong><br/>{r.type}
-                     </Popup>
-                </Circle>
-            ))}
+        <div style={{ height: '520px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e2e8f0', position: 'relative', marginBottom: '1.5rem', boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)' }}>
+          <MapContainer center={[37.5665, 126.9780]} zoom={17} style={{ height: '100%', width: '100%', background: '#f8fafc' }}>
+            <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" opacity={0.20} />
+            
+            {/* 구역 그리드 및 작업자 정보 */}
+            {zones.filter(z => z.lat && z.lng).map(zone => {
+                const zonePlans = plans.filter(p => p.zone_id === zone.id);
+                const hasWork = zonePlans.length > 0;
+                const hasDanger = risks.some(r => r.zone_id === zone.id); // 위험 목록 연동 여부 확인 필요하나 여기서는 단순 ID 비교
+                const isOverlap = hasWork && hasDanger;
+
+                const pathOptions = isOverlap
+                    ? { fillColor: '#3b82f6', fillOpacity: 0.7, color: '#ef4444', weight: 4 }
+                    : hasWork
+                        ? { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
+                        : hasDanger
+                            ? { fillColor: '#ef4444', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 }
+                            : { fillColor: '#ffffff', fillOpacity: 0.5, color: 'rgba(0,0,0,0.2)', weight: 1.5 };
+
+                const labelContent = showWorkerLabels && (
+                    <div style={{ 
+                        background: 'rgba(255, 255, 255, 0.98)', 
+                        border: `1.5px solid ${hasWork ? '#3b82f6' : '#94a3b8'}`, 
+                        borderRadius: '6px', padding: '4px 8px', 
+                        fontSize: '0.75rem', fontWeight: '900', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', 
+                        pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '90px'
+                    }}>
+                        <div style={{ borderBottom: hasWork ? '1px solid #eee' : 'none', pb: '2px', mb: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ background: hasWork ? '#3b82f6' : '#64748b', color: 'white', padding: '0 4px', borderRadius: '3px', fontSize: '0.65rem' }}>#{zone.id}</span>
+                            <span>{zone.name}</span>
+                        </div>
+                        {hasWork && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2px', justifyContent: 'center' }}>
+                                {zonePlans.flatMap(p => p.allocations || []).map((a, idx) => (
+                                    <span key={idx} style={{ color: '#1e40af', background: '#eff6ff', padding: '1px 4px', borderRadius: '3px', fontSize: '0.65rem' }}>{a.worker_name}</span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+
+                return (
+                    <ZoneSquareStyled
+                        key={zone.id}
+                        zone={zone}
+                        pathOptions={pathOptions}
+                        tooltipContent={labelContent}
+                        tooltipOptions={{ permanent: true, direction: 'center', opacity: 1, offset: [0, 0] }}
+                    />
+                );
+            })}
           </MapContainer>
           
           <button 

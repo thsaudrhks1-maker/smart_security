@@ -1,5 +1,5 @@
 import React from 'react';
-import { Polygon, Popup } from 'react-leaflet';
+import { Polygon, Popup, Tooltip } from 'react-leaflet';
 
 /**
  * 좌표를 기준으로 정사각형 구역 컴포넌트.
@@ -43,7 +43,7 @@ export function ZoneSquare({ zone, fillColor = '#ffffff', fillOpacity = 0.55, st
 /**
  * pathOptions만 넘겨서 구역 사각형 그리기 (일일 작업 계획 등에서 색상 동적 지정용).
  */
-export function ZoneSquareStyled({ zone, pathOptions = {}, popupContent }) {
+export function ZoneSquareStyled({ zone, pathOptions = {}, popupContent, tooltipContent, tooltipOptions = {} }) {
   if (zone.lat == null || zone.lng == null) return null;
   const positions = getZoneSquarePositions(Number(zone.lat), Number(zone.lng));
   const defaultPath = {
@@ -57,6 +57,11 @@ export function ZoneSquareStyled({ zone, pathOptions = {}, popupContent }) {
   return (
     <Polygon positions={positions} pathOptions={merged}>
       {popupContent != null && <Popup>{popupContent}</Popup>}
+      {tooltipContent != null && (
+        <Tooltip {...tooltipOptions}>
+          {tooltipContent}
+        </Tooltip>
+      )}
     </Polygon>
   );
 }

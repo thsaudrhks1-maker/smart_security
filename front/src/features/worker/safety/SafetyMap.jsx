@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, Circle, SVGOverlay, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, SVGOverlay, Tooltip, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/WorkerDashboard.css';
-import { mapApi } from '../../../api/mapApi'; // mapApi 사용
+import { mapApi } from '../../../api/mapApi';
+import { safetyApi } from '../../../api/safetyApi';
+import { ZoneSquareStyled } from '../../manager/work/ZoneSquareLayer';
 
 // --- 아이콘 리소스 설정 ---
 const createIcon = (colorUrl) => new L.Icon({
@@ -62,6 +64,7 @@ const SafetyMap = () => {
     // --- Data State (from Smart Security Backend) ---
     const [risks, setRisks] = useState([]);
     const [workers, setWorkers] = useState([]);
+    const [zones, setZones] = useState([]);
     const [alertLog, setAlertLog] = useState([]);
 
     // --- 1. Initial Data Load ---
@@ -71,15 +74,12 @@ const SafetyMap = () => {
 
     const loadInitialData = async () => {
         try {
-            // Risks
-            const riskData = await mapApi.getRisks();
-            setRisks(riskData);
-            
-            // Zones (추가 예정)
-            // const zoneRes = await apiClient.get('/safety/zones');
-            
-            // Blueprint (도면 정보)
-            // const bpRes = await apiClient.get('/map/blueprint');
+            const [riskData, zoneData] = await Promise.all([
+                mapApi.getRisks(),
+                safetyApi.getZones()
+            ]);
+            setRisks(riskData || []);
+            setZones(zoneData || []);
         } catch (error) {
             console.error("데이터 로딩 실패:", error);
         }
@@ -233,6 +233,21 @@ const SafetyMap = () => {
                       </SVGOverlay>
                   )}
 
+                  {/* 구역 그리드 */}
+                  {zones.filter(z => z.lat && z.lng).map(zone => (
+                      <ZoneSquareStyled
+                          key={`zone-${zone.id}`}
+                          zone={zone}
+                          pathOptions={{ fillColor: '#ffffff', fillOpacity: 0.1, color: 'rgba(0,0,0,0.2)', weight: 1 }}
+                          tooltipContent={(
+                              <div style={{ background: 'rgba(255,255,255,0.8)', padding: '2px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', color: '#666' }}>
+                                  #{zone.id} {zone.name}
+                              </div>
+                          )}
+                          tooltipOptions={{ permanent: true, direction: 'center', opacity: 0.7 }}
+                      />
+                  ))}
+
                   {/* 편집 핸들 */}
                   {isEditMode && (
                       <Marker 
@@ -277,13 +292,18 @@ const SafetyMap = () => {
                       </React.Fragment>
                   ))}
 
-                  {/* 작업자 */}
+                   {/* 작업자 */}
                   {workers.map(w => (
                       <Marker
                           key={w.id}
                           position={[w.lat, w.lng]}
                           icon={w.status === 'DANGER' ? icons.danger : icons.safe}
                       >
+                          <Tooltip permanent direction="top" offset={[0, -10]} opacity={0.9}>
+                               <div style={{ background: 'white', padding: '2px 6px', borderRadius: '4px', border: `1.5px solid ${w.status === 'DANGER' ? 'red' : 'green'}`, fontSize: '11px', fontWeight: 'bold' }}>
+                                   {w.name}
+                               </div>
+                          </Tooltip>
                           <Popup>
                               <div style={{color:'black'}}>
                                   <strong>{w.name}</strong> ({w.role})<br/>
