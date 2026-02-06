@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './LocationPicker.css';
 
-// Leaflet 기본 마커 ?�이�??�정 (?�수)
+// Leaflet 기본 마커 아이콘 설정 (필수)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -13,7 +13,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// ????�코??(좌표 ??주소, Nominatim)
+// 리버스 지오코드 (좌표 → 주소, Nominatim)
 async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(
@@ -27,7 +27,7 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-// 지???�릭 ?�벤???�들??컴포?�트 (?�릭 ??????�코????주소까�? 콜백)
+// 지도 클릭 이벤트를 듣는 컴포넌트 (클릭 시 지오코드로 주소까지 콜백)
 function LocationMarker({ onLocationSelect }) {
   const [position, setPosition] = useState(null);
 
@@ -50,14 +50,14 @@ function LocationMarker({ onLocationSelect }) {
 const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [center, setCenter] = useState([
-    initialLat || 37.5665, // 기본�? ?�울 ?�청
+    initialLat || 37.5665, // 기본값: 서울 시청
     initialLng || 126.978,
   ]);
   const [selectedCoords, setSelectedCoords] = useState(
     initialLat && initialLng ? [initialLat, initialLng] : null
   );
 
-  // 미터(m) ?�위�??�경??degree)�?변?�하�??��? 격자???�성
+  // 미터(m) 단위를 각도(degree)로 변환하여 격자를 생성
   const getDetailedGrid = () => {
     if (!selectedCoords || !gridConfig || !gridConfig.grid_rows || !gridConfig.grid_cols) return { boundary: null, lines: [] };
     
@@ -83,7 +83,7 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
     ];
 
     const lines = [];
-    // ?�로??(Vertical)
+    // 세로선 (Vertical)
     for (let i = 0; i <= grid_cols; i++) {
       const lng = left + (i * grid_spacing * lngM);
       lines.push([[bottom, lng], [top, lng]]);
@@ -99,7 +99,7 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
 
   const { boundary, lines } = getDetailedGrid();
 
-  // ?�치 ?�택 ?�들??(주소 ?�으�??�께 ?�달: 지???�릭 ??????�코??결과)
+  // 위치 선택 핸들러 (주소 함께 전달: 지도 클릭 또는 지오코드 결과)
   const handleLocationSelect = (lat, lng, address = null) => {
     setSelectedCoords([lat, lng]);
     if (onLocationSelect) {
@@ -107,11 +107,11 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
     }
   };
 
-  // 주소 검??(Nominatim API ?�용 - 무료, 검??결과 주소�?그�?�?부모에 ?�달)
+  // 주소 검색 (Nominatim API 사용 - 무료, 검색 결과 주소를 그대로 부모에 전달)
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
-      alert('주소�??�력?�주?�요.');
+      alert('주소를 입력해주세요.');
       return;
     }
 
@@ -132,11 +132,11 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
           onLocationSelect(parseFloat(lat), parseFloat(lon), display_name || null);
         }
       } else {
-        alert('주소�?찾을 ???�습?�다. ??구체?�으�??�력?�주?�요.');
+        alert('주소를 찾을 수 없습니다. 더 구체적으로 입력해주세요.');
       }
     } catch (error) {
-      console.error('주소 검???�패:', error);
-      alert('주소 검??�??�류가 발생?�습?�다.');
+      console.error('주소 검색 실패:', error);
+      alert('주소 검색 중 오류가 발생했습니다.');
     }
   };
 
@@ -153,11 +153,12 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
               handleSearch(e);
             }
           }}
-          placeholder="주소�?검?�하거나 지?��? ?�릭?�세??(?? ?�울??강남�???��??"
+          placeholder="주소를 검색하거나 지도를 클릭하세요 (예: 서울시 강남구 테헤란로)"
           className="search-input"
         />
         <button type="button" className="search-btn" onClick={handleSearch}>
-          ?�� 검??        </button>
+          위치 검색
+        </button>
       </div>
 
       <MapContainer
@@ -174,7 +175,7 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
         <LocationMarker onLocationSelect={handleLocationSelect} />
         {selectedCoords && <Marker position={selectedCoords} />}
         
-        {/* 그리???�리�?(?�세 격자) */}
+        {/* 그리드 렌더링 (상세 격자) */}
         {boundary && (
           <>
             <Polygon 
@@ -204,21 +205,22 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
 
       {selectedCoords && (
         <div className="selected-address">
-          <strong>?�� ?�택??좌표:</strong>
+          <strong>현장 선택된 좌표:</strong>
           <br />
-          ?�도: {selectedCoords[0].toFixed(6)}, 경도: {selectedCoords[1].toFixed(6)}
+          위도: {selectedCoords[0].toFixed(6)}, 경도: {selectedCoords[1].toFixed(6)}
           {gridConfig && (
             <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#1e40af', background: '#eff6ff', padding: '8px', borderRadius: '6px' }}>
-              ?�� ?�상 ?�기: ??<b>{(gridConfig.grid_cols * gridConfig.grid_spacing).toFixed(0)}m</b> x <b>{(gridConfig.grid_rows * gridConfig.grid_spacing).toFixed(0)}m</b>
+              현장 예상 크기: <b>{(gridConfig.grid_cols * gridConfig.grid_spacing).toFixed(0)}m</b> x <b>{(gridConfig.grid_rows * gridConfig.grid_spacing).toFixed(0)}m</b>
               <br/>
-              ?�이???�인?? <b>{gridConfig.grid_rows * gridConfig.grid_cols}�?/b>
+              타일 개수: <b>{gridConfig.grid_rows * gridConfig.grid_cols}</b>개
             </div>
           )}
         </div>
       )}
 
       <div className="map-hint">
-        ?�� ?�트: 지?��? ?�릭?�거??주소�?검?�하???�치�??�택?�세??      </div>
+        팁 힌트: 지도를 클릭하거나 주소를 검색하여 위치를 선택하세요
+      </div>
     </div>
   );
 };

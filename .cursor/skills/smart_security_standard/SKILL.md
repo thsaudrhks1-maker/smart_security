@@ -44,4 +44,3 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 - **중앙 집중식 관리**:
   - **백엔드**: `back/main.py`에서 `include_router(..., prefix="/api")`를 통해 일괄 적용한다. 개별 라우터 파일의 `prefix`에는 `/api`를 붙이지 않는다.
   - **프론트엔드**: `src/api/client.js`의 `baseURL`에 `/api`를 포함시킨다. 개별 API 라이브러리(예: `workApi.js`)에서는 `/api`를 생략하고 하위 경로만 작성한다.
-

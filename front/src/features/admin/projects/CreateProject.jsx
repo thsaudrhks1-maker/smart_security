@@ -10,7 +10,7 @@ import {
   Layers, ChevronDown, CheckCircle2, UserCheck, Wrench
 } from 'lucide-react';
 
-import CommonMap from '@/components/common/CommonMap';
+import LocationPicker from '@/components/common/LocationPicker';
 
 const CreateProject = () => {
   const navigate = useNavigate();
@@ -20,10 +20,19 @@ const CreateProject = () => {
   const [managerOptions, setManagerOptions] = useState([]);
   const [safetyManagerOptions, setSafetyManagerOptions] = useState([]);
   
-  // 폼 상태
+  // 오늘 날짜와 6개월 후 날짜 계산
+  const today = new Date();
+  const sixMonthsLater = new Date(today);
+  sixMonthsLater.setMonth(today.getMonth() + 6);
+  
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  // 폼 상태 (초기값 설정)
   const [formData, setFormData] = useState({
-    name: '',
-    budget: '',
+    name: '강남 테헤란로 데이터센터 신축공사',
+    budget: '50000000',
     client_id: '',
     constructor_id: '',
     manager_id: '',
@@ -31,8 +40,8 @@ const CreateProject = () => {
     location_address: '',
     lat: 37.5665,
     lng: 126.9780,
-    start_date: '',
-    end_date: '',
+    start_date: formatDate(today),
+    end_date: formatDate(sixMonthsLater),
     grid_cols: 5,
     grid_rows: 5,
     grid_spacing: 10,
@@ -75,12 +84,13 @@ const CreateProject = () => {
     }
   }, [formData.constructor_id, directInput.constructor]);
 
-  const handleMapClick = (latlng) => {
+  // LocationPicker에서 위치 선택 시 호출
+  const handleLocationSelect = (lat, lng, address) => {
     setFormData(prev => ({
       ...prev,
-      lat: latlng.lat,
-      lng: latlng.lng,
-      location_address: `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)} (선택된 좌표)`
+      lat,
+      lng,
+      location_address: address || `${lat.toFixed(6)}, ${lng.toFixed(6)} (선택된 좌표)`
     }));
   };
 
@@ -234,21 +244,24 @@ const CreateProject = () => {
 
         {/* Section 4: 위치 및 기간 */}
         <FormSection title="위치 및 기간" icon={<MapPin size={18} color="#ef4444" />}>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <Label>현장 주소</Label>
-            <Input 
-              placeholder="주소를 검색하거나 지도를 클릭하세요" 
-              value={formData.location_address}
-              onChange={e => setFormData({...formData, location_address: e.target.value})}
+          <div style={{ gridColumn: '1/-1' }}>
+            <Label>현장 위치 및 그리드 미리보기</Label>
+            <LocationPicker 
+              onLocationSelect={handleLocationSelect}
+              initialLat={formData.lat}
+              initialLng={formData.lng}
+              gridConfig={{
+                grid_rows: parseInt(formData.grid_rows) || 5,
+                grid_cols: parseInt(formData.grid_cols) || 5,
+                grid_spacing: parseInt(formData.grid_spacing) || 10
+              }}
             />
-          </div>
-          <div style={{ gridColumn: '1/-1', height: '350px' }}>
-             <CommonMap 
-               center={[formData.lat, formData.lng]} 
-               zoom={15}
-               onMapClick={handleMapClick}
-               markers={[{ lat: formData.lat, lng: formData.lng, title: '현장 위치' }]}
-             />
+            <div style={{ marginTop: '1rem', padding: '1rem', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+              <p style={{ fontSize: '0.9rem', color: '#1e40af', fontWeight: '700', margin: 0 }}>
+                <MapIcon size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                선택된 주소: {formData.location_address || '지도를 클릭하거나 주소를 검색하세요'}
+              </p>
+            </div>
           </div>
           <div>
             <Label>착공일</Label>
