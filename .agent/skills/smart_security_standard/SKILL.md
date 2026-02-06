@@ -53,3 +53,19 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 - **이유**: 시점의 일관성 유지, 비즈니스 로직에서의 시간 제어권 확보, 테스트 용이성을 위함이다.
 - **파이썬 기준**: `datetime.now()`를 사용하여 전달한다.
 
+## 4. 데이터베이스 구조 및 네이밍 표준 (Database Naming Standard)
+
+- **테이블 및 클래스 네이밍 컨벤션:** 데이터의 성격과 생명 주기에 따라 4가지 접두어를 사용하며, **파이썬 클래스명도 테이블명과 동일하게 `snake_case`로 작성**하여 1:1 매핑을 강제한다. (PascalCase 지양)
+  - `sys_`: 시스템 전역 기초 정보 (예: `class sys_users`)
+  - `project_`: 프로젝트 물리적 구조 및 소속 (예: `class project_master`)
+  - `content_`: 안전/작업 가이드 및 마스터 지식 (예: `class content_safety_gear`)
+  - `daily_`: 매일 발생하는 운영 데이터 (예: `class daily_attendance`)
+
+### 도메인별 매핑 테이블 가이드
+| 도메인 | 테이블명 기준 |
+| :--- | :--- |
+| **SYS** | `sys_users`, `sys_companies`, `sys_emergency_alerts` |
+| **PROJECT** | `project_master`, `project_sites`, `project_zones`, `project_members`, `project_companies` |
+| **CONTENT** | `content_work_templates`, `content_safety_gear`, `content_work_gear_map` |
+| **DAILY** | `daily_attendance`, `daily_weather`, `daily_notices`, `daily_work_tasks`, `daily_worker_allocations`, `daily_safety_logs`, `daily_danger_zones`, `daily_danger_images`, `daily_violations` |
+

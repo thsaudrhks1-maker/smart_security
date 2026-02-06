@@ -1,81 +1,31 @@
-# Smart Security API (Force Reload)
-from fastapi import FastAPI, Depends
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.ext.asyncio import AsyncSession
+import os
 
-from back.database import Base, engine, get_db
-import asyncio
-
-# 모듈별 라우터 임포트
-# 모듈별 라우터 임포트
-from back.auth.router import router as auth_router
+# [Standard] 새 도메인 라우터 임포트
+from back.sys.router import router as sys_router
 from back.project.router import router as project_router
-from back.map.router import router as map_router, simulate_worker_movement
-from back.work.router import router as work_router
-from back.company.router import router as company_router
-from back.safety.router import router as safety_router
-from back.dashboard.router import router as dashboard_router
-from back.worker.router import router as worker_router
-from back.admin.router import router as admin_router
-from back.manager.router import router as manager_router # [NEW]
-from back.attendance.router import router as attendance_router # [NEW]
-from back.notice.router import router as notice_router
+from back.content.router import router as content_router
+from back.daily.router import router as daily_router
 
-app = FastAPI(title="Smart Security AI API")
+app = FastAPI(title="Smart Security Standard API")
 
-# CORS 설정 (더욱 관대한 설정으로 교체)
-origins = [
-    "http://localhost:3500",
-    "http://127.0.0.1:3500",
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:8500",
-]
-
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3500", "http://127.0.0.1:3500",
-        "http://localhost:3000", "http://127.0.0.1:3000",
-        "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:8500", "http://127.0.0.1:8500",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 도면 등 정적 파일 서빙 (업로드된 도면 이미지)
-import os as _os
-_static_path = _os.path.join(_os.path.dirname(__file__), "static")
-if _os.path.isdir(_static_path):
-    app.mount("/static", StaticFiles(directory=_static_path), name="static")
-
-# 라우터 등록 (/api 공통 접두어 부여로 프론트엔드 호환성 유지)
-app.include_router(auth_router, prefix="/api")
-app.include_router(project_router, prefix="/api")
-app.include_router(map_router, prefix="/api")
-app.include_router(work_router, prefix="/api")
-app.include_router(company_router, prefix="/api")
-app.include_router(safety_router, prefix="/api")
-app.include_router(dashboard_router, prefix="/api")
-app.include_router(worker_router, prefix="/api")
-app.include_router(admin_router, prefix="/api")
-app.include_router(manager_router, prefix="/api")
-app.include_router(attendance_router, prefix="/api")
-app.include_router(notice_router, prefix="/api")
-
-# --- Admin / Data Endpoints ---
-# --- Admin / Data Endpoints deleted (moved to back/admin/router.py) ---
-
-@app.on_event("startup")
-async def startup_event():
-    # 백그라운드에서 작업자 이동 시뮬레이션 시작
-    asyncio.create_task(simulate_worker_movement())
+# [Standard] 중앙 집중식 API 라우팅
+app.include_router(sys_router, prefix="/api/sys", tags=["System"])
+app.include_router(project_router, prefix="/api/project", tags=["Project"])
+app.include_router(content_router, prefix="/api/content", tags=["Content"])
+app.include_router(daily_router, prefix="/api/daily", tags=["Daily"])
 
 @app.get("/")
-def read_root():
-    print("ROOT ACCESSED - RELOAD CHECK")
-    return {"message": "Smart Safety Guardian API is running"}
+async def root():
+    return {"message": "Smart Security API is running with Global Standard Architecture"}

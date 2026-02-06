@@ -60,10 +60,8 @@ async def execute(query: str, params: dict = None):
     try:
         # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
         if params:
-            params = {
-                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                for k, v in params.items()
-            }
+            # PostgreSQL Array 연산을 위해 자동 직렬화 중단 (필요시 리포지토리에서 처리)
+            params = params
         
         async with engine.begin() as conn:
             result = await conn.execute(text(query), params or {})
@@ -77,10 +75,8 @@ async def fetch_one(query: str, params: dict = None) -> dict | None:
     try:
         # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
         if params:
-            params = {
-                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                for k, v in params.items()
-            }
+            # PostgreSQL Array 연산을 위해 자동 직렬화 중단 (필요시 리포지토리에서 처리)
+            params = params
         
         async with engine.connect() as conn:
             result = await conn.execute(text(query), params or {})
@@ -95,10 +91,8 @@ async def fetch_all(query: str, params: dict = None) -> list[dict]:
     try:
         # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
         if params:
-            params = {
-                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                for k, v in params.items()
-            }
+            # PostgreSQL Array 연산을 위해 자동 직렬화 중단 (필요시 리포지토리에서 처리)
+            params = params
         
         async with engine.connect() as conn:
             result = await conn.execute(text(query), params or {})
@@ -113,10 +107,8 @@ async def insert_and_return(query: str, params: dict = None) -> dict | None:
     try:
         # JSON 타입 파라미터 자동 직렬화 (list, dict → JSON 문자열)
         if params:
-            params = {
-                k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                for k, v in params.items()
-            }
+            # PostgreSQL Array 연산을 위해 자동 직렬화 중단 (필요시 리포지토리에서 처리)
+            params = params
         
         async with engine.begin() as conn:
             result = await conn.execute(text(query), params or {})

@@ -114,8 +114,9 @@ const CreateProject = () => {
       const managers = await getCompanyUsers(companyId, 'manager');
       setCandidateManagers(managers);
 
-      // 2. 안전관리자 후보 (role=safety_manager)
-      const safeties = await getCompanyUsers(companyId, 'safety_manager');
+      // 2. 안전관리자 후보 (role=safety_manager, manager 모두 가능하도록 확장)
+      // 백엔드 service.py에서 split(',') 처리가 되어 있으므로 콤마로 연결하여 요청
+      const safeties = await getCompanyUsers(companyId, 'safety_manager,manager');
       setCandidateSafeties(safeties);
     } catch (err) {
       console.error('담당자 목록 로드 실패', err);

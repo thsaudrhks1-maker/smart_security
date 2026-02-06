@@ -3,56 +3,34 @@ name: Database Lifecycle Manager
 description: DB 스키마 의존성 관리, 시딩(Seeding) 순서, 마이그레이션(Alembic) 워크플로우를 담당하는 스킬.
 ---
 
-# 데이터베이스 수명주기 관리 (Database Lifecycle Manager)
+# Database Lifecycle Manager
 
-## 1. 데이터베이스 계층 구조 (Dependency Hierarchy)
-*외래키(FK) 제약조건으로 인해 데이터 생성/삭제 순서를 엄격히 지켜야 합니다.*
+본 스킬은 프로젝트의 데이터베이스 생애주기 전반을 관리하며, 특히 상무님 등 주요 의사결정자에게 보여줄 데모 데이터를 생성하는 규칙을 정의합니다.
 
-### 생성 순서 (Creation Order)
-1. **Companies** (업체 정보 - 최상위)
-2. **Users** (로그인 계정)
-3. **Workers** (작업자 프로필 - User와 Company를 연결)
-4. **Projects** (프로젝트 정보) -> *Users/Companies와 N:N 관계 주의*
-5. **DailyWorkPlans** (작업 계획서)
-6. **WorkerAllocations** (작업자 배정 정보)
+## 1. 개요
+데이터베이스의 일관성을 유지하고, 개발 및 데모 환경에서 즉시 사용 가능한 풍부한 데이터를 공급하는 것을 목표로 합니다.
 
-### 삭제 순서 (Deletion Order)
-*반드시 생성의 역순으로 삭제해야 함.*
-1. `WorkerAllocations`, `Attendance`, `DailyDangerZone`
-2. `DailyWorkPlans`
-3. `ProjectMembers`, `ProjectParticipants` (관계 테이블)
-4. `Projects`
-5. `Workers`
-6. `Users`
-7. `Companies`
+## 2. 시딩(Seeding) 가이드
+- **위치:** 모든 테스트 및 시딩 스크립트는 루트 디렉토리의 `script_test/` 폴더 내에 보관합니다.
+- **실행 방식:** 패키지 모듈 방식 대신 직접 실행 가능하도록 `sys.path` 설정을 포함해야 합니다.
+- **데이터 품질:** 
+    - 실제 현장 용어 사용 (예: '작업1' 금지, '지하 1층 환기 덕트 설치' 권장)
+    - 시간 데이터는 항상 실행 시점의 `today()`와 동기화
+- **정합성 유지:** 데이터 삽입 전 반드시 `fix_sequence`를 통해 PostgreSQL ID 시퀀스를 초기화합니다.
 
-## 2. Alembic 마이그레이션 워크플로우
-*DB 스키마 변경 시 `Base.metadata.create_all` 사용 금지.*
+## 3. DB 설계 및 테이블 생성 원칙 (필독)
+에이전트는 새로운 기능을 구현하거나 스키마를 수정할 때 다음 원칙을 반드시 준수합니다.
+- **참조 테이블 원칙:** 다른 테이블의 ID(Foreign Key) 목록을 저장해야 할 경우, **JSON 배열을 사용하지 않고 반드시 다대다(M:N) 매핑 테이블을 생성**합니다. (예: `required_ppe`를 JSON으로 넣는 대신 `template_resource_map` 테이블 사용)
+- **JSONB 사용 제한:** JSON 데이터 타입은 다음의 경우에만 예외적으로 허용합니다.
+    1. 필드 구성이 극히 유동적인 메타데이터 (예: 센서 로그의 로우 데이터)
+    2. 단순 텍스트 설명의 집합 (참조가 필요 없는 단순 코멘트 리스트 등)
+- **데이터 무결성:** 참조 테이블 생성 시 반드시 `FOREIGN KEY` 제약 조건을 걸어 데이터 정합성을 보장합니다.
+- **정규화:** 제3정규화까지 고려하여 중복 데이터를 최소화합니다.
 
-1. **로컬 개발 (Migration 생성)**:
-   - 모델 코드를 수정한 후 반드시 로컬에서 마이그레이션 파일 생성.
-   - 명령어: `alembic revision --autogenerate -m "변경내용"`
-   - 생성된 `migrations/versions/*.py` 파일을 Git에 Commit & Push.
+## 3. 마이그레이션 규칙 (Alembic)
+- 스키마 변경 시 반드시 `alembic revision --autogenerate`를 통해 이력을 관리합니다.
+- 새로운 테이블 추가 시 `back/database.py`의 하단 모델 임포트 리스트에 반드시 등록해야 합니다.
 
-2. **서버 배포 (Migration 적용)**:
-   - 배포 스크립트(`deploy_server.ps1`)는 반드시 코드 Pull 이후에 `alembic upgrade head`를 실행해야 함.
-
-## 3. DB 초기화 및 시딩 (Reset & Seed)
-
-### A. 전체 초기화 (Full Reset)
-- **명령어**: `python reset_scenario.py`
-- **용도**: DB 스키마가 변경되었거나, 데이터를 완전히 깨끗한 상태에서 시작해야 할 때 사용.
-- **특징**: 모든 테이블을 `DROP CASCADE` 하고 재생성하므로 **기존의 모든 데이터가 유실됨.**
-
-### B. 인크리멘탈 시딩 (Incremental Seeding) - ⭐ 권장
-- **원칙**: 기존 데이터를 파괴하지 않고, 특정 기능 테스트를 위해 필요한 데이터만 **추가**함.
-- **구현 방법**:
-  1. `select` 쿼리로 데이터 존재 여부 먼저 확인 (Idempotency 보장).
-  2. `seed/seed_*.py` 형식으로 기능별 시딩 파일을 분리.
-- **예시**: `python seed/seed_extended_historical.py` (과거 출역 데이터만 추가)
-
-### C. 필수 생성 데이터 (Scenario Standard)
-1. **Users**: Admin, Manager, Worker, Safety Manager (PW: `0000` 기본)
-2. **Project**: 최소 1개의 활성 프로젝트 (User와 매핑 완료)
-3. **Site & Zone**: 현물 도면 대응을 위한 구역 데이터
-4. **Member Status**: 승인 대기(PENDING)와 승인 완료(ACTIVE) 상태가 혼합되도록 설정하여 권한 테스트 보장.
+## 4. 주요 스크립트 명세
+- `script_test/master_data.py`: 업체, 공종 템플릿 등 기초 마스터 정보 주입
+- `script_test/scenario_seeder.py`: 특정 인물(강공남 등) 중심의 일일 현장 시나리오 생성
