@@ -10,24 +10,24 @@ description: DB 스키마 의존성 관리, 시딩(Seeding) 순서, 마이그레
 ## 0. 테이블 명명 규칙 (Table Naming Convention)
 
 ### 참조 테이블 (Junction Table) 규칙
-Many-to-Many 관계의 중간 테이블은 **`_links`** 접미사를 필수로 사용합니다.
+Many-to-Many 관계의 중간 테이블은 관계의 성격을 명확히 나타내는 **직관적인 이름(Descriptive Name)**을 사용합니다. 별도의 접미사(`_links`, `_maps` 등)를 강제하지 않으며, 테이블 자체가 담고 있는 데이터의 의미를 우선시합니다.
 
-**형식:**
+**권장 형식:**
 ```
-{entity1}_{entity2}_links
+{주체}_{대상} 또는 {주체}_{관계의_의미}
 ```
 
 **예시:**
-- ✅ `daily_worker_links` (작업일보 ↔ 작업자)
-- ✅ `project_user_links` (프로젝트 ↔ 사용자)
-- ✅ `zone_danger_links` (구역 ↔ 위험요소)
-- ❌ `daily_worker_allocations` (너무 김, 금지)
-- ❌ `project_members` (불명확, 금지)
+- ✅ `project_users` (프로젝트 ↔ 사용자 연결)
+- ✅ `project_companies` (프로젝트 ↔ 참여 업체 연결)
+- ✅ `daily_worker_users` (작업 ↔ 배정된 작업자)
+- ✅ `content_work_gear_map` (작업 ↔ 보호구 매핑)
 
 **이유:**
-- 간결성: 테이블명이 짧아야 쿼리 가독성이 높아짐
-- 일관성: 모든 참조 테이블이 `_links`로 끝나면 DB 스키마 파악이 쉬움
-- 명확성: "이 테이블은 두 엔티티를 연결하는 테이블이구나"를 즉시 인지 가능
+- 직관성: `links`라는 추상적인 단어보다 `users`, `companies` 등 실제 데이터의 정체가 명확함
+- 유연성: 로컬 파일(model.py) 로드 시 테이블 정의와 규칙이 일치하지 않는 문제를 방지
+- 일관성: 이미 구축된 `back/database.py`의 모델 리스트와 명명법을 통일함
+
 
 ## 1. 개요
 데이터베이스의 일관성을 유지하고, 개발 및 데모 환경에서 즉시 사용 가능한 풍부한 데이터를 공급하는 것을 목표로 합니다.

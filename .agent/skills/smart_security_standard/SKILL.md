@@ -48,24 +48,23 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 ## 2. 데이터베이스 명명 규칙 (Database Naming Convention)
 
 ### A. 참조 테이블 (Junction Table) 명명 규칙
-Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 **`_links`** 접미사를 사용합니다.
+Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 관계의 의미를 명확히 담은 **직관적인 이름(Descriptive Name)**을 사용합니다. `_links`와 같은 추상적인 접미사는 사용하지 않으며, 현재 구현된 테이블 명칭들을 우선적으로 따릅니다.
 
 **규칙:**
-- ✅ `{entity1}_{entity2}_links` 형식
-- ✅ 짧고 명확한 이름 사용
-- ❌ `allocations`, `mappings`, `relationships` 등 장황한 단어 사용 금지
+- `{주체}_{대상}` 또는 `{주체}_{의미}` 형식 (예: `project_users`, `project_companies`)
+- 단순 연결이 아닌 구체적으로 어떤 엔티티들이 엮이는지 명시
 
 **예시:**
-- ❌ `daily_worker_allocations` (너무 김)
-- ✅ `daily_worker_links`
-- ✅ `project_user_links`
-- ✅ `zone_danger_links`
-- ✅ `site_equipment_links`
+- ✅ `project_users` (프로젝트 ↔ 사용자)
+- ✅ `project_companies` (프로젝트 ↔ 업체)
+- ✅ `daily_worker_users` (작업 ↔ 작업자)
+- ✅ `content_work_gear_map` (작업 ↔ 보호구)
 
 **적용 대상:**
-- 작업일보 ↔ 작업자: `daily_worker_links`
-- 프로젝트 ↔ 사용자: `project_user_links`
-- 프로젝트 ↔ 협력사: `project_company_links`
+- 작업 ↔ 작업자: `daily_worker_users`
+- 프로젝트 ↔ 사용자: `project_users`
+- 프로젝트 ↔ 협력사: `project_companies`
+- 작업 ↔ 보호구: `content_work_gear_map`
 
 ## 3. API 및 통신 표준 (API Standards)
 

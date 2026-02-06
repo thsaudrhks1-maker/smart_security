@@ -46,8 +46,10 @@ const WorkerDashboard = () => {
                 });
             }
             
-            setZones(zonesRes?.data || []);
-            setPlans(plansRes || []);
+            setZones(zonesRes?.data?.data || []);
+            setPlans(plansRes?.data?.data || []);
+
+
         } catch (e) {
             console.error('근로자 대시보드 로드 실패', e);
         } finally {
@@ -57,11 +59,11 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user]);
 
-    const myPlan = plans.find(p => p.worker_ids?.includes(user?.id));
+    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => w.id === user?.id)) : null;
     
     // 통계 계산
-    const dangerCount = zones.filter(z => z.dangers?.length > 0).length;
-    const taskCount = zones.filter(z => z.tasks?.length > 0).length;
+    const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
+    const taskCount = Array.isArray(zones) ? zones.filter(z => z.tasks?.length > 0).length : 0;
     const levels = ['B1', '1F', '2F', '3F'];
 
     return (

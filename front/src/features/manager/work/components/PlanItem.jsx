@@ -35,11 +35,12 @@ const PlanItem = ({ plan }) => {
                     paddingTop: '6px',
                     borderTop: '1px solid #e2e8f0'
                 }}>
-                    {workers.map((w) => (
-                        <div key={w.id || w.worker_id} style={{ marginTop: '3px' }}>
-                            • {w.full_name} ({w.job_title})
+                    {workers.map((w, idx) => (
+                        <div key={`${w.id || w.worker_id || idx}-${idx}`} style={{ marginTop: '3px' }}>
+                            • {w.full_name} ({w.job_title || '작업자'})
                         </div>
                     ))}
+
                 </div>
             )}
         </div>

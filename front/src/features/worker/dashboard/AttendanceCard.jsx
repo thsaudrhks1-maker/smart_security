@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { checkIn, getMyAttendance } from '@/api/attendanceApi';
 import { Clock, MapPin, CheckCircle2, LogIn } from 'lucide-react';
 
@@ -7,18 +7,19 @@ import { Clock, MapPin, CheckCircle2, LogIn } from 'lucide-react';
  * [WORKER] 출석(출근) 카드 컴포넌트
  */
 const AttendanceCard = ({ projectInfo }) => {
+  const { user } = useAuth();
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStatus();
-  }, []);
+    if (user?.id) loadStatus();
+  }, [user]);
 
   const loadStatus = async () => {
     try {
-      const res = await getMyAttendance();
-      if (res.data && res.data.length > 0) {
-        setAttendance(res.data[0]);
+      const res = await getMyAttendance(user.id);
+      if (res.data?.success && res.data?.data) {
+        setAttendance(res.data.data);
       }
     } catch (error) {
       console.error("출근 정보 로드 실패:", error);
@@ -36,11 +37,17 @@ const AttendanceCard = ({ projectInfo }) => {
       }
       const res = await checkIn({
         project_id: projectInfo.project_id,
+        user_id: user.id,
         check_in_method: 'APP'
       });
-      setAttendance(res.data);
-      alert('출근 처리되었습니다. 오늘도 안전작업 하세요!');
-      loadStatus();
+      
+      if (res.data?.success) {
+        alert('출근 처리되었습니다. 오늘도 안전작업 하세요!');
+        loadStatus();
+      }
+
+
+
     } catch (error) {
       console.error(error);
       alert('출근 처리에 실패했습니다.');

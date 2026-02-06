@@ -37,12 +37,31 @@ class safety_logs_repository:
     @staticmethod
     async def create_danger_zone(data: dict):
         """위험 구역 생성"""
+        # 파라미터 전처리: 누락된 키에 대해 None 처리 및 타입 변환
+        params = {
+            "zone_id": data.get("zone_id"),
+            "date": data.get("date"),
+            "danger_info_id": data.get("danger_info_id"),
+            "risk_type": data.get("risk_type") or data.get("custom_type"),
+            "description": data.get("description")
+        }
+
+        # date가 문자열인 경우 date 객체로 변환
+        if params["date"] and isinstance(params["date"], str):
+            from datetime import date as dt_date
+            try:
+                # ISO 형식(YYYY-MM-DD) 또는 시간 포함 형식 처리
+                params["date"] = dt_date.fromisoformat(params["date"].split('T')[0])
+            except ValueError:
+                pass
+
         sql = """
             INSERT INTO daily_danger_zones (zone_id, date, danger_info_id, risk_type, description)
             VALUES (:zone_id, :date, :danger_info_id, :risk_type, :description)
             RETURNING *
         """
-        return await insert_and_return(sql, data)
+        return await insert_and_return(sql, params)
+
     
     @staticmethod
     async def delete_danger_zone(danger_id: int):

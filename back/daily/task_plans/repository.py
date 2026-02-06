@@ -43,12 +43,31 @@ class task_plans_repository:
     @staticmethod
     async def create_task(data: dict):
         """작업 계획 생성"""
+        params = {
+            "project_id": data.get("project_id"),
+            "zone_id": data.get("zone_id"),
+            "work_info_id": data.get("work_info_id"),
+            "date": data.get("date"),
+            "description": data.get("description"),
+            "risk_score": data.get("risk_score", 0),
+            "status": data.get("status", "PLANNED")
+        }
+
+        # date가 문자열인 경우 date 객체로 변환
+        if params["date"] and isinstance(params["date"], str):
+            from datetime import date as dt_date
+            try:
+                params["date"] = dt_date.fromisoformat(params["date"].split('T')[0])
+            except ValueError:
+                pass
+
         sql = """
             INSERT INTO daily_work_tasks (project_id, zone_id, work_info_id, date, description, calculated_risk_score, status)
             VALUES (:project_id, :zone_id, :work_info_id, :date, :description, :risk_score, :status)
             RETURNING *
         """
-        return await insert_and_return(sql, data)
+        return await insert_and_return(sql, params)
+
     
     @staticmethod
     async def update_task(task_id: int, data: dict):

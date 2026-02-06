@@ -168,8 +168,8 @@ const DailyPlanManagement = () => {
                             {plans.filter(p => p.level === selectedLevel).length === 0 ? (
                                 <EmptyState text="작업 없음" />
                             ) : (
-                                plans.filter(p => p.level === selectedLevel).map(p => (
-                                    <PlanItem key={p.id} plan={p} />
+                                plans.filter(p => p.level === selectedLevel).map((p, idx) => (
+                                    <PlanItem key={`plan-${p.id || idx}`} plan={p} />
                                 ))
                             )}
                         </div>
@@ -182,8 +182,8 @@ const DailyPlanManagement = () => {
                             {dangers.filter(d => d.level === selectedLevel).length === 0 ? (
                                 <EmptyState text="위험 구역 없음" />
                             ) : (
-                                dangers.filter(d => d.level === selectedLevel).map(d => (
-                                    <DangerItem key={d.id} danger={d} />
+                                dangers.filter(d => d.level === selectedLevel).map((d, idx) => (
+                                    <DangerItem key={`danger-${d.id || idx}`} danger={d} />
                                 ))
                             )}
                         </div>
