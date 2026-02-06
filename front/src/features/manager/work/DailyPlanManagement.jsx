@@ -76,15 +76,27 @@ const DailyPlanManagement = () => {
                 />
             )}
 
-            <header style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div>
-                   <h1 style={{ fontSize: '1.75rem', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                     <Calendar size={32} color="#3b82f6" /> 일일 작업 계획
-                   </h1>
+            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '1.5rem 2rem', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                   <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '16px' }}>
+                     <Calendar size={40} color="#3b82f6" />
+                   </div>
+                   <div>
+                      <h1 style={{ fontSize: '1.8rem', fontWeight: '900', margin: 0, color: '#0f172a' }}>일일 작업 계획</h1>
+                      <div style={{ display: 'flex', gap: '15px', marginTop: '8px', color: '#64748b', fontSize: '1rem' }}>
+                         <span style={{ fontWeight: '800', color: '#3b82f6' }}>{project?.name || '프로젝트 정보 로딩 중...'}</span>
+                         <span style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '15px' }}>📍 {project?.location_address || '위치 정보 없음'}</span>
+                      </div>
+                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', background: 'white', padding: '8px 16px', borderRadius: '14px', border: '1px solid #e2e8f0 shadow-sm' }}>
-                    <Calendar size={18} color="#64748b" />
-                    <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ border: 'none', outline: 'none', fontWeight: '800' }} />
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', background: '#f8fafc', padding: '15px 30px', borderRadius: '20px', border: '2px solid #3b82f6' }}>
+                    <Calendar size={24} color="#3b82f6" />
+                    <input 
+                        type="date" 
+                        value={selectedDate} 
+                        onChange={(e) => setSelectedDate(e.target.value)} 
+                        style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: '900', fontSize: '1.4rem', color: '#1e40af', cursor: 'pointer' }} 
+                    />
                 </div>
             </header>
 
@@ -134,9 +146,9 @@ const DailyPlanManagement = () => {
 const ZoneSettingModal = ({ zone, onClose, onSave }) => {
     const [formData, setFormData] = useState({ work_type: '', risk_type: 'NORMAL', worker_count: 0 });
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, backdropFilter: 'blur(8px)' }}>
-            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '32px', width: '400px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                <h2 style={{ margin: '0 0 1.5rem 0', fontWeight: '900' }}>{zone.name} 설정</h2>
+        <div style={{ position: 'fixed', inset: 0, background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '32px', width: '400px', boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+                <h2 style={{ margin: '0 0 1.5rem 0', fontWeight: '900', color: '#0f172a' }}>{zone.name} 설정</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <label>작업 유형</label>
                     <select value={formData.work_type} onChange={e => setFormData({...formData, work_type: e.target.value})} style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
