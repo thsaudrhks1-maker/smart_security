@@ -1,225 +1,104 @@
+
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { 
-  LayoutDashboard, 
-  Folder, 
-  Users, 
-  Building2, 
-  Briefcase,
-  ShieldAlert,
-  FileText,
-  CheckSquare,
-  Globe, 
-  Settings,
-  Wrench,
-  AlertCircle,
-  LogOut,
-  Megaphone
+import {
+  LayoutDashboard, Folder, Users, Building2,
+  ShieldAlert, FileText, CheckSquare, Settings,
+  LogOut, ShieldCheck, Briefcase, Globe, Wrench, ChevronRight
 } from 'lucide-react';
 
-/**
- * Admin???�비게이???�이?�바
- * Dark Theme (검??바탕 + 밝�? 글?? - ?�무??Pick
- */
 const NavSidebar = () => {
+  const { logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, logout } = useAuth();
-  const currentPath = location.pathname;
 
-  // 메뉴 ?�정
-  const menuConfig = [
+  const menuGroups = [
     { category: "Main", items: [
-      { icon: LayoutDashboard, label: "?�?�보??, path: "/admin", implemented: true },
+      { icon: LayoutDashboard, label: "대시보드 현황", path: "/admin/dashboard", implemented: true },
+      { icon: Folder, label: "프로젝트 관리", path: "/admin/projects", implemented: true },
+      { icon: Building2, label: "발주/협력사 관리", path: "/admin/companies", implemented: true },
+      { icon: Users, label: "전체 사용자 관리", path: "/admin/workers", implemented: false },
     ]},
-    { category: "Project & Work", items: [
-      { icon: Folder, label: "?�장 관�?, path: "/admin/projects", implemented: true },
-      { icon: Users, label: "근로??관�?, path: "/admin/workers", implemented: false }, 
-      { icon: Building2, label: "?�력??고객?? 관�?, path: "/admin/companies", implemented: true },
-      { icon: Briefcase, label: "?�업 관�?, path: "/admin/work", implemented: false },
-    ]},
-    { category: "Safety & Content", items: [
-      { icon: ShieldAlert, label: "?�전 관???�터", path: "/admin/map", implemented: false },
-      { icon: FileText, label: "콘텐�?관�?, path: "/admin/contents", implemented: true },
-      { icon: CheckSquare, label: "체크리스??관�?, path: "/admin/checklist", implemented: false },
-      { icon: Globe, label: "?�국??콘텐�?관�?, path: "/admin/global", implemented: false },
+    { category: "Operation", items: [
+      { icon: Briefcase, label: "공종 및 직종 관리", path: "/admin/work", implemented: false },
+      { icon: ShieldAlert, label: "현장 안전 맵 설정", path: "/admin/map", implemented: false },
+      { icon: FileText, label: "콘텐츠/공지 관리", path: "/admin/contents", implemented: true },
+      { icon: CheckSquare, label: "안전 점검표 관리", path: "/admin/checklist", implemented: false },
     ]},
     { category: "System", items: [
-      { icon: Settings, label: "?�형 관�?, path: "/admin/types", implemented: false },
-      { icon: Wrench, label: "?�비 관�?, path: "/admin/equipments", implemented: false },
-      { icon: Megaphone, label: "?�스??공�?", path: "/admin/notice", implemented: false },
+      { icon: Settings, label: "안전 유형 설정", path: "/admin/types", implemented: false },
+      { icon: Wrench, label: "관리 장비 설정", path: "/admin/equipments", implemented: false },
+      { icon: Globe, label: "시스템 언어 설정", path: "/admin/global", implemented: false },
     ]}
   ];
 
   const handleLogout = () => {
-    if (window.confirm('로그?�웃 ?�시겠습?�까?')) {
-      logout();
-      navigate('/');
-    }
-  };
-
-  const NavItem = ({ icon: Icon, label, path, implemented }) => {
-    const isActive = currentPath === path || (path !== '/admin' && currentPath.startsWith(path));
-    
-    return (
-      <button 
-        onClick={() => path && navigate(path)}
-        style={{ 
-          width: '100%',
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px',
-          background: isActive ? '#0f172a' : 'transparent', // ???�두??배경?�로 강조
-          color: implemented ? (isActive ? '#ffffff' : '#94a3b8') : '#ef4444',
-          border: 'none',
-          borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
-          cursor: 'pointer', 
-          transition: 'all 0.2s',
-          padding: '13px 20px',
-          textAlign: 'left',
-          fontSize: '0.9rem',
-          fontWeight: isActive ? '600' : '400', // ?�택 ?�된�??�게
-          position: 'relative'
-        }}
-        onMouseEnter={(e) => {
-          if (!isActive) {
-            e.currentTarget.style.color = implemented ? '#cbd5e1' : '#f87171';
-            e.currentTarget.style.background = '#334155';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!isActive) {
-            e.currentTarget.style.color = implemented ? '#94a3b8' : '#ef4444';
-            e.currentTarget.style.background = 'transparent';
-          }
-        }}
-      >
-        <Icon size={18} />
-        <span style={{ flex: 1 }}>{label}</span>
-        {!implemented && <AlertCircle size={14} color="#ef4444" />}
-      </button>
-    );
+    logout();
+    navigate('/login');
   };
 
   return (
-    <nav style={{ 
-      width: '260px',
-      height: '100vh',
-      background: '#1e293b', // Dark Slate BG
-      color: '#ffffff',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      boxShadow: '4px 0 10px rgba(0,0,0,0.3)'
+    <div style={{
+      width: '280px', height: '100%', background: 'white',
+      borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column',
+      padding: '1.5rem 1rem'
     }}>
-      {/* ?�더 */}
-      <div style={{ padding: '24px 20px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
-        <h1 style={{ 
-          fontSize: '1.25rem', 
-          fontWeight: '800', 
-          color: '#ffffff', 
-          margin: 0, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px' 
-        }}>
-          <ShieldAlert size={26} color="#3b82f6" />
-          Smart Guardian
-        </h1>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', paddingLeft: '34px', letterSpacing: '0.05em' }}>
-          SYSTEM ADMINISTRATOR
+      {/* Brand Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 10px 2.5rem' }}>
+        <div style={{ width: '40px', height: '40px', background: '#3b82f6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ShieldCheck size={24} color="white" />
         </div>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>Smart Admin</h1>
       </div>
 
-      {/* 메뉴 */}
-      <div style={{ padding: '10px 0', flex: 1, overflowY: 'auto' }}>
-        {menuConfig.map((group, idx) => (
-          <div key={idx} style={{ marginBottom: '10px' }}>
-            <div style={{ 
-              padding: '15px 20px 8px', 
-              fontSize: '0.7rem', 
-              fontWeight: '700', 
-              color: '#475569', 
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
+      {/* Menus */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {menuGroups.map((group, idx) => (
+          <div key={idx} style={{ marginBottom: '2rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase', paddingLeft: '12px', marginBottom: '12px', letterSpacing: '0.05em' }}>
               {group.category}
             </div>
-            {group.items.map((item) => (
-              <NavItem key={item.path} {...item} />
-            ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {group.items.map((item, i) => (
+                <NavLink
+                  key={i}
+                  to={item.path}
+                  style={({ isActive }) => ({
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 14px', borderRadius: '12px', textDecoration: 'none',
+                    background: isActive ? '#eff6ff' : 'transparent',
+                    color: isActive ? '#3b82f6' : (item.implemented ? '#475569' : '#cbd5e1'),
+                    fontWeight: isActive ? '800' : '600', transition: 'all 0.2s',
+                    cursor: item.implemented ? 'pointer' : 'not-allowed'
+                  })}
+                  onClick={(e) => !item.implemented && e.preventDefault()}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <item.icon size={20} />
+                    <span style={{ fontSize: '0.95rem' }}>{item.label}</span>
+                  </div>
+                  {item.implemented && <ChevronRight size={14} style={{ opacity: 0.5 }} />}
+                </NavLink>
+              ))}
+            </div>
           </div>
         ))}
-        
-        {/* 범�? */}
-        <div style={{ 
-          margin: '20px', 
-          padding: '12px', 
-          background: 'rgba(239, 68, 68, 0.1)', 
-          borderRadius: '6px',
-          fontSize: '0.75rem',
-          color: '#fca5a5',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          border: '1px solid rgba(239, 68, 68, 0.2)'
-        }}>
-          <AlertCircle size={14} />
-          <span>붉�???메뉴??준�?중입?�다</span>
-        </div>
       </div>
 
-      {/* ?�단 ?��? ?�로??�?로그?�웃 */}
-      <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Users size={20} color="#cbd5e1" />
-          </div>
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f1f5f9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.full_name || 'GUEST'} <span style={{fontSize:'0.7rem', color:'#94a3b8', fontWeight:'normal'}}>({user?.role})</span>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.username || 'user_id'}
-            </div>
-          </div>
-        </div>
-        <button 
+      {/* Footer / Logout */}
+      <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid #f1f5f9' }}>
+        <button
           onClick={handleLogout}
-          style={{ 
-            width: '100%', 
-            padding: '10px', 
-            borderRadius: '6px', 
-            background: '#334155', 
-            color: '#f87171', 
-            border: '1px solid #475569', 
-            fontWeight: '600',
-            cursor: 'pointer', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: '8px',
-            fontSize: '0.85rem',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#ef4444';
-            e.currentTarget.style.color = 'white';
-            e.currentTarget.style.borderColor = '#ef4444';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#334155';
-            e.currentTarget.style.color = '#f87171';
-            e.currentTarget.style.borderColor = '#475569';
+          style={{
+            width: '100%', padding: '12px', border: 'none', background: '#fef2f2',
+            color: '#ef4444', borderRadius: '12px', fontWeight: '800',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
           }}
         >
-          <LogOut size={16} /> 로그?�웃
+          <LogOut size={18} /> 로그아웃
         </button>
       </div>
-    </nav>
+    </div>
   );
 };
 

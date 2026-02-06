@@ -209,7 +209,7 @@ const LocationPicker = ({ onLocationSelect, initialLat, initialLng, gridConfig }
           <br />
           위도: {selectedCoords[0].toFixed(6)}, 경도: {selectedCoords[1].toFixed(6)}
           {gridConfig && (
-            <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#1e40af', background: '#eff6ff', padding: '8px', borderRadius: '6px' }}>
+            <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#0f172a', background: '#eff6ff', padding: '8px', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
               현장 예상 크기: <b>{(gridConfig.grid_cols * gridConfig.grid_spacing).toFixed(0)}m</b> x <b>{(gridConfig.grid_rows * gridConfig.grid_spacing).toFixed(0)}m</b>
               <br/>
               타일 개수: <b>{gridConfig.grid_rows * gridConfig.grid_cols}</b>개

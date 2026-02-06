@@ -1,32 +1,24 @@
+
 import React, { useState, useEffect } from 'react';
-import { FileText, HardHat, Shield, ChevronDown, ChevronRight } from 'lucide-react';
-import { workApi } from '@/api/workApi';
+import apiClient from '@/api/client';
+import { FileText, Shield, HardHat, Info, ChevronRight, CheckCircle } from 'lucide-react';
 
-const TAB = { PROCESS: '공정', RULES: '?�전?�칙', EQUIPMENT: '?�전공구' };
-
-/**
- * 최고관리자 - 콘텐�?관�?(공정·?�전?�비·?�전?�칙 ?�람)
- * DB???�록???�업 공정�??�구�? ?�전?�칙???��? 카테고리�??�시
- */
 const AdminContents = () => {
-  const [activeTab, setActiveTab] = useState(TAB.PROCESS);
-  const [templates, setTemplates] = useState([]);
+  const [contents, setContents] = useState([]);
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
-      setLoading(true);
       try {
-        const [contents, allResources] = await Promise.all([
-          workApi.getTemplatesContents(),
-          workApi.getSafetyResources(),
+        const [cRes, rRes] = await Promise.all([
+          apiClient.get('/sys/contents'),
+          apiClient.get('/sys/resources')
         ]);
-        setTemplates(Array.isArray(contents) ? contents : []);
-        setResources(Array.isArray(allResources) ? allResources : []);
+        setContents(Array.isArray(cRes.data) ? cRes.data : []);
+        setResources(Array.isArray(rRes.data) ? rRes.data : []);
       } catch (e) {
-        console.error(e);
+        console.error('콘텐츠 로드 실패', e);
       } finally {
         setLoading(false);
       }
@@ -37,173 +29,71 @@ const AdminContents = () => {
   const allRules = resources.flatMap((r) => (r.safety_rules || []).map((text) => ({ resourceName: r.name, text })));
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>;
+    return <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b', fontWeight: '800' }}>콘텐츠 데이터를 불러오는 중...</div>;
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '900px' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
-        <FileText size={28} color="#3b82f6" />
-        콘텐�?관�?      </h1>
-      <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-        ?�록??공정·?�전?�비·?�전?�칙???�인?�니?? (추후 관리자 직접 ?�정 기능 추�? ?�정)
-      </p>
-
-      {/* 카테고리 ?��? */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {[TAB.PROCESS, TAB.EQUIPMENT, TAB.RULES].map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              border: activeTab === tab ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-              background: activeTab === tab ? '#eff6ff' : 'white',
-              color: activeTab === tab ? '#1d4ed8' : '#475569',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            {tab === TAB.PROCESS && <HardHat size={18} />}
-            {tab === TAB.EQUIPMENT && <Shield size={18} />}
-            {tab === TAB.RULES && <FileText size={18} />}
-            {tab}
-          </button>
-        ))}
+    <div style={{ padding: '2.5rem', maxWidth: '1000px', margin: '0 auto', color: '#1e293b' }}>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.5rem' }}>
+          <FileText size={32} color="#3b82f6" /> 통합 콘텐츠 및 안전 자원 관리
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '1.1rem' }}>
+          시스템에 등록된 공정별 안전 장비, 장비별 필수 수칙을 확인합니다.
+        </p>
       </div>
 
-      {/* 공정 리스??*/}
-      {activeTab === TAB.PROCESS && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>공정 목록 ({templates.length}�?</div>
-          {templates.map((t) => {
-            const isExpanded = expandedId === `t-${t.id}`;
-            return (
-              <div key={t.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: 'white' }}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : `t-${t.id}`)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '14px 16px',
-                    border: 'none',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                  }}
-                >
-                  {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  {t.work_type}
-                  <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b' }}>
-                    ?�험??{t.base_risk_score} · ?�구�?{t.required_resources?.length ?? 0}�?                  </span>
-                </button>
-                {isExpanded && (
-                  <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0' }}>
-                    {t.checklist_items?.length > 0 && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?��? ??��</div>
-                        <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#334155' }}>
-                          {t.checklist_items.map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {t.required_resources?.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?�요 ?�전공구</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {t.required_resources.map((r) => (
-                            <span key={r.id} style={{ background: '#eff6ff', color: '#1e40af', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                              {r.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem' }}>
+        
+        {/* Safety Rules Section */}
+        <section>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Shield size={22} color="#10b981" /> 공종별 통합 안전 수칙
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {allRules.length === 0 ? (
+              <div style={{ padding: '3rem', textAlign: 'center', background: '#f8fafc', borderRadius: '20px', color: '#94a3b8' }}>등록된 수칙이 없습니다.</div>
+            ) : allRules.map((item, idx) => (
+              <div key={idx} style={{ padding: '1.25rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', display: 'flex', gap: '12px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <CheckCircle size={18} color="#10b981" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#10b981', marginBottom: '4px', textTransform: 'uppercase' }}>{item.resourceName}</div>
+                  <div style={{ fontSize: '0.95rem', color: '#334155', fontWeight: '600', lineHeight: 1.5 }}>{item.text}</div>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        </section>
 
-      {/* ?�전공구 리스??*/}
-      {activeTab === TAB.EQUIPMENT && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>?�전공구·?�비 목록 ({resources.length}�?</div>
-          {resources.map((r) => {
-            const isExpanded = expandedId === `r-${r.id}`;
-            return (
-              <div key={r.id} style={{ border: '1px solid #e2e8f0', borderRadius: '10px', overflow: 'hidden', background: 'white' }}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : `r-${r.id}`)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '14px 16px',
-                    border: 'none',
-                    background: '#f8fafc',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontWeight: '600',
-                    color: '#1e293b',
-                  }}
-                >
-                  {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  {r.name}
-                  <span style={{ fontSize: '0.8rem', color: '#64748b', background: '#e2e8f0', padding: '2px 8px', borderRadius: '4px' }}>{r.type}</span>
-                </button>
-                {isExpanded && (
-                  <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0' }}>
-                    {r.description && <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '10px' }}>{r.description}</p>}
-                    {r.safety_rules?.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?�전?�칙</div>
-                        <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#334155' }}>
-                          {r.safety_rules.map((rule, i) => (
-                            <li key={i}>{rule}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
+        {/* Equipments Section */}
+        <section>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <HardHat size={22} color="#3b82f6" /> 관리 대상 안전 장비
+          </h2>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {resources.map((res) => (
+              <div key={res.id} style={{ padding: '1rem 1.25rem', background: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '10px', height: '10px', background: '#3b82f6', borderRadius: '50%' }} />
+                    <span style={{ fontWeight: '800', color: '#1e293b' }}>{res.name}</span>
+                 </div>
+                 <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '700' }}>수칙 {res.safety_rules?.length || 0}건</span>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
 
-      {/* ?�전?�칙 리스??(?�비�??�칙 모음) */}
-      {activeTab === TAB.RULES && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>?�전?�칙 ({allRules.length}�?</div>
-          {allRules.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>?�록???�전?�칙???�습?�다.</div>
-          ) : (
-            allRules.map((item, i) => (
-              <div key={i} style={{ padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem' }}>
-                <span style={{ fontWeight: '600', color: '#475569' }}>[{item.resourceName}]</span> {item.text}
-              </div>
-            ))
-          )}
-        </div>
-      )}
+          <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#eff6ff', borderRadius: '20px', border: '1px dashed #3b82f6' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.75rem' }}>
+              <Info size={18} color="#3b82f6" />
+              <span style={{ fontWeight: '900', color: '#1e40af', fontSize: '0.95rem' }}>관리자 안내</span>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#1e40af', lineHeight: 1.6 }}>
+              현재는 시스템에 사전 등록된 고정 데이터를 표시합니다. 향후 **콘텐츠 에디터** 기능을 통해 관리자가 직접 수칙을 수정하고 새로운 장비를 등록할 수 있는 기능이 업데이트될 예정입니다.
+            </p>
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 };

@@ -1,161 +1,82 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Marker, Popup, Circle, Tooltip, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import '../styles/WorkerDashboard.css';
-import { mapApi } from '@/api/mapApi';
+
+import React, { useState, useEffect } from 'react';
 import { safetyApi } from '@/api/safetyApi';
-import { getProjectById } from '@/api/projectApi';
-import { workerApi } from '@/api/workerApi';
-import BuildingSectionView from '@/features/manager/work/BuildingSectionView';
-import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
-
-// --- ?�이�?리소???�정 ---
-const createIcon = (colorUrl) => new L.Icon({
-    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/${colorUrl}`,
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-const icons = {
-    safe: createIcon('marker-icon-green.png'),
-    danger: createIcon('marker-icon-red.png'),
-    equipment: createIcon('marker-icon-red.png'),
-    opening: createIcon('marker-icon-blue.png'),
-    falling: createIcon('marker-icon-orange.png')
-};
+import { Map as MapIcon, AlertTriangle, Info, Plus } from 'lucide-react';
+import CommonMap from '@/components/common/CommonMap';
+import DangerReportModal from '../dashboard/DangerReportModal';
 
 const SafetyMap = () => {
-    const navigate = useNavigate();
-    
-    // --- UI State ---
-    const [project, setProject] = useState(null);
-    const [selectedLevel, setSelectedLevel] = useState('1F');
-    const [loading, setLoading] = useState(true);
-    
-    const [showMap, setShowMap] = useState(true); 
-    const [floorPlanUrl, setFloorPlanUrl] = useState(null);
-    const [opacity, setOpacity] = useState(0.8);
-    
-    // --- Data State ---
-    const [risks, setRisks] = useState([]);
-    const [workers, setWorkers] = useState([]);
     const [zones, setZones] = useState([]);
+    const [risks, setRisks] = useState([]);
+    const [project, setProject] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [isReportOpen, setIsReportOpen] = useState(false);
+    const [selectedZone, setSelectedZone] = useState(null);
 
-    // --- 1. Initial Data Load ---
     useEffect(() => {
-        const init = async () => {
+        const load = async () => {
             try {
-                setLoading(true);
-                // 1. 근로???�?�보?�에???�로?�트 ID 가?�오�?                const dash = await workerApi.getDashboard();
-                const pid = dash?.project?.id;
-                if (!pid) return;
-
-                // 2. ?�로?�트 ?�세 ?�보 (층수 ??
-                const proj = await getProjectById(pid);
-                setProject(proj);
-
-                // 3. 구역 �??�험 ?�보
-                const [riskData, zoneData] = await Promise.all([
-                    mapApi.getRisks(),
-                    safetyApi.getZones(null, pid)
+                const today = new Date().toISOString().split('T')[0];
+                const [zRes, rRes] = await Promise.all([
+                    safetyApi.getZones(),
+                    safetyApi.getDailyDangerZones(today)
                 ]);
-                setRisks(riskData || []);
-                setZones(zoneData || []);
-
-                // 기본 층수 ?�정 (?�재 배정???�업???�다�?�?층으�? ?�으�?1F)
-                // TODO: 근로??배정 �?찾기 로직 추�? 가??            } catch (error) {
-                console.error("?�이??로딩 ?�패:", error);
-            } finally {
-                setLoading(false);
-            }
+                setZones(zRes || []);
+                setRisks(rRes || []);
+                if (zRes?.length > 0) {
+                    setProject({ lat: zRes[0].lat, lng: zRes[0].lng, id: zRes[0].site_id });
+                }
+            } catch (e) { console.error(e); }
+            finally { setLoading(false); }
         };
-        init();
+        load();
     }, []);
 
-    // 층수 리스???�성
-    const levels = useMemo(() => {
-        if (!project) return ['1F'];
-        const res = [];
-        for (let i = project.basement_floors; i >= 1; i--) res.push(`B${i}`);
-        for (let i = 1; i <= project.ground_floors; i++) res.push(`${i}F`);
-        return res;
-    }, [project]);
-
-    // ?�터링된 구역 (?�재 층만)
-    const filteredZones = useMemo(() => {
-        return zones.filter(z => z.level === selectedLevel);
-    }, [zones, selectedLevel]);
-
-    const center = project ? [project.location_lat, project.location_lng] : [37.5665, 126.9780];
-
-    if (loading) return <div style={{padding:'20px', textAlign:'center'}}>?�장 ?�이?��? 불러?�는 �?..</div>;
-
     return (
-      <div className="floor-viewer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
-        
-        {/* ?�더 */}
-        <header style={{ flexShrink: 0, padding:'12px 20px', background:'#1e293b', color:'white', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
-                <button onClick={() => navigate(-1)} style={{background:'transparent', border:'1px solid #475569', color:'white', padding:'6px 12px', borderRadius:'6px', cursor:'pointer' }}>?�</button>
-                <div>
-                    <h2 style={{margin:0, fontSize:'1.1rem'}}>?���??�전 모니?�링</h2>
-                    <div style={{fontSize:'11px', color:'#94a3b8'}}>{project?.name}</div>
-                </div>
-            </div>
-            <div style={{display:'flex', gap:'8px'}}>
-                <span style={{fontSize:'12px', background:'#334155', padding:'4px 8px', borderRadius:'4px'}}>{selectedLevel}</span>
-            </div>
-        </header>
-
-        {/* 메인 콘텐�??�역 (?�면??+ 지?? */}
-        <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-            {project && (
-                <BuildingSectionView 
-                    project={project}
-                    selectedLevel={selectedLevel}
-                    onLevelSelect={setSelectedLevel}
-                    allZones={zones}
-                    allRisks={risks}
-                />
-            )}
-
-            {/* 지???�역 */}
-            <div style={{ flex: 1, position: 'relative' }}>
-                <UniversalBlueprintMap
-                    role="WORKER"
-                    zones={filteredZones}
-                    risks={risks.filter(r => filteredZones.some(z => z.id === r.zone_id))}
-                    center={center}
-                    zoom={20}
-                    height="100%"
-                    blueprintUrl={floorPlanUrl}
-                >
-                    {/* ?�험 ?�소 (?�시�?마커 ??- ?�요??추�? ?�동) */}
-                </UniversalBlueprintMap>
-
-                {/* ?�단 ?�보 배�? */}
-                <div style={{ position:'absolute', bottom:20, left:20, right:20, zIndex:1000, display:'flex', flexDirection:'column', gap:'10px' }}>
-                    <div style={{ background:'rgba(255,255,255,0.95)', padding:'12px 16px', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)', border:'1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <div>
-                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>?�재 �?/div>
-                            <div style={{fontSize:'1rem', fontWeight:'900', color:'#1e293b'}}>{selectedLevel}</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>?�험 ?�소</div>
-                            <div style={{fontSize:'0.9rem', fontWeight:'800', color: risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length > 0 ? '#ef4444' : '#10b981'}}>
-                                {risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length}�?감�?
-                            </div>
-                        </div>
+        <div style={{ height: 'calc(100vh - 70px)', position: 'relative', background: '#f8fafc' }}>
+            <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px', zIndex: 1000 }}>
+                <div style={{ background: 'white', padding: '12px 20px', borderRadius: '20px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <MapIcon size={20} color="#3b82f6" />
+                        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: '900' }}>실시간 안전 현황판</h2>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#ef4444' }}>
+                        위험 {risks.length}건 감지됨
                     </div>
                 </div>
             </div>
+
+            {project ? (
+                <CommonMap 
+                    center={[project.lat, project.lng]}
+                    zoom={18}
+                    markers={risks.map(r => ({ lat: r.lat, lng: r.lng, title: `위험: ${r.risk_type}`, color: 'red' }))}
+                    onMapClick={(e) => {
+                        setSelectedZone({ lat: e.latlng.lat, lng: e.latlng.lng, id: 1, name: '현장 지점' });
+                        setIsReportOpen(true);
+                    }}
+                />
+            ) : (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>지도를 불러오는 중...</div>
+            )}
+
+            <div style={{ position: 'absolute', bottom: '100px', left: '20px', right: '20px', zIndex: 1000 }}>
+                <div style={{ background: 'rgba(15, 23, 42, 0.9)', color: 'white', padding: '15px', borderRadius: '20px', backdropFilter: 'blur(8px)', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                        <Info size={18} color="#f59e0b" />
+                        <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>안전 신고 안내</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#cbd5e1', lineHeight: 1.5 }}>현장 내 위험 요소를 발견하셨나요? <strong>지도의 해당 위치를 길게 눌러</strong> 즉시 신고해 주세요.</p>
+                </div>
+            </div>
+
+            <DangerReportModal 
+                open={isReportOpen} 
+                onClose={() => setIsReportOpen(false)} 
+                zone={selectedZone}
+                onSuccess={() => {}} 
+            />
         </div>
-      </div>
     );
 };
 

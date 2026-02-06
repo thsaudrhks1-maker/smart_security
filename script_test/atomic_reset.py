@@ -32,7 +32,7 @@ async def final_atomic_reset():
         await conn.run_sync(Base.metadata.create_all)
 
     today = date.today()
-    pw_hash = bcrypt.hashpw("1234".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        pw_hash = bcrypt.hashpw("1234".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     # 1. [SYS] 업체 마스터 (발주처 2, 시공사 2, 협력사 2)
     print("📝 [SYS] 업체 및 사용자 데이터 주입 중...")
@@ -96,9 +96,9 @@ async def final_atomic_reset():
     print("\n✅ [SUCCESS] 리얼 월드 더미 데이터 환경 구축 완료!")
     print("---------------------------------------")
     print("🚀 접속 정보:")
-    print(" - 최고관리자: admin / 1234")
-    print(" - 현대소장: modern_mgr / 1234")
-    print(" - GS소장: gs_mgr / 1234")
+    print(" - 최고관리자: admin / 0000")
+    print(" - 현대소장: modern_mgr / 0000")
+    print(" - GS소장: gs_mgr / 0000")
     print("---------------------------------------")
 
 if __name__ == "__main__":

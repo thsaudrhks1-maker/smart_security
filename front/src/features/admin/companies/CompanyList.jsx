@@ -1,99 +1,105 @@
 
 import React, { useState, useEffect } from 'react';
 import { companyApi } from '@/api/companyApi';
-import { Building2, Plus, Briefcase, Trash2 } from 'lucide-react';
+import { Building2, Plus, Search, Building } from 'lucide-react';
 
 const CompanyList = () => {
     const [companies, setCompanies] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [formData, setFormData] = useState({ name: '', type: 'SPECIALTY' });
-
-    useEffect(() => {
-        loadCompanies();
-    }, []);
+    const [newComp, setNewComp] = useState({ name: '', type: 'PARTNER' });
 
     const loadCompanies = async () => {
         try {
             const res = await companyApi.getCompanies();
-            setCompanies(res.data || []);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
+            setCompanies(res.data.data || []);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    useEffect(() => { loadCompanies(); }, []);
+
+    const handleCreate = async () => {
+        if (!newComp.name) return alert('업체명을 입력하세요.');
         try {
-            // 업체 등록 로직 (필요 시 API 정의 후 연결)
-            alert('업체가 성공적으로 등록되었습니다.');
+            await companyApi.createCompany(newComp);
             setShowModal(false);
+            setNewComp({ name: '', type: 'PARTNER' });
             loadCompanies();
+            alert('업체가 성공적으로 등록되었습니다.');
         } catch (e) {
-            alert('등록 실패');
+            alert('업체 등록에 실패했습니다.');
         }
     };
 
-    if (loading) return <div style={{ color: 'white', padding: '2rem' }}>로딩 중...</div>;
+    if (loading) return <div style={{ color: '#64748b', padding: '3rem', textAlign: 'center', fontWeight: '800' }}>데이터 로딩 중...</div>;
 
     return (
-        <div style={{ padding: '2rem', color: 'white' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto', color: '#1e293b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: '800' }}>🏢 협력업체 관리</h1>
-                    <p style={{ color: '#94a3b8' }}>시스템에 등록된 원청 및 협력사 목록입니다.</p>
+                    <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>🏢 협력업체 및 파트너 관리</h1>
+                    <p style={{ color: '#64748b' }}>시스템에 등록된 발주처, 시공사 및 파트너사 목록입니다.</p>
                 </div>
-                <button 
+                <button
                     onClick={() => setShowModal(true)}
-                    style={{ padding: '10px 20px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ padding: '0.8rem 1.5rem', background: '#3b82f6', border: 'none', borderRadius: '12px', color: 'white', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)' }}
                 >
-                    + 신규 업체 등록
+                    <Plus size={20} /> 새 업체 등록
                 </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 {companies.map(c => (
-                    <div key={c.id} style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between' }}>
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.5rem' }}>
-                                <Building2 size={18} color={c.type === 'GENERAL' ? '#3b82f6' : '#10b981'} />
-                                <h3 style={{ margin: 0 }}>{c.name}</h3>
+                    <div key={c.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '14px' }}>
+                          <Building size={24} color="#64748b" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a' }}>{c.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '2px', display: 'flex', gap: '8px' }}>
+                              <span style={{ color: '#3b82f6', fontWeight: '700' }}>{c.type}</span>
+                              <span style={{ color: '#cbd5e1' }}>|</span>
+                              <span>{c.business_no || '사업자번호 미등록'}</span>
                             </div>
-                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                {c.type === 'GENERAL' ? '원청/종합건설' : '협력사/전문건설'}
-                            </span>
                         </div>
                     </div>
                 ))}
-                {companies.length === 0 && <div style={{ color: '#64748b' }}>등록된 업체가 없습니다.</div>}
             </div>
 
-            {/* 등록 모달 (심플 버전) */}
+            {/* 업체 등록 모달 */}
             {showModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '24px', width: '100%', maxWidth: '400px' }}>
-                        <h2 style={{ marginBottom: '1.5rem' }}>신규 업체 등록</h2>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <input 
-                                type="text" placeholder="업체명 (예: (주)현대건설)" 
-                                value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                                style={{ padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
-                                required
-                            />
-                            <select 
-                                value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}
-                                style={{ padding: '12px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
-                            >
-                                <option value="GENERAL">원청 (종합건설)</option>
-                                <option value="SPECIALTY">협력사 (전문건설)</option>
-                            </select>
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                                <button type="submit" style={{ flex: 1, padding: '12px', background: '#3b82f6', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 'bold' }}>등록</button>
-                                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '8px', color: 'white' }}>취소</button>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+                    <div style={{ background: 'white', padding: '2.5rem', borderRadius: '24px', width: '450px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '1.5rem', color: '#0f172a' }}>새 업체 등록</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '800', color: '#475569', fontSize: '0.9rem' }}>업체명</label>
+                                <input
+                                    type="text"
+                                    placeholder="정확한 업체명 입력"
+                                    value={newComp.name}
+                                    onChange={e => setNewComp({ ...newComp, name: e.target.value })}
+                                    style={{ width: '100%', padding: '0.9rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', boxSizing: 'border-box' }}
+                                />
                             </div>
-                        </form>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '800', color: '#475569', fontSize: '0.9rem' }}>업체 구분</label>
+                                <select
+                                    value={newComp.type}
+                                    onChange={e => setNewComp({ ...newComp, type: e.target.value })}
+                                    style={{ width: '100%', padding: '0.9rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}
+                                >
+                                    <option value="CLIENT">발주처 (Client)</option>
+                                    <option value="CONSTRUCTOR">시공사 (Constructor)</option>
+                                    <option value="PARTNER">협력사 (Partner)</option>
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
+                                <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', background: 'white', fontWeight: '800', cursor: 'pointer', color: '#64748b' }}>취소</button>
+                                <button onClick={handleCreate} style={{ flex: 1, padding: '1rem', border: 'none', borderRadius: '12px', background: '#3b82f6', color: 'white', fontWeight: '800', cursor: 'pointer' }}>등록하기</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

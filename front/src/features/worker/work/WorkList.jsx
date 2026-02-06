@@ -1,228 +1,62 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { workApi } from '@/api/workApi';
-import { safetyApi } from '@/api/safetyApi';
-import { Plus, Trash2, Calendar, MapPin, User, AlertTriangle, X } from 'lucide-react';
+import { Briefcase, Calendar, MapPin, Search, ChevronRight } from 'lucide-react';
 
 const WorkList = () => {
-  const { user } = useAuth();
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const [plans, setPlans] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  // Form Data (DB Driven)
-  const [templates, setTemplates] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  
-  // New Plan Input
-  const [newPlan, setNewPlan] = useState({
-      template_id: "",
-      zone_id: "",
-      site_id: 1, // Default Site ID (?�시)
-      date: new Date().toISOString().split('T')[0],
-      description: "",
-      equipment_flags: []
-  });
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const res = await workApi.getPlans({ date: today });
+                // 내 ID가 배정된 작업만 필터링
+                const filtered = (res || []).filter(p => p.worker_ids?.includes(user?.id));
+                setPlans(filtered);
+            } catch (e) { console.error(e); }
+            finally { setLoading(false); }
+        };
+        load();
+    }, [user]);
 
-  // Fetch Data
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    try {
-        setLoading(true);
-        const [plansData, tmplData, zoneData] = await Promise.all([
-            workApi.getPlans(),
-            workApi.getTemplates(),
-            safetyApi.getZones()
-        ]);
-        setPlans(plansData);
-        setTemplates(tmplData);
-        setZones(zoneData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreate = async (e) => {
-      e.preventDefault();
-      if (!newPlan.template_id || !newPlan.zone_id) {
-          alert("?�업 종류?� 구역???�택?�주?�요.");
-          return;
-      }
-      
-      try {
-          await workApi.createPlan({
-              ...newPlan,
-              template_id: Number(newPlan.template_id),
-              zone_id: Number(newPlan.zone_id),
-              allocations: [] // ?�업??배정?� 추후 구현
-          });
-          alert("?�업???�록?�었?�니??");
-          setShowForm(false);
-          loadAllData(); // Refresh
-      } catch (err) {
-          alert("?�록 ?�패: " + (err.response?.data?.detail || err.message));
-      }
-  };
-
-  const handleDelete = async (id) => {
-      if(!window.confirm("?�말 ??��?�시겠습?�까?")) return;
-      try {
-          await workApi.deletePlan(id);
-          // UI Optimistic Update or Refresh
-          setPlans(plans.filter(p => p.id !== id));
-      } catch(err) {
-          alert("??�� ?�패");
-      }
-  }
-
-  const getRiskColor = (score) => {
-      if (score >= 70) return 'var(--accent-danger)';
-      if (score >= 40) return 'var(--accent-warning)';
-      return 'var(--success)';
-  }
-
-  if (loading) return <div style={{padding:'2rem', textAlign:'center'}}>Loading...</div>;
-
-  return (
-    <div className="animate-fade-in" style={{ padding: '1rem', maxWidth:'1200px', margin:'0 auto' }}>
-      
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div>
-           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>금일 ?�업 ?�황</h2>
-           <p className="text-muted">{new Date().toLocaleDateString()} Daily Work Plan</p>
-        </div>
-        
-        {user?.role === 'manager' && (
-          <button onClick={() => setShowForm(true)} className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Plus size={18} />
-            ?�업 ?�록
-          </button>
-        )}
-      </div>
-
-      {/* Write Form (Toggle) */}
-      {showForm && (
-          <div className="glass-panel animate-fade-in" style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
-              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'1rem'}}>
-                  <h3>???�업 ?�록</h3>
-                  <button onClick={() => setShowForm(false)} className="btn-icon"><X size={20}/></button>
-              </div>
-              
-              <form onSubmit={handleCreate} style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-                  
-                  {/* ?�짜 */}
-                  <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�짜</label>
-                      <input type="date" className="input-field" 
-                        value={newPlan.date} 
-                        onChange={e => setNewPlan({...newPlan, date: e.target.value})} 
-                      />
-                  </div>
-
-                  {/* ?�업 ?�플�?(DB ?�동) */}
-                  <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 종류 <span style={{color:'red'}}>*</span></label>
-                      <select className="input-field" 
-                        value={newPlan.template_id}
-                        onChange={e => setNewPlan({...newPlan, template_id: e.target.value})}
-                      >
-                          <option value="">?�택?�세??/option>
-                          {templates.map(t => (
-                              <option key={t.id} value={t.id}>
-                                  {t.work_type} (?�험?? {t.base_risk_score})
-                              </option>
-                          ))}
-                      </select>
-                  </div>
-
-                  {/* 구역 (DB ?�동) */}
-                  <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 구역 <span style={{color:'red'}}>*</span></label>
-                      <select className="input-field"
-                        value={newPlan.zone_id}
-                        onChange={e => setNewPlan({...newPlan, zone_id: e.target.value})}
-                      >
-                          <option value="">?�택?�세??/option>
-                          {zones.length === 0 && <option disabled>?�록??구역???�습?�다</option>}
-                          {zones.map(z => (
-                              <option key={z.id} value={z.id}>{z.name} ({z.type})</option>
-                          ))}
-                      </select>
-                  </div>
-
-                  {/* ?�명 */}
-                  <div style={{gridColumn:'1/-1'}}>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 ?�용 ?�세</label>
-                      <input type="text" className="input-field" placeholder="?? 2�?A구역 거푸�?조립 ?�업"
-                        value={newPlan.description}
-                        onChange={e => setNewPlan({...newPlan, description: e.target.value})}
-                      />
-                  </div>
-
-                  <div style={{gridColumn:'1/-1', textAlign:'right', marginTop:'1rem'}}>
-                      <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary" style={{marginRight:'0.5rem'}}>취소</button>
-                      <button type="submit" className="btn btn-primary">?�록?�기</button>
-                  </div>
-              </form>
-          </div>
-      )}
-
-      {/* Grid List */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-        {plans.length === 0 && (
-            <div style={{gridColumn:'1/-1', textAlign:'center', padding:'3rem', color:'var(--text-muted)'}}>
-                ?�록???�업???�습?�다.
-            </div>
-        )}
-        
-        {plans.map(plan => (
-          <div key={plan.id} className="glass-panel" style={{ padding: '1.5rem', borderLeft: `4px solid ${getRiskColor(plan.calculated_risk_score)}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom:'1rem' }}>
-                <span className="badge" style={{ background: 'rgba(255,255,255,0.1)' }}>{plan.work_type}</span>
-                {user?.role === 'manager' && (
-                    <button onClick={() => handleDelete(plan.id)} className="btn-icon" style={{ color: 'var(--text-muted)' }}><Trash2 size={16}/></button>
-                )}
-            </div>
-            
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{plan.description || plan.work_type}</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <MapPin size={16} /> {plan.zone_name}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <User size={16} /> {plan.allocations?.length || 0}�??�입
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <AlertTriangle size={16} color={getRiskColor(plan.calculated_risk_score)} /> 
-                     ?�험?? {plan.calculated_risk_score} 
-                </div>
+    return (
+        <div style={{ padding: '1.5rem', color: '#1e293b', paddingBottom: '100px' }}>
+            <div style={{ marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>💼 내 작업 목록</h1>
+                <p style={{ color: '#64748b' }}>오늘 나에게 할당된 작업과 장소를 확인하세요.</p>
             </div>
 
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                {plan.allocations && plan.allocations.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        {plan.allocations.map(a => (
-                            <div key={a.id} style={{ fontSize: '0.8rem', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', display:'flex', alignItems:'center', gap:'4px' }}>
-                                {a.role === '?�기감시' || a.role === '?�?? ? '�? : ''} {a.worker_name}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>작성된 작업 계획을 불러오는 중...</div>
+            ) : plans.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'white', borderRadius: '24px', border: '1px dashed #cbd5e1' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+                    <div style={{ fontWeight: '800', color: '#64748b', fontSize: '1.1rem', marginBottom: '8px' }}>오늘 배정된 작업이 없습니다.</div>
+                    <p style={{ fontSize: '0.9rem', color: '#94a3b8', margin: 0 }}>관리자에게 작업 배정 여부를 문의하세요.</p>
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                    {plans.map(plan => (
+                        <div key={plan.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '900', color: '#3b82f6', marginBottom: '4px', textTransform: 'uppercase' }}>{plan.work_type}</div>
+                                <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem', fontWeight: '900' }}>{plan.work_type} 작업</h3>
+                                <div style={{ display: 'flex', gap: '15px', color: '#64748b', fontSize: '0.85rem' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> {plan.level} {plan.location || '지정 장소'}</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> {plan.date}</span>
+                                </div>
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>?�업??미배??/span>
-                )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+                            <ChevronRight size={20} color="#cbd5e1" />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default WorkList;

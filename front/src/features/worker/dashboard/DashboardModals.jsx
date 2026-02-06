@@ -1,200 +1,43 @@
+
 import React from 'react';
-import { 
-  Shield, CheckCircle, AlertTriangle, Bell, MapPin
-} from 'lucide-react';
-import SimpleModal from '@/components/common/SimpleModal';
+import { X, Info, ShieldAlert, CheckCircle } from 'lucide-react';
 
 /**
- * 근로???�?�보???�용 모달 모음
+ * [WORKER] 대시보드 내 공통 활용 모달 모음
  */
-export const WorkDetailModal = ({ isOpen, onClose, plans, selectedIndex, setSelectedIndex }) => {
-  const detailPlan = plans[selectedIndex];
-  if (!detailPlan) return null;
-
-  return (
-    <SimpleModal isOpen={isOpen} onClose={onClose} title="?�� 금일 ?�업 ?�세">
-      <div>
-        {plans.length > 1 && (
-          <div style={{ marginBottom: '1rem', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {plans.map((p, idx) => (
-              <button
-                key={p.id ?? idx}
-                type="button"
-                onClick={() => setSelectedIndex(idx)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: selectedIndex === idx ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                  background: selectedIndex === idx ? '#eff6ff' : '#fff',
-                  color: selectedIndex === idx ? '#1d4ed8' : '#64748b',
-                  fontWeight: selectedIndex === idx ? 600 : 400,
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
-              >
-                {p.zone_name} · {p.work_type}
-              </button>
-            ))}
-          </div>
-        )}
-        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
-          <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '4px' }}>?�업�?/div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{detailPlan.description}</div>
+export const SafetyGuideModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+    return (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '450px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Info size={24} color="#3b82f6" />
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900' }}>오늘의 안전 가이드</h2>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={24} /></button>
+                </div>
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                    <GuideItem icon={<ShieldAlert color="#f59e0b" />} title="보호구 착용 필수" desc="안전모, 안전화 미착용 시 구역 출입이 제한됩니다." />
+                    <GuideItem icon={<CheckCircle color="#10b981" />} title="추락 사고 주의" desc="개구부 및 단부 작업 시 안전고리를 반드시 체결하세요." />
+                </div>
+                <button 
+                    onClick={onClose}
+                    style={{ width: '100%', marginTop: '2rem', padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '16px', fontWeight: '800', cursor: 'pointer' }}
+                >
+                    확인하였습니다
+                </button>
+            </div>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem' }}>?�업 ?�형</div>
-            <div style={{ fontWeight: '600' }}>{detailPlan.work_type}</div>
-          </div>
-          <div>
-            <div style={{ color: '#64748b', fontSize: '0.8rem' }}>?�업 구역</div>
-            <div style={{ fontWeight: '600' }}>{detailPlan.zone_name}</div>
-          </div>
-        </div>
-
-        {/* 보호�?�?체크리스??(기존 코드 ?��?) */}
-        {detailPlan.required_resources?.length > 0 && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
-               <Shield size={18} /> ?�수 보호�?착용 ?�인
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              {detailPlan.required_resources.map((res, i) => (
-                <label key={res.id || i} style={{ 
-                  display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer'
-                }}>
-                  <input type="checkbox" style={{ width: '18px', height: '18px' }} />
-                  <div style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: '600' }}>{res.name}</div>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {detailPlan.checklist_items?.length > 0 && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: '800', marginBottom: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
-               <CheckCircle size={18} /> ?�전 ?��? 리스??
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {detailPlan.checklist_items.map((item, i) => (
-                <label key={i} style={{ 
-                  display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7', cursor: 'pointer'
-                }}>
-                  <input type="checkbox" style={{ width: '18px', height: '18px', marginTop: '2px' }} />
-                  <div style={{ fontSize: '0.9rem', color: '#166534', fontWeight: '500', lineHeight: '1.4' }}>{item}</div>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </SimpleModal>
-  );
+    );
 };
 
-export const RiskDetailModal = ({ isOpen, onClose, risks, onFetchLocation }) => (
-  <SimpleModal isOpen={isOpen} onClose={onClose} title="?�️ 금일 ?�험 지??>
-    {risks.length > 0 ? (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {risks.map((risk, idx) => (
-          <div key={idx} style={{ border: '1px solid #fed7aa', background: '#fff7ed', borderRadius: '8px', padding: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-               <span style={{ fontWeight: '700', color: '#c2410c' }}>{risk.name}</span>
-               <span style={{ background: '#f97316', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px' }}>{risk.level}</span>
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#431407', marginBottom: '0.75rem' }}>
-              {risk.description || '?�험 구역?�니?? ?�근 ??주의?�세??'}
-            </div>
-            <button 
-              onClick={() => onFetchLocation(risk)}
-              style={{ width: '100%', padding: '8px', background: 'white', border: '1px solid #f97316', color: '#f97316', borderRadius: '4px', fontWeight: '600', cursor: 'pointer' }}
-            >
-              지?�에???�치 보기
-            </button>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <CheckCircle size={48} color="#10b981" style={{ margin: '0 auto 1rem' }} />
-        <div style={{ color: '#10b981', fontWeight: '700' }}>?�험 지???�음</div>
-        <div style={{ fontSize: '0.9rem', color: '#64748b' }}>?�전???�업 ?�경?�니??</div>
-      </div>
-    )}
-  </SimpleModal>
-);
-
-export const NoticeModal = ({ isOpen, onClose, notices }) => (
-  <SimpleModal isOpen={isOpen} onClose={onClose} title="?�� 공�??�항">
-    {notices?.length > 0 ? (
-       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-         {notices.map((notice, idx) => (
-           <div key={idx} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: notice.priority === 'URGENT' ? '1px solid #fecaca' : '1px solid #e2e8f0' }}>
-             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '0.5rem' }}>
-               {notice.priority === 'URGENT' && <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 4px', borderRadius: '4px' }}>긴급</span>}
-               <span style={{ fontWeight: '700', color: '#1e293b' }}>{notice.title}</span>
-             </div>
-             <div style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.5' }}>
-                {notice.content || '공�? ?�용???�습?�다.'}
-             </div>
-           </div>
-         ))}
-       </div>
-    ) : (
-      <div style={{ textAlign: 'center', color: '#94a3b8' }}>?�록??공�??�항???�습?�다.</div>
-    )}
-  </SimpleModal>
-);
-
-export const EmergencyAlertModal = ({ isOpen, onClose, alert }) => (
-  <SimpleModal isOpen={isOpen} onClose={onClose} title="?�� 긴급 ?�림">
-    {alert ? (
-      <div style={{ textAlign: 'center', padding: '1rem' }}>
-        <AlertTriangle size={64} color="#ef4444" style={{ margin: '0 auto 1.5rem' }} />
-        <h2 style={{ color: '#ef4444', margin: '0 0 1rem' }}>{alert.title}</h2>
-        <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#1e293b' }}>
-          {alert.message}
-        </p>
-      </div>
-    ) : (
-       <div style={{ textAlign: 'center', color: '#94a3b8' }}>?�재 발령??긴급 ?�림???�습?�다.</div>
-    )}
-  </SimpleModal>
-);
-
-export const SafetyInfoModal = ({ isOpen, onClose, safetyInfos }) => (
-  <SimpleModal isOpen={isOpen} onClose={onClose} title="?�� 금일 ?�전 ?�보">
-    {safetyInfos?.length > 0 ? (
-       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-         {safetyInfos.map((info, idx) => (
-           <div key={idx} style={{ 
-             background: info.type === 'TASK_SAFETY' ? '#f0f9ff' : '#f0fdf4', 
-             border: info.type === 'TASK_SAFETY' ? '1px solid #bae6fd' : '1px solid #86efac', 
-             borderRadius: '8px', 
-             padding: '1rem' 
-           }}>
-             <div style={{ 
-               fontWeight: '800', 
-               color: info.type === 'TASK_SAFETY' ? '#0369a1' : '#10b981', 
-               marginBottom: '0.75rem', 
-               fontSize: '1rem',
-               display: 'flex',
-               alignItems: 'center',
-               gap: '6px'
-             }}>
-               {info.type === 'TASK_SAFETY' ? <Shield size={18} /> : <Bell size={18} />}
-               {info.title}
-             </div>
-             <div style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
-               {info.content}
-             </div>
-           </div>
-         ))}
-       </div>
-    ) : (
-      <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>?�록???�전 ?�보가 ?�습?�다.</div>
-    )}
-  </SimpleModal>
+const GuideItem = ({ icon, title, desc }) => (
+    <div style={{ display: 'flex', gap: '12px', padding: '1rem', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+        <div style={{ marginTop: '2px' }}>{icon}</div>
+        <div>
+            <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#1e293b' }}>{title}</div>
+            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>{desc}</div>
+        </div>
+    </div>
 );

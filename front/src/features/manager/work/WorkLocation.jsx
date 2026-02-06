@@ -1,319 +1,115 @@
+
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import { ZoneSquare } from './ZoneSquareLayer';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { MapPin, Plus, Pencil, Map, Building2, X } from 'lucide-react';
-import { getManagerDashboard } from '@/api/managerApi';
-import { getProjectById, getProjectSites, updateProject } from '@/api/projectApi';
+import { projectApi } from '@/api/projectApi';
 import { safetyApi } from '@/api/safetyApi';
-import LocationPicker from '@/components/common/LocationPicker';
+import { MapPin, RefreshCcw, Layers, Info, CheckCircle2 } from 'lucide-react';
+import CommonMap from '@/components/common/CommonMap';
+import BuildingSectionView from './BuildingSectionView';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+const WorkLocation = () => {
+    const [project, setProject] = useState(null);
+    const [zones, setZones] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedLevel, setSelectedLevel] = useState('1F');
 
-const generateLevels = (project) => {
-  if (!project) return ['1F'];
-  const levels = [];
-  for (let i = project.basement_floors; i >= 1; i--) {
-    levels.push(`B${i}`);
-  }
-  for (let i = 1; i <= project.ground_floors; i++) {
-    levels.push(`${i}F`);
-  }
-  return levels;
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const [pRes, zRes] = await Promise.all([
+                projectApi.getProjects(),
+                safetyApi.getZones()
+            ]);
+            if (pRes.data.data?.length > 0) setProject(pRes.data.data[0]);
+            setZones(zRes || []);
+        } catch (e) {
+            console.error('위치 데이터 로드 실패', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSyncZones = async () => {
+        if (!confirm('현재 도면 좌표를 기반으로 구역 데이터를 동기화하시겠습니까?')) return;
+        setLoading(true);
+        try {
+            await safetyApi.syncZonesByBlueprint(project.id);
+            alert('구역 동기화가 완료되었습니다.');
+            loadData();
+        } catch (e) {
+            alert('동기화 처리 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) return <div style={{ padding: '3rem', textAlign: 'center', fontWeight: '800', color: '#64748b' }}>현장 데이터를 로드하는 중...</div>;
+
+    const filteredZones = zones.filter(z => z.level === selectedLevel);
+
+    return (
+        <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
+                <div>
+                    <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <MapPin size={32} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} /> 현장 구역 및 위치 관리
+                    </h1>
+                    <p style={{ color: '#64748b', fontSize: '1.1rem' }}>현장의 층별 도면을 바탕으로 작업 구역을 설정하고 관리합니다.</p>
+                </div>
+                <button
+                    onClick={handleSyncZones}
+                    style={{ padding: '0.8rem 1.5rem', background: '#0f172a', border: 'none', borderRadius: '14px', color: 'white', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.2)' }}
+                >
+                    <RefreshCcw size={20} /> 도면 데이터 동기화
+                </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem' }}>
+                {/* 층별 필터 사이드바 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+                        <BuildingSectionView 
+                            project={project} 
+                            allZones={zones} 
+                            activeLevel={selectedLevel}
+                            onLevelChange={setSelectedLevel}
+                        />
+                    </div>
+                    <div style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '24px', border: '1px solid #dbeafe', color: '#1e40af' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <Info size={18} />
+                            <span style={{ fontWeight: '800', fontSize: '0.9rem' }}>관리 팁</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.5 }}>
+                            각 구역은 위경도 좌표를 기반으로 사각형 그리드 형태로 생성됩니다. 동기화 버튼을 누르면 프로젝트 설정에 따라 자동으로 구역이 생성됩니다.
+                        </p>
+                    </div>
+                </div>
+
+                {/* 지도 메인 영역 */}
+                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', height: '700px', display: 'flex', flexDirection: 'column' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <h2 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Layers size={20} color="#6366f1" /> {selectedLevel} 평면 구역도
+                      </h2>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>검 검색된 구역: <strong>{filteredZones.length}</strong>개</span>
+                   </div>
+                   <div style={{ flex: 1, borderRadius: '16px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                    {project && (
+                        <CommonMap 
+                            center={[project.lat, project.lng]}
+                            zoom={19}
+                            gridOnly={true}
+                            highlightLevel={selectedLevel}
+                        />
+                    )}
+                   </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default function WorkLocation() {
-  const [projectId, setProjectId] = useState(null);
-  const [project, setProject] = useState(null);
-  const [sites, setSites] = useState([]);
-  const [siteId, setSiteId] = useState(null);
-  const [zones, setZones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingZone, setEditingZone] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    level: '1F',
-    type: 'INDOOR',
-    lat: '',
-    lng: '',
-    default_hazards_text: '',
-  });
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState('ALL');
-
-  const [configData, setConfigData] = useState({
-    grid_spacing: 10,
-    grid_rows: 10,
-    grid_cols: 10,
-    basement_floors: 0,
-    ground_floors: 1
-  });
-
-  const levels = generateLevels(project);
-
-  const filteredZones = selectedLevel === 'ALL' 
-    ? zones 
-    : zones.filter(z => z.level === selectedLevel);
-
-  const centerLat = project?.location_lat != null ? project.location_lat : 37.5665;
-  const centerLng = project?.location_lng != null ? project.location_lng : 126.978;
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const dash = await getManagerDashboard();
-        const pid = dash?.project_info?.id;
-        if (!pid) {
-          setLoading(false);
-          return;
-        }
-        setProjectId(pid);
-        const [proj, siteList] = await Promise.all([
-          getProjectById(pid),
-          getProjectSites(pid),
-        ]);
-        setProject(proj);
-        setSites(siteList || []);
-        
-        if (proj) {
-          setConfigData({
-            grid_spacing: proj.grid_spacing || 10,
-            grid_rows: proj.grid_rows || 10,
-            grid_cols: proj.grid_cols || 10,
-            basement_floors: proj.basement_floors || 0,
-            ground_floors: proj.ground_floors || 1
-          });
-        }
-
-        if (siteList?.length > 0 && !siteId) {
-          setSiteId(siteList[0].id);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!siteId) {
-      setZones([]);
-      return;
-    }
-    safetyApi.getZones(siteId).then((data) => setZones(data || [])).catch(() => setZones([]));
-  }, [siteId]);
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      level: '1F',
-      type: 'INDOOR',
-      lat: '',
-      lng: '',
-      default_hazards_text: '',
-    });
-    setEditingZone(null);
-    setShowForm(false);
-    setShowMapPicker(false);
-  };
-
-  const handleMapPick = (lat, lng) => {
-    setFormData((prev) => ({ ...prev, lat: lat != null ? String(lat) : prev.lat, lng: lng != null ? String(lng) : prev.lng }));
-    setShowMapPicker(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return alert('구역명을 ?�력?�주?�요.');
-    if (!siteId) return alert('?�장???�택?�주?�요.');
-    setSubmitting(true);
-    try {
-      const default_hazards = formData.default_hazards_text
-        ? formData.default_hazards_text.split(/[,\n]/).map((s) => s.trim()).filter(Boolean)
-        : null;
-      const payload = {
-        name: formData.name.trim(),
-        level: formData.level,
-        type: formData.type,
-        lat: formData.lat ? parseFloat(formData.lat) : null,
-        lng: formData.lng ? parseFloat(formData.lng) : null,
-        default_hazards: default_hazards && default_hazards.length ? default_hazards : null,
-      };
-      if (editingZone) {
-        await safetyApi.updateZone(editingZone.id, payload);
-      } else {
-        await safetyApi.createZone({ ...payload, site_id: siteId });
-      }
-      resetForm();
-      const data = await safetyApi.getZones(siteId);
-      setZones(data || []);
-    } catch (err) {
-      alert('?�???�패: ' + (err.response?.data?.detail || err.message));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const startEdit = (z) => {
-    setEditingZone(z);
-    setFormData({
-      name: z.name || '',
-      level: z.level || '1F',
-      type: z.type || 'INDOOR',
-      lat: z.lat != null ? String(z.lat) : '',
-      lng: z.lng != null ? String(z.lng) : '',
-      default_hazards_text: Array.isArray(z.default_hazards) ? z.default_hazards.join(', ') : '',
-    });
-    setShowForm(true);
-  };
-
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>;
-  if (!projectId || !project) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>배정???�로?�트가 ?�습?�다.</div>;
-
-  return (
-    <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <MapPin color="#3b82f6" size={28} /> ?�업 ?�치 ?�정
-        </h1>
-        <p style={{ color: '#64748b', marginTop: '6px' }}>?�로?�트 ?�치 기반 그리??�?구역??관리합?�다.</p>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: '600', color: '#475569' }}>?�로?�트:</span>
-        <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold' }}>{project.name}</span>
-      </div>
-
-      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <label style={{ fontWeight: '600', color: '#475569' }}>?�장</label>
-        <select
-          value={siteId || ''}
-          onChange={(e) => setSiteId(e.target.value ? Number(e.target.value) : null)}
-          style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '150px' }}
-        >
-          <option value="">?�택</option>
-          {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-
-        {siteId && (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setShowConfig(!showConfig)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #64748b', background: 'white', cursor: 'pointer' }}
-            >
-              ?�️ {showConfig ? '?�정 ?�기' : '그리???�정'}
-            </button>
-            <button
-              onClick={async () => {
-                if (window.confirm('기존 구역???�생?�됩?�다. 계속?�시겠습?�까?')) {
-                  try {
-                    setLoading(true);
-                    await safetyApi.generateSiteGrid(siteId);
-                    const data = await safetyApi.getZones(siteId);
-                    setZones(data || []);
-                    alert('?�료?�었?�니??');
-                  } catch (e) { alert(e.message); } finally { setLoading(false); }
-                }
-              }}
-              style={{ padding: '8px 12px', borderRadius: '8px', background: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              ?�� 그리???�생??            </button>
-          </div>
-        )}
-      </div>
-
-      {showConfig && project && (
-        <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>?�� 그리??�?층수 ?�정</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
-            <label><span>격자 간격</span><input type="number" value={configData.grid_spacing} onChange={e => setConfigData({...configData, grid_spacing: parseFloat(e.target.value)})} /></label>
-            <label><span>가�?/span><input type="number" value={configData.grid_cols} onChange={e => setConfigData({...configData, grid_cols: parseInt(e.target.value)})} /></label>
-            <label><span>?�로</span><input type="number" value={configData.grid_rows} onChange={e => setConfigData({...configData, grid_rows: parseInt(e.target.value)})} /></label>
-            <label><span>지??/span><input type="number" value={configData.basement_floors} onChange={e => setConfigData({...configData, basement_floors: parseInt(e.target.value)})} /></label>
-            <label><span>지??/span><input type="number" value={configData.ground_floors} onChange={e => setConfigData({...configData, ground_floors: parseInt(e.target.value)})} /></label>
-            <button 
-              onClick={async () => {
-                await updateProject(projectId, configData);
-                const up = await getProjectById(projectId);
-                setProject(up);
-                alert('?�?�되?�습?�다.');
-              }}
-              style={{ padding: '10px', background: '#1e293b', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-            >?�??/button>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', overflowX: 'auto' }}>
-        <button onClick={() => setSelectedLevel('ALL')} style={{ padding: '6px 12px', borderRadius: '20px', background: selectedLevel === 'ALL' ? '#1e293b' : 'white', color: selectedLevel === 'ALL' ? 'white' : '#64748b', cursor: 'pointer' }}>?�체</button>
-        {levels.map(l => (
-          <button key={l} onClick={() => setSelectedLevel(l)} style={{ padding: '6px 12px', borderRadius: '20px', background: selectedLevel === l ? '#1e293b' : 'white', color: selectedLevel === l ? 'white' : '#64748b', cursor: 'pointer' }}>{l}</button>
-        ))}
-      </div>
-
-      {siteId && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ height: '400px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            <MapOnly center={[centerLat, centerLng]} zones={filteredZones} />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>구역 목록 ({selectedLevel})</h2>
-            <button onClick={() => { resetForm(); setShowForm(true); }} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>+ 추�?</button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-            {filteredZones.map(z => (
-              <div key={z.id} style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>[{z.level}] {z.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{z.type}</div>
-                </div>
-                <button onClick={() => startEdit(z)} style={{ border: 'none', background: 'none', cursor: 'pointer' }}><Pencil size={16} /></button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
-           <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '400px' }}>
-              <h3>{editingZone ? '?�정' : '추�?'}</h3>
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <input placeholder="구역�? value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required style={{ padding: '8px' }} />
-                <select value={formData.level} onChange={e => setFormData({...formData, level: e.target.value})} style={{ padding: '8px' }}>
-                  {levels.map(l => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>?�??/button>
-                  <button type="button" onClick={resetForm} style={{ flex: 1, padding: '10px', background: '#f1f5f9', border: 'none', borderRadius: '8px' }}>취소</button>
-                </div>
-              </form>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MapOnly({ center, zones }) {
-  return (
-    <MapContainer center={center} zoom={18} style={{ height: '100%', width: '100%' }}>
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {zones.filter(z => z.lat && z.lng).map(z => <ZoneSquare key={z.id} zone={z} />)}
-    </MapContainer>
-  );
-}
+export default WorkLocation;

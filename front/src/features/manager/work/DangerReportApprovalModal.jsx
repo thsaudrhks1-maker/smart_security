@@ -1,392 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import apiClient from '../../../api/client';
 
-/**
- * 매니?� ?�고 ?�인 모달
- * - 근로???�고 ?�용 ?�인
- * - ?�진 ?�인
- * - ?�인/반려 처리
- */
-function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false);
+import React, { useState } from 'react';
+import { X, Check, AlertTriangle, MessageSquare } from 'lucide-react';
+import apiClient from '@/api/client';
 
-  useEffect(() => {
-    if (!open || !report) {
-      setImages([]);
-      return;
-    }
+const DangerReportApprovalModal = ({ open, onClose, report, onSuccess }) => {
+    const [comment, setComment] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // ?�당 Zone??모든 PENDING ?�고 ?�진 가?�오�?    const allPendingReports = report.allPendingReports || [report];
-    console.log('?�� [매니?� 모달] 모든 PENDING ?�고:', allPendingReports);
+    if (!open || !report) return null;
 
-    setLoading(true);
-    
-    // 모든 ?�고???�진??병렬�?가?�오�?    Promise.all(
-      allPendingReports.map(r => {
-        const reportId = r.id || r.danger_zone_id;
-        console.log(`?�� API ?�출: /safety/reports/${reportId}/images`);
-        return apiClient.get(`/safety/reports/${reportId}/images`)
-          .then(res => ({
-            reportId: reportId,
-            reportDesc: r.description,
-            images: res.data || []
-          }))
-          .catch(err => {
-            console.error(`???�진 로드 ?�패 (?�고 ${reportId}):`, err);
-            return { reportId: reportId, reportDesc: r.description, images: [] };
-          });
-      })
-    )
-    .then(results => {
-      // 모든 ?�고???�진???�나??배열�??�합
-      const allImages = results.flatMap(r => 
-        r.images.map(img => ({ ...img, reportId: r.reportId, reportDesc: r.reportDesc }))
-      );
-      console.log('???�체 ?�진 로드 ?�공:', allImages);
-      setImages(allImages);
-    })
-    .finally(() => setLoading(false));
-  }, [open, report]);
+    const handleAction = async (status) => {
+        setLoading(true);
+        try {
+            await apiClient.patch(`/safety/reports/${report.id}/status`, {
+                status: status,
+                manager_comment: comment
+            });
+            alert(status === 'APPROVED' ? '위험 신고가 승인되었습니다.' : '위험 신고가 반려되었습니다.');
+            onSuccess();
+            onClose();
+        } catch (e) {
+            console.error('상태 변경 실패', e);
+            alert('중복 처리되었거나 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleApprove = async () => {
-    const allReports = report.allPendingReports || [report];
-    const reportCount = allReports.length;
-    
-    if (!window.confirm(
-      `??구역??${reportCount}�??�고�?모두 ?�인?�시겠습?�까?\n?�인 ???�당 구역??빨간???�험 구역?�로 ?�시?�니??`
-    )) {
-      return;
-    }
-
-    setProcessing(true);
-    try {
-      // 모든 ?�고 ?�인
-      await Promise.all(
-        allReports.map(r => {
-          const reportId = r.id || r.danger_zone_id;
-          return apiClient.post(`/safety/reports/${reportId}/approve`);
-        })
-      );
-      alert(`${reportCount}�??�고가 ?�인?�었?�니??`);
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      console.error('?�인 ?�패:', error);
-      alert('?�인 처리 �??�류가 발생?�습?�다.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handleReject = async () => {
-    const allReports = report.allPendingReports || [report];
-    const reportCount = allReports.length;
-    
-    if (!window.confirm(
-      `??구역??${reportCount}�??�고�?모두 반려?�시겠습?�까?\n반려 ???�험 구역?�서 ?�외?�니??`
-    )) {
-      return;
-    }
-
-    setProcessing(true);
-    try {
-      // 모든 ?�고 반려
-      await Promise.all(
-        allReports.map(r => {
-          const reportId = r.id || r.danger_zone_id;
-          return apiClient.post(`/safety/reports/${reportId}/reject`);
-        })
-      );
-      alert(`${reportCount}�??�고가 반려?�었?�니??`);
-      onSuccess?.();
-      onClose();
-    } catch (error) {
-      console.error('반려 ?�패:', error);
-      alert('반려 처리 �??�류가 발생?�습?�다.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  if (!open || !report) return null;
-
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10000,
-      padding: '20px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '28px',
-        width: '100%',
-        maxWidth: '700px',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
-      }}>
-        {/* ?�더 */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '24px',
-          paddingBottom: '16px',
-          borderBottom: '2px solid #f97316'
-        }}>
-          <h2 style={{ margin: 0, color: '#f97316', fontSize: '20px' }}>
-            ?�� 근로???�험 ?�고 검??          </h2>
-          <span style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            backgroundColor: '#fff7ed',
-            color: '#f97316',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            border: '2px solid #f97316'
-          }}>
-            ?�인 ?��?          </span>
-        </div>
-
-        {/* 구역 ?�보 */}
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '16px', 
-          backgroundColor: '#fef3c7', 
-          borderRadius: '10px',
-          border: '2px solid #fbbf24'
-        }}>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: '#92400e' }}>
-            ?�� ?�고 ?�치
-          </div>
-          <div style={{ fontSize: '15px', color: '#78350f' }}>
-            {report.zoneName || `구역 #${report.zone_id}`} ({report.zoneLevel || report.level || '-'})
-          </div>
-          {report.allPendingReports && report.allPendingReports.length > 1 && (
-            <div style={{ 
-              marginTop: '8px', 
-              padding: '8px', 
-              backgroundColor: '#fef9c3', 
-              borderRadius: '6px',
-              fontSize: '13px',
-              color: '#713f12'
-            }}>
-              ?�️ ??구역??{report.allPendingReports.length}개의 ?�고가 ?�습?�다
-            </div>
-          )}
-        </div>
-
-        {/* ?�험 ?�형 */}
-        <div style={{ marginBottom: '18px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', fontSize: '15px' }}>
-            ?�️ ?�험 ?�형
-          </div>
-          <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#fee2e2', 
-            borderRadius: '8px',
-            border: '1px solid #fca5a5',
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#991b1b'
-          }}>
-            {getRiskTypeLabel(report.risk_type || report.level)}
-          </div>
-        </div>
-
-        {/* ?�고 ?�용 */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', fontSize: '15px' }}>
-            ?�� ?�고 ?�용
-          </div>
-          <div style={{ 
-            padding: '14px', 
-            backgroundColor: '#f1f5f9', 
-            borderRadius: '8px',
-            whiteSpace: 'pre-line',
-            lineHeight: '1.7',
-            fontSize: '14px',
-            color: '#334155',
-            border: '1px solid #cbd5e1'
-          }}>
-            {report.description || '?�세 ?�명 ?�음'}
-          </div>
-        </div>
-
-        {/* ?�고 ?�진 */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-            ?�진 로딩 �?..
-          </div>
-        ) : images.length > 0 ? (
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#1e293b', fontSize: '15px' }}>
-              ?�� 첨�? ?�진 ({images.length}??
-            </div>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
-              gap: '14px' 
-            }}>
-              {images.map(img => (
-                <div 
-                  key={`${img.reportId}_${img.id}`} 
-                  style={{ 
-                    borderRadius: '10px', 
-                    overflow: 'hidden',
-                    border: '2px solid #e2e8f0',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                  }}
-                  onClick={() => window.open(`http://localhost:8500/static/danger_zone_images/${img.image_name}`, '_blank')}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  <img 
-                    src={`http://localhost:8500/static/danger_zone_images/${img.image_name}`}
-                    alt={`?�고 ?�진 ${img.id}`}
-                    style={{ 
-                      width: '100%', 
-                      height: '180px', 
-                      objectFit: 'cover' 
-                    }}
-                  />
-                  <div style={{ 
-                    padding: '8px', 
-                    backgroundColor: '#f8fafc', 
-                    fontSize: '11px', 
-                    color: '#64748b',
-                    textAlign: 'center'
-                  }}>
-                    {new Date(img.uploaded_at).toLocaleString('ko-KR')}
-                    {img.reportDesc && (
-                      <div style={{ 
-                        marginTop: '4px', 
-                        fontSize: '10px', 
-                        color: '#94a3b8',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {img.reportDesc}
-                      </div>
-                    )}
-                  </div>
+    return (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000, padding: '20px' }}>
+            <div style={{ background: 'white', borderRadius: '24px', padding: '2rem', width: '100%', maxWidth: '500px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <AlertTriangle size={24} color="#ef4444" />
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900' }}>위험 신고 검토 및 승인</h2>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={24} /></button>
                 </div>
-              ))}
+
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '16px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700', marginBottom: '4px' }}>신고 내용</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', lineHeight: 1.5 }}>{report.description}</div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '800', fontSize: '0.9rem', color: '#475569' }}>
+                        <MessageSquare size={16} style={{ verticalAlign: 'middle', marginRight: '5px' }} /> 관리자 검토 의견
+                    </label>
+                    <textarea 
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
+                        placeholder="승인 또는 반려 사유를 입력하세요."
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', minHeight: '100px', outline: 'none', fontSize: '0.9rem' }}
+                    />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                        onClick={() => handleAction('REJECTED')}
+                        disabled={loading}
+                        style={{ flex: 1, padding: '1rem', background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                        반려 처리
+                    </button>
+                    <button 
+                        onClick={() => handleAction('APPROVED')}
+                        disabled={loading}
+                        style={{ flex: 1, padding: '1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '14px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                        <Check size={20} /> 신고 승인
+                    </button>
+                </div>
             </div>
-          </div>
-        ) : (
-          <div style={{ 
-            padding: '24px', 
-            textAlign: 'center', 
-            color: '#94a3b8',
-            backgroundColor: '#f8fafc',
-            borderRadius: '8px',
-            fontSize: '14px',
-            marginBottom: '24px'
-          }}>
-            첨�????�진???�습?�다.
-          </div>
-        )}
-
-        {/* 버튼 */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
-          justifyContent: 'flex-end',
-          paddingTop: '20px',
-          borderTop: '1px solid #e2e8f0'
-        }}>
-          <button
-            onClick={onClose}
-            disabled={processing}
-            style={{
-              padding: '12px 24px',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
-              backgroundColor: 'white',
-              color: '#475569',
-              cursor: processing ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '600'
-            }}
-          >
-            취소
-          </button>
-          <button
-            onClick={handleReject}
-            disabled={processing}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              backgroundColor: processing ? '#ccc' : '#64748b',
-              color: 'white',
-              cursor: processing ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            {processing ? '처리�?..' : '반려'}
-          </button>
-          <button
-            onClick={handleApprove}
-            disabled={processing}
-            style={{
-              padding: '12px 24px',
-              border: 'none',
-              borderRadius: '8px',
-              backgroundColor: processing ? '#ccc' : '#16a34a',
-              color: 'white',
-              cursor: processing ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            {processing ? '처리�?..' : '???�인'}
-          </button>
         </div>
-
-        <div style={{ 
-          marginTop: '20px', 
-          padding: '14px', 
-          backgroundColor: '#fffbeb', 
-          borderRadius: '8px', 
-          fontSize: '13px', 
-          color: '#92400e',
-          border: '1px solid #fde047'
-        }}>
-          ?�� <strong>?�내:</strong> ?�인 ???�당 구역??빨간???�험 구역?�로 ?�환?�어 모든 근로?�에�??�시?�니??
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ?�험 ?�형 ?��? ?�벨
-function getRiskTypeLabel(riskType) {
-  const labels = {
-    'FALL': '?�하�??�험',
-    'HEAVY_EQUIPMENT': '중장�??�업',
-    'FIRE': '?�재 ?�험',
-    'ELECTRIC': '감전 ?�험',
-    'COLLAPSE': '붕괴 ?�험',
-    'ETC': '기�? ?�험',
-    'CAUTION': '주의 구역'
-  };
-  return labels[riskType] || riskType || '?�험 구역';
-}
+    );
+};
 
 export default DangerReportApprovalModal;

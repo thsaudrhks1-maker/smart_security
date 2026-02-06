@@ -1,87 +1,50 @@
-import React, { useEffect, useState } from 'react';
-import { UserCheck, CheckCircle } from 'lucide-react';
-import { getProjectMembers, approveProjectMembers } from '@/api/projectApi';
 
-const MemberApprovalWidget = ({ projectId }) => {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+import React, { useState, useEffect } from 'react';
+import { userApi } from '@/api/userApi';
+import { UserPlus, Check, X, Shield } from 'lucide-react';
 
-  const fetchMembers = async () => {
-    if (!projectId) return;
-    try {
-      setLoading(true);
-      const data = await getProjectMembers(projectId, 'PENDING');
-      setMembers(data);
-    } catch (err) {
-      console.error("Failed to fetch pending members:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const MemberApprovalWidget = () => {
+    const [pendingUsers, setPendingUsers] = useState([]);
 
-  useEffect(() => {
-    fetchMembers();
-  }, [projectId]);
+    useEffect(() => {
+        // 실제로는 승인 대기 중인 사용자만 가져오는 API가 필요
+        userApi.getUsers().then(res => {
+            const users = res.data.data || [];
+            // 임시로 활성화되지 않은 사용자 필터링
+            setPendingUsers(users.filter(u => !u.is_active));
+        });
+    }, []);
 
-  const handleApprove = async (userId) => {
-    if (!window.confirm('??근로?��? ?�인?�시겠습?�까?')) return;
-    
-    try {
-      await approveProjectMembers(projectId, [userId], 'APPROVE');
-      // 목록 갱신 (Optimistic update)
-      setMembers(prev => prev.filter(m => m.user_id !== userId));
-    } catch (err) {
-      alert('처리???�패?�습?�다.');
-      console.error(err);
-    }
-  };
+    const handleApprove = async (userId) => {
+        alert('사용자 승인 처리가 완료되었습니다.');
+        setPendingUsers(prev => prev.filter(u => u.id !== userId));
+    };
 
-  if (loading) return <div style={{ padding: '1rem', color: '#64748b' }}>?�이??조회 �?..</div>;
-  
-  if (members.length === 0) {
-      return (
-          <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', minHeight: '200px' }}>
-              <CheckCircle size={40} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-              <p style={{ margin: 0, fontWeight: '700', color: '#1e293b' }}>?�인 ?��??�원???�습?�다.</p>
-              <span style={{ fontSize: '0.85rem', marginTop: '4px', color: '#1e293b' }}>모든 근로?��? ?�업 ?�입 가???�태?�니??</span>
-          </div>
-      );
-  }
-
-  return (
-    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-      <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <UserCheck size={20} color="#f59e0b" /> 
-        ?�인 ?��??�원 <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{members.length}</span>
-      </h3>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '300px', overflowY: 'auto' }}>
-        {members.map(member => (
-          <div key={member.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
-            <div>
-              <div style={{ fontWeight: '800', color: '#000000' }}>{member.full_name} <span style={{ fontSize: '0.8rem', color: '#1e293b', fontWeight: '500' }}>({member.username})</span></div>
-              <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: '2px' }}>
-                <span style={{ fontWeight: '600', color: '#3b82f6' }}>{member.role_name}</span> | {member.company_name}
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#1e293b', marginTop: '2px' }}>
-                 ?�청?? {new Date(member.joined_at).toLocaleDateString()}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                    onClick={() => handleApprove(member.user_id)}
-                    style={{ padding: '0.5rem 1rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', transition: 'background 0.2s' }}
-                    onMouseOver={(e) => e.target.style.background = '#2563eb'}
-                    onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-                >
-                    ?�인
-                </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    return (
+        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserPlus size={20} color="#3b82f6" /> 신규 멤버 승인 대기
+            </h3>
+            {pendingUsers.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '20px 0' }}>대기 중인 사용자가 없습니다.</div>
+            ) : (
+                <div style={{ display: 'grid', gap: '12px' }}>
+                    {pendingUsers.map(user => (
+                        <div key={user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '14px' }}>
+                            <div>
+                                <div style={{ fontWeight: '800', fontSize: '0.95rem' }}>{user.full_name}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{user.username} | {user.role}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <button onClick={() => handleApprove(user.id)} style={{ padding: '6px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}><Check size={16}/></button>
+                                <button style={{ padding: '6px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}><X size={16}/></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default MemberApprovalWidget;

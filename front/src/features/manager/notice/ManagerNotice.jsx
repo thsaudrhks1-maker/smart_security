@@ -1,161 +1,63 @@
+
 import React, { useState, useEffect } from 'react';
-import { noticeApi } from '@/api/noticeApi';
-import { getManagerDashboard } from '@/api/managerApi';
-import { Megaphone, Plus, X, Trash2, Edit3, AlertCircle, Clock, ChevronRight } from 'lucide-react';
+import apiClient from '@/api/client';
+import { Bell, Megaphone, Plus, Trash2, Calendar } from 'lucide-react';
 
 const ManagerNotice = () => {
-  const [notices, setNotices] = useState([]);
-  const [projectId, setProjectId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ title: '', content: '', is_important: false });
+    const [notices, setNotices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+    useEffect(() => {
+        loadNotices();
+    }, []);
 
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      const dash = await getManagerDashboard();
-      const pid = dash?.project_info?.id;
-      if (pid) {
-        setProjectId(pid);
-        const data = await noticeApi.getProjectNotices(pid);
-        setNotices(data || []);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadNotices = async () => {
+        try {
+            const res = await apiClient.get('/sys/notices');
+            setNotices(res.data.data || []);
+        } catch (e) {
+            console.error('공지사항 로드 실패', e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.title.trim() || !formData.content.trim()) return;
-
-    try {
-      await noticeApi.createNotice({ ...formData, project_id: projectId });
-      setFormData({ title: '', content: '', is_important: false });
-      setShowModal(false);
-      loadInitialData();
-    } catch (err) {
-      alert('공�? ?�록 ?�패');
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('??��?�시겠습?�까?')) return;
-    try {
-      await noticeApi.deleteNotice(id);
-      loadInitialData();
-    } catch (err) {
-      alert('??�� ?�패');
-    }
-  };
-
-  return (
-    <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Megaphone color="#f59e0b" size={28} /> 공�??�항 관�?
-          </h1>
-          <p style={{ color: '#64748b', marginTop: '5px' }}>?�장 근로?�들?�게 ?�시간으�??�전 공�? �??�내 ?�항???�달?�니??</p>
-        </div>
-        <button 
-          onClick={() => setShowModal(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
-        >
-          <Plus size={20} /> 공�? ?�성
-        </button>
-      </div>
-
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>로딩 �?..</div>
-        ) : notices.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '5rem', background: 'white', borderRadius: '20px', border: '2px dashed #e2e8f0', color: '#94a3b8' }}>
-            <Megaphone size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-            <p>?�록??공�??�항???�습?�다.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {notices.map(notice => (
-              <div key={notice.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', border: notice.is_important ? '2px solid #fecaca' : '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {notice.is_important && (
-                      <span style={{ background: '#ef4444', color: 'white', fontSize: '0.7rem', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>IMPORTANT</span>
-                    )}
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{notice.title}</h3>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => handleDelete(notice.id)} style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '6px', borderRadius: '8px', color: '#ef4444', cursor: 'pointer' }}><Trash2 size={16}/></button>
-                  </div>
+    return (
+        <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <Megaphone size={28} color="#3b82f6" /> 현장 공지사항 관리
+                    </h1>
+                    <p style={{ color: '#64748b', marginTop: '4px' }}>근로자들에게 전달할 중요한 안전 수칙 및 현장 소식을 게시합니다.</p>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{notice.content}</p>
-                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '15px', fontSize: '0.8rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14} /> {new Date(notice.created_at).toLocaleDateString()}</span>
-                    <span>?�️ {notice.author_name || '관리자'}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div style={{ background: 'white', borderRadius: '20px', width: '500px', padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>??공�??�항 ?�성</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                <button style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Plus size={20} /> 새 공지 작성
+                </button>
             </div>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <label>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>?�목</div>
-                <input 
-                  type="text" 
-                  value={formData.title} 
-                  onChange={e => setFormData({...formData, title: e.target.value})}
-                  placeholder="공�? ?�목???�력?�세??
-                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none' }}
-                  required
-                />
-              </label>
-              <label>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>?�용</div>
-                <textarea 
-                  value={formData.content} 
-                  onChange={e => setFormData({...formData, content: e.target.value})}
-                  placeholder="?�달?�실 ?�용???�력?�세??.."
-                  rows={5}
-                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', resize: 'none' }}
-                  required
-                />
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={formData.is_important}
-                  onChange={e => setFormData({...formData, is_important: e.target.checked})}
-                />
-                <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>중요 공�?�??�정 (?�단 고정 �?강조)</span>
-              </label>
-              <button 
-                type="submit"
-                style={{ marginTop: '1rem', padding: '14px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}
-              >
-                ?�록?�기
-              </button>
-            </form>
-          </div>
+
+            <div style={{ display: 'grid', gap: '1rem' }}>
+                {notices.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '5rem', background: '#f8fafc', borderRadius: '24px', border: '1px dashed #cbd5e1', color: '#94a3b8' }}>
+                        등록된 공지사항이 없습니다.
+                    </div>
+                ) : notices.map(notice => (
+                    <div key={notice.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: '800' }}>{notice.title}</h3>
+                            <div style={{ display: 'flex', gap: '15px', color: '#64748b', fontSize: '0.85rem' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> {notice.created_at?.split('T')[0]}</span>
+                                <span>작성자: 관리자</span>
+                            </div>
+                        </div>
+                        <button style={{ padding: '8px', color: '#ef4444', background: '#fef2f2', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                ))}
+            </div>
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default ManagerNotice;

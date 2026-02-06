@@ -3,6 +3,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './components/layout/MainLayout';
+import ManagerLayout from './features/manager/components/layout/ManagerLayout';
+import WorkerLayout from './features/worker/components/layout/WorkerLayout';
 
 // Auth
 import Login from './features/auth/Login';
@@ -18,18 +20,17 @@ import ProjectList from './features/admin/projects/ProjectList';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CreateProject from './features/admin/projects/CreateProject';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({ children, allowedRoles, layout: Layout = MainLayout }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>로딩 중...</div>;
+  if (loading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', color: '#0f172a' }}>로딩 중...</div>;
   if (!user) return <Navigate to="/" replace />;
   
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // 레이아웃 적용
-  return <MainLayout>{children}</MainLayout>;
+  return <Layout>{children}</Layout>;
 };
 
 const DashboardRedirect = () => {
@@ -64,9 +65,37 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Manager/Worker Routes도 비슷한 방식으로 확장 가능 */}
-          <Route path="/manager/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><ManagerDashboard /></ProtectedRoute>} />
-          <Route path="/worker/dashboard" element={<ProtectedRoute allowedRoles={['worker']}><WorkerDashboard /></ProtectedRoute>} />
+          {/* Manager Routes: Smart Site 현장 관리자 레이아웃 */}
+          <Route path="/manager/*" element={
+            <ProtectedRoute allowedRoles={['manager']} layout={ManagerLayout}>
+              <Routes>
+                <Route path="dashboard" element={<ManagerDashboard />} />
+                <Route path="work" element={<ManagerDashboard />} />
+                <Route path="contents" element={<ManagerDashboard />} />
+                <Route path="locations" element={<ManagerDashboard />} />
+                <Route path="companies" element={<ManagerDashboard />} />
+                <Route path="workers" element={<ManagerDashboard />} />
+                <Route path="attendance" element={<ManagerDashboard />} />
+                <Route path="safety-info" element={<ManagerDashboard />} />
+                <Route path="violations" element={<ManagerDashboard />} />
+                <Route path="location" element={<ManagerDashboard />} />
+                <Route path="education" element={<ManagerDashboard />} />
+                <Route path="notices" element={<ManagerDashboard />} />
+                <Route path="emergency" element={<ManagerDashboard />} />
+                <Route path="" element={<Navigate to="/manager/dashboard" replace />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Worker Routes */}
+          <Route path="/worker/*" element={
+            <ProtectedRoute allowedRoles={['worker']} layout={WorkerLayout}>
+              <Routes>
+                <Route path="dashboard" element={<WorkerDashboard />} />
+                <Route path="" element={<Navigate to="/worker/dashboard" replace />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
     </AuthProvider>

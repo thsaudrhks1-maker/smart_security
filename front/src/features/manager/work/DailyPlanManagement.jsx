@@ -1,556 +1,222 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import ZoneStatusSidePanel from './ZoneStatusSidePanel';
-import BuildingSectionView from './BuildingSectionView';
-import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
-import DangerReportApprovalModal from './DangerReportApprovalModal';
-import 'leaflet/dist/leaflet.css';
 import { workApi } from '@/api/workApi';
-import { getMyWorkers } from '@/api/managerApi';
 import { safetyApi } from '@/api/safetyApi';
-import { getManagerDashboard } from '@/api/managerApi';
-import { getProjectById, getProjectSites } from '@/api/projectApi';
-import apiClient from '@/api/client';
-import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, X, ShieldAlert, Trash2, Map, LayoutDashboard } from 'lucide-react';
-
-const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
-
-const RISK_TYPES = [
-  { value: 'HEAVY_EQUIPMENT', label: '중장�? },
-  { value: 'FIRE', label: '?�재' },
-  { value: 'FALL', label: '?�하�? },
-  { value: 'ETC', label: '기�?' },
-];
-
-const globalStyles = `
-  .thin-scroll::-webkit-scrollbar {
-    width: 4px;
-  }
-  .thin-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .thin-scroll::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-  }
-`;
+import { getManagerDashboard } from '@/api/authApi';
+import { 
+  Calendar, Map as MapIcon, Plus, Users, 
+  ChevronRight, ChevronLeft, Filter, AlertTriangle 
+} from 'lucide-react';
+import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 
 const DailyPlanManagement = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [zones, setZones] = useState([]);
-  const [dangerZones, setDangerZones] = useState([]);
-  const [project, setProject] = useState(null);
-  const [sites, setSites] = useState([]);
-  const [siteId, setSiteId] = useState(null);
-  const [openWorkAreas, setOpenWorkAreas] = useState(true);
-  const [openDangerZones, setOpenDangerZones] = useState(true);
-  const [showDangerModal, setShowDangerModal] = useState(false);
-  const [editPlanId, setEditPlanId] = useState(null);
-  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
-  const [expandedZoneId, setExpandedZoneId] = useState(null);
-  const [initialZoneId, setInitialZoneId] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('1F');
-  const [showZoneActionModal, setShowZoneActionModal] = useState(false);
-  const [selectedZoneForAction, setSelectedZoneForAction] = useState(null);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
-  const [selectedPendingReport, setSelectedPendingReport] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedLevel, setSelectedLevel] = useState('ALL');
+    const [zones, setZones] = useState([]);
+    const [plans, setPlans] = useState([]);
+    const [dangerZones, setDangerZones] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [siteId, setSiteId] = useState(null);
+    const [blueprint, setBlueprint] = useState(null);
 
-  const filteredZones = useMemo(() => {
-    return selectedLevel === 'ALL' 
-      ? zones 
-      : zones.filter(z => z.level === selectedLevel);
-  }, [zones, selectedLevel]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedZone, setSelectedZone] = useState(null);
 
-  const loadPlans = async () => {
-    try {
-      setLoading(true);
-      const data = await workApi.getPlans({ date: selectedDate });
-      setPlans(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const filteredZones = useMemo(() => {
+        return selectedLevel === 'ALL' ? zones : zones.filter(z => z.level === selectedLevel);
+    }, [zones, selectedLevel]);
 
-  const loadZones = async () => {
-    try {
-      const data = siteId != null ? await safetyApi.getZones(siteId) : await safetyApi.getZones();
-      setZones(data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const loadDangerZones = async () => {
-    try {
-      const data = await safetyApi.getDailyDangerZones(selectedDate);
-      setDangerZones(data || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const dash = await getManagerDashboard();
-        const pid = dash?.project_info?.id;
-        if (!pid) return;
-        const [proj, siteList] = await Promise.all([getProjectById(pid), getProjectSites(pid)]);
-        setProject(proj);
-        setSites(siteList || []);
-        if (siteList?.length > 0 && siteId == null) setSiteId(siteList[0].id);
-      } catch (e) {
-        console.error(e);
-      }
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [plansRes, zonesRes, dangerRes] = await Promise.all([
+                workApi.getPlans({ date: selectedDate }),
+                siteId ? safetyApi.getZones(siteId) : safetyApi.getZones(),
+                safetyApi.getDailyDangerZones(selectedDate)
+            ]);
+            setPlans(plansRes || []);
+            setZones(zonesRes || []);
+            setDangerZones(dangerRes || []);
+        } catch (err) {
+            console.error('데이터 로드 실패:', err);
+        } finally {
+            setLoading(false);
+        }
     };
-    init();
-  }, []);
 
-  useEffect(() => { loadPlans(); }, [selectedDate]);
-  useEffect(() => { loadZones(); }, [siteId]);
-  useEffect(() => { loadDangerZones(); }, [selectedDate]);
+    useEffect(() => {
+        const fetchSiteInfo = async () => {
+            const dash = await getManagerDashboard();
+            if (dash?.project_info?.id) {
+                setSiteId(dash.project_info.id);
+                // 도면 설정 (임시)
+                setBlueprint({
+                    url: 'https://images.unsplash.com/photo-1503387762-592dea58ed23?auto=format&fit=crop&w=1200',
+                    config: { lat: dash.project_info.lat, lng: dash.project_info.lng, width: 0.005, height: 0.005 }
+                });
+            }
+        };
+        fetchSiteInfo();
+    }, []);
 
-  // 1. ?�장�??�터�?(건물 ?�면???�계??
-  const plansInSite = useMemo(() => (siteId != null ? plans.filter((p) => p.site_id === siteId) : plans), [plans, siteId]);
-  const risksInSite = useMemo(() => {
-    const siteZoneIds = new Set(zones.map(z => z.id));
-    return dangerZones.filter(d => siteZoneIds.has(d.zone_id));
-  }, [dangerZones, zones]);
+    useEffect(() => {
+        loadData();
+    }, [selectedDate, siteId]);
 
-  // 2. 층별 ?�터�?(�?�??�측 리스?�용)
-  const plansInLevel = useMemo(() => {
-    const levelZoneIds = new Set(filteredZones.map(z => z.id));
-    return plansInSite.filter(p => levelZoneIds.has(p.zone_id));
-  }, [plansInSite, filteredZones]);
+    const handleZoneClick = (zone) => {
+        setSelectedZone(zone);
+        setIsModalOpen(true);
+    };
 
-  const risksInLevel = useMemo(() => {
-    const levelZoneIds = new Set(filteredZones.map(z => z.id));
-    return risksInSite.filter(d => levelZoneIds.has(d.zone_id));
-  }, [risksInSite, filteredZones]);
-
-  const handleDateChange = (days) => {
-    const date = new Date(selectedDate);
-    date.setDate(date.getDate() + days);
-    setSelectedDate(date.toISOString().split('T')[0]);
-  };
-
-  return (
-    <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden', color: '#1e293b' }}>
-      <style>{globalStyles}</style>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#000000', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Calendar color="#3b82f6" size={28} /> ?�일 ?�업 계획
-          </h1>
-          <p style={{ color: '#1e293b', marginTop: '5px', fontWeight: '600' }}>?�업 ?�치(구역)�??�택??근무?�에�?배정?�니??</p>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          {sites.length > 0 && (
-            <select
-              value={siteId ?? ''}
-              onChange={(e) => setSiteId(e.target.value ? Number(e.target.value) : null)}
-              style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: '160px' }}
-            >
-              <option value="">?�장 ?�체</option>
-              {sites.map((s) => (
-                <option key={s.id} value={s.id}>{s.name || `?�장 ${s.id}`}</option>
-              ))}
-            </select>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', background: 'white', padding: '5px', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-            <button onClick={() => handleDateChange(-1)} style={{ border: 'none', background: 'transparent', padding: '8px', cursor: 'pointer' }}><ChevronLeft size={20}/></button>
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ border: 'none', fontSize: '1rem', fontWeight: '700', outline: 'none' }} />
-            <button onClick={() => handleDateChange(1)} style={{ border: 'none', background: 'transparent', padding: '8px', cursor: 'pointer' }}><ChevronRight size={20}/></button>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem', padding: '0.85rem 1.25rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><HardHat size={18} color="#3b82f6" /> <strong>?�장 ?�업</strong> <span style={{ color: '#3b82f6', fontWeight: '800' }}>{plansInSite.length}�?/span></span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} color="#ea580c" /> <strong>?�험 구역</strong> <span style={{ color: '#ea580c', fontWeight: '800' }}>{risksInSite.length}�?/span></span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18} color="#64748b" /> <strong>배정 ?�원</strong> <span style={{ color: '#475569', fontWeight: '800' }}>{plansInSite.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}�?/span></span>
-      </div>
-
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        <div style={{ display: 'flex', gap: '1.5rem', paddingBottom: '1rem', height: '100%', minHeight: '520px' }}>
-          
-          {/* [NEW] 건물 ?�면???�택�?*/}
-          {project && (
-            <BuildingSectionView 
-              project={project}
-              selectedLevel={selectedLevel}
-              onLevelSelect={setSelectedLevel}
-              allZones={zones}
-              allPlans={plansInSite}
-              allRisks={risksInSite}
-            />
-          )}
-
-          {project && siteId && (
-            <div style={{ flex: 1, minWidth: 400, display: 'flex', flexDirection: 'column', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', position: 'relative' }}>
-              <div style={{ height: '520px', position: 'relative', overflow: 'hidden' }}>
-                <UniversalBlueprintMap 
-                  role="MANAGER"
-                  zones={filteredZones}
-                  plans={plansInLevel}
-                  risks={risksInLevel}
-                  height="100%"
-                  zoom={19}
-                  onZoneClick={(zone) => { 
-                    // Zone??PENDING ?�험???�는지 ?�인
-                    const pendingDangers = risksInLevel.filter(r => r.zone_id === zone.id && r.status === 'PENDING');
-                    console.log('?�� [매니?�] Zone ?�릭:', zone.id, '| PENDING ?�고:', pendingDangers);
-                    
-                    if (pendingDangers.length > 0) {
-                      // ?�당 Zone??모든 PENDING ?�고�??�달 (?�진 ?�합 ?�시??
-                      const reportWithZone = {
-                        ...pendingDangers[0], // �?번째 ?�고??기본 ?�보 ?�용
-                        zoneName: zone.name,
-                        zoneLevel: zone.level,
-                        allPendingReports: pendingDangers // 모든 PENDING ?�고 ?�함
-                      };
-                      console.log('?�� ?�달???�이??', reportWithZone);
-                      
-                      // PENDING ?�험 ???�인 모달
-                      setSelectedPendingReport(reportWithZone);
-                      setShowApprovalModal(true);
-                    } else {
-                      // ?�반 Zone ???�업/?�험 ?�택 모달
-                      setSelectedZoneForAction(zone); 
-                      setShowZoneActionModal(true); 
-                    }
-                  }}
-                />
-                <ZoneStatusSidePanel 
-                  zones={filteredZones} filteredPlans={plansInLevel} isOpen={isSidePanelOpen} onClose={() => setIsSidePanelOpen(false)}
-                  expandedZoneId={expandedZoneId} setExpandedZoneId={setExpandedZoneId} WORK_TYPE_COLORS={WORK_TYPE_COLORS}
-                />
-                {!isSidePanelOpen && (
-                  <button onClick={() => setIsSidePanelOpen(true)} style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 999, background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <LayoutDashboard size={14} /> 목록 보기
-                  </button>
-                )}
-              </div>
-              <DailyPlanMapLegend plans={plansInLevel} dangerZones={risksInLevel} />
-            </div>
-          )}
-
-          <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: '#f1f5f9' }}>
-                <HardHat size={20} color="#3b82f6" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>?�일 ?�업 ({selectedLevel})</span>
-                <button onClick={() => setShowModal(true)} style={{ marginLeft: 'auto', padding: '6px 12px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><Plus size={16} /></button>
-              </div>
-              <div style={{ padding: '1rem', maxHeight: '420px', overflowY: 'auto' }}>
-                {plansInLevel.map(plan => <PlanCard key={plan.id} plan={plan} onEdit={() => setEditPlanId(plan.id)} onDelete={async () => { await workApi.deletePlan(plan.id); loadPlans(); }} />)}
-              </div>
+    return (
+        <div style={{ padding: '20px', color: '#1e293b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>📅 일일 작업 및 인력 관리</h1>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>일자별 작업 계획을 수립하고 현장 구역별 인력을 배정합니다.</p>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <input 
+                        type="date" 
+                        value={selectedDate} 
+                        onChange={e => setSelectedDate(e.target.value)}
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                </div>
             </div>
 
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: '#fff7ed' }}>
-                <ShieldAlert size={20} color="#ea580c" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>?�험 구역 ({selectedLevel})</span>
-                <button onClick={() => { setInitialZoneId(''); setShowDangerModal(true); }} style={{ marginLeft: 'auto', padding: '6px 12px', background: '#ea580c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><Plus size={16} /></button>
-              </div>
-              <div style={{ padding: '1rem' }}>
-                {risksInLevel.map(d => (
-                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', padding: '8px', borderLeft: '4px solid #ea580c', background: '#fffaf5' }}>
-                    <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#000000' }}>{zones.find(z => z.id === d.zone_id)?.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#666' }}>{d.description}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px' }}>
+                {/* 메인 지도 영역 */}
+                <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+                    <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            {['ALL', '1F', '2F', '3F'].map(lv => (
+                                <button 
+                                    key={lv}
+                                    onClick={() => setSelectedLevel(lv)}
+                                    style={{ 
+                                        padding: '4px 12px', borderRadius: '6px', fontSize: '13px', border: '1px solid',
+                                        background: selectedLevel === lv ? '#3b82f6' : 'white',
+                                        color: selectedLevel === lv ? 'white' : '#64748b',
+                                        borderColor: selectedLevel === lv ? '#3b82f6' : '#e2e8f0',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    {lv}
+                                </button>
+                            ))}
+                        </div>
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>* 구역을 클릭하여 작업을 할당하세요.</span>
                     </div>
-                    <button onClick={async () => { if (window.confirm('??��?�시겠습?�까?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer' }}><X size={16} /></button>
-                  </div>
-                ))}
-              </div>
+                    <UniversalBlueprintMap 
+                        blueprintUrl={blueprint?.url}
+                        blueprintConfig={blueprint?.config}
+                        zones={filteredZones}
+                        plans={plans}
+                        risks={dangerZones}
+                        onZoneClick={handleZoneClick}
+                    />
+                </div>
+
+                {/* 우측 작업 상세 리스트 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ background: 'white', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <h3 style={{ margin: '0 0 15px 0', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Filter size={18} /> 오늘 작업 요약
+                        </h3>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 'bold' }}>총 작업 건수</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '900' }}>{plans.length} 건</div>
+                            </div>
+                            <div style={{ padding: '12px', background: '#fef2f2', borderRadius: '10px' }}>
+                                <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: 'bold' }}>위험 구역</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: '900' }}>{dangerZones.length} 개소</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ background: 'white', flex: 1, padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', overflowY: 'auto' }}>
+                        <h3 style={{ margin: '0 0 15px 0', fontSize: '1rem' }}>작업 및 인력 배정 현황</h3>
+                        {plans.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>배정된 작업이 없습니다.</div>
+                        ) : (
+                            <div style={{ display: 'grid', gap: '10px' }}>
+                                {plans.map(p => (
+                                    <div key={p.id} style={{ padding: '12px', border: '1px solid #f1f5f9', borderRadius: '10px', background: '#fcfcfc' }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{p.work_type}</div>
+                                        <div style={{ fontSize: '12px', color: '#64748b' }}>장소: {p.location || '미정'}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-          </div>
+
+            {/* 작업 할당 모달 */}
+            {isModalOpen && (
+                <AssignModal 
+                    zone={selectedZone} 
+                    date={selectedDate} 
+                    onClose={() => setIsModalOpen(false)} 
+                    onSuccess={() => { setIsModalOpen(false); loadData(); }} 
+                />
+            )}
         </div>
-      </div>
-
-      {showZoneActionModal && selectedZoneForAction && (
-        <ZoneActionModal 
-          zone={selectedZoneForAction}
-          onClose={() => { setShowZoneActionModal(false); setSelectedZoneForAction(null); }}
-          onSelectWorkPlan={() => {
-            setInitialZoneId(selectedZoneForAction.id.toString());
-            setShowZoneActionModal(false);
-            setShowModal(true);
-          }}
-          onSelectDangerZone={() => {
-            setInitialZoneId(selectedZoneForAction.id.toString());
-            setShowZoneActionModal(false);
-            setShowDangerModal(true);
-          }}
-        />
-      )}
-      {showModal && <CreatePlanModal onClose={() => { setShowModal(false); setInitialZoneId(''); }} currDate={selectedDate} zones={zones} initialZoneId={initialZoneId} siteId={siteId} onSuccess={() => { setShowModal(false); setInitialZoneId(''); loadPlans(); }} />}
-      {showDangerModal && <DangerZoneModal selectedDate={selectedDate} zones={zones} onClose={() => { setShowDangerModal(false); setInitialZoneId(''); }} onSuccess={() => { loadDangerZones(); setShowDangerModal(false); setInitialZoneId(''); }} initialZoneId={initialZoneId} />}
-      {editPlanId != null && <EditPlanModal planId={editPlanId} zones={zones} onClose={() => setEditPlanId(null)} onSuccess={() => { setEditPlanId(null); loadPlans(); }} />}
-      
-      {/* 근로???�고 ?�인 모달 */}
-      {showApprovalModal && selectedPendingReport && (
-        <DangerReportApprovalModal 
-          open={showApprovalModal}
-          onClose={() => { setShowApprovalModal(false); setSelectedPendingReport(null); }}
-          report={selectedPendingReport}
-          onSuccess={() => {
-            setShowApprovalModal(false);
-            setSelectedPendingReport(null);
-            loadDangerZones();
-          }}
-        />
-      )}
-    </div>
-  );
+    );
 };
 
-const DailyPlanMapLegend = ({ plans, dangerZones }) => {
-  const workTypes = [...new Set(plans.map((p) => p.work_type))];
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', padding: '10px 16px', fontSize: '0.85rem', background: 'white', color: '#1e293b' }}>
-      {workTypes.map((wt, i) => (
-        <span key={wt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: '600' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: WORK_TYPE_COLORS[i % WORK_TYPE_COLORS.length] }} /> {wt}
-        </span>
-      ))}
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: '600' }}><span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} /> ?�험 구역</span>
-    </div>
-  );
-};
+const AssignModal = ({ zone, date, onClose, onSuccess }) => {
+    const [workType, setWorkType] = useState('');
+    const [loading, setLoading] = useState(false);
 
-const PlanCard = ({ plan, dangerZones, onEdit, onDelete }) => (
-  <div style={{ background: 'white', borderRadius: '10px', padding: '1rem', marginBottom: '10px', border: '1px solid #e2e8f0', borderLeft: '4px solid #3b82f6', color: '#1e293b' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-      <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#1e293b' }}>{plan.zone_name}</span>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={onEdit} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.8rem' }}>?�정</button>
-        <button onClick={onDelete} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>??��</button>
-      </div>
-    </div>
-    <div style={{ fontWeight: '800', marginBottom: '0.5rem', color: '#1e293b' }}>{plan.work_type}</div>
-    <div style={{ fontSize: '0.85rem', color: '#475569', fontWeight: '500' }}>{plan.description}</div>
-    <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-      {plan.allocations?.map(a => <span key={a.id} style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', color: '#64748b' }}>{a.worker_name}</span>)}
-    </div>
-  </div>
-);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await workApi.createPlan({
+                zone_id: zone.id,
+                date: date,
+                work_type: workType,
+                site_id: zone.site_id
+            });
+            alert('작업이 성공적으로 배정되었습니다.');
+            onSuccess();
+        } catch (err) {
+            console.error(err);
+            alert('배정 실패');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-const ZoneActionModal = ({ zone, onClose, onSelectWorkPlan, onSelectDangerZone }) => {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: '700' }}>구역 ?�정</h3>
-        <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-          <MapPin size={16} style={{ display: 'inline', marginRight: '4px' }} />
-          {zone.name} ({zone.level})
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          <button 
-            onClick={onSelectWorkPlan}
-            style={{ 
-              padding: '1rem', 
-              background: '#3b82f6', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => e.target.style.background = '#2563eb'}
-            onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-          >
-            <HardHat size={20} /> ?�업 배정
-          </button>
-          <button 
-            onClick={onSelectDangerZone}
-            style={{ 
-              padding: '1rem', 
-              background: '#ea580c', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => e.target.style.background = '#c2410c'}
-            onMouseOut={(e) => e.target.style.background = '#ea580c'}
-          >
-            <ShieldAlert size={20} /> ?�험 구역 ?�록
-          </button>
-          <button 
-            onClick={onClose}
-            style={{ 
-              padding: '0.75rem', 
-              background: '#f1f5f9', 
-              color: '#475569', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              fontSize: '0.95rem',
-              fontWeight: '500'
-            }}
-          >
-            취소
-          </button>
+    return (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'white', padding: '24px', borderRadius: '16px', width: '400px' }}>
+                <h2 style={{ margin: '0 0 20px 0' }}>작업 배정 - {zone.name}</h2>
+                <form onSubmit={handleSubmit}>
+                    <div style={{ marginBottom: '15px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>작업 유형</label>
+                        <input 
+                            type="text" 
+                            required 
+                            placeholder="예: 철근 조립, 콘크리트 타설"
+                            value={workType} 
+                            onChange={e => setWorkType(e.target.value)} 
+                            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button type="button" onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>취소</button>
+                        <button type="submit" disabled={loading} style={{ flex: 1, padding: '12px', borderRadius: '8px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>
+                            {loading ? '배정 중..' : '작업 배정'}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-      </div>
-    </div>
-  );
-};
-
-const DangerZoneModal = ({ selectedDate, zones, onClose, onSuccess, initialZoneId = '' }) => {
-  const [form, setForm] = useState({ zone_id: initialZoneId, risk_type: 'HEAVY_EQUIPMENT', description: '' });
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await safetyApi.createDailyDangerZone({ ...form, date: selectedDate, zone_id: parseInt(form.zone_id) });
-      onSuccess();
-    } catch (err) { alert(err.message); }
-  };
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�험 구역 ?�록</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <select value={form.zone_id} onChange={e => setForm({ ...form, zone_id: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required>
-            <option value="">구역 ?�택</option>
-            {zones.map(z => <option key={z.id} value={z.id}>{z.name} ({z.level})</option>)}
-          </select>
-          <select value={form.risk_type} onChange={e => setForm({ ...form, risk_type: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required>
-            <option value="">?�험 ?�형 ?�택</option>
-            {RISK_TYPES.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
-          </select>
-          <input type="text" placeholder="?�험 ?�명 (?? ?�레???�업 �?" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required />
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '6px', background: '#f1f5f9', color: '#475569', border: 'none', cursor: 'pointer' }}>취소</button>
-            <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: '#ea580c', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }}>?�록</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const EditPlanModal = ({ planId, zones, onClose, onSuccess }) => {
-  const [form, setForm] = useState({ description: '', worker_ids: [] });
-  const [workers, setWorkers] = useState([]);
-  useEffect(() => {
-    const load = async () => {
-      const [p, w] = await Promise.all([workApi.getPlan(planId), getMyWorkers()]);
-      setForm({ description: p.description || '', worker_ids: (p.allocations || []).map(a => a.worker_id) });
-      setWorkers(w || []);
-    };
-    load();
-  }, [planId]);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await workApi.updatePlan(planId, { description: form.description, allocations: form.worker_ids.map(id => ({ worker_id: id, role: '?�업?? })) });
-      onSuccess();
-    } catch (err) { alert(err.message); }
-  };
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�업 계획 ?�정</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} />
-          <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', color: '#1e293b' }}>
-            {workers.map(w => (
-              <label key={w.id} style={{ display: 'block', color: '#1e293b' }}>
-                <input type="checkbox" checked={form.worker_ids.includes(w.id)} onChange={e => setForm({ ...form, worker_ids: e.target.checked ? [...form.worker_ids, w.id] : form.worker_ids.filter(id => id !== w.id) })} /> {w.full_name}
-              </label>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px' }}>취소</button>
-            <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none' }}>?�??/button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const CreatePlanModal = ({ onClose, currDate, zones, initialZoneId, onSuccess, siteId }) => {
-  const [form, setForm] = useState({ date: currDate, zone_id: initialZoneId || '', template_id: '', description: '', worker_ids: [] });
-  const [templates, setTemplates] = useState([]);
-  const [workers, setWorkers] = useState([]);
-  useEffect(() => {
-    const load = async () => {
-      const [t, w] = await Promise.all([workApi.getTemplates(), getMyWorkers()]);
-      setTemplates(t);
-      setWorkers(w);
-    };
-    load();
-  }, []);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        site_id: siteId,
-        zone_id: parseInt(form.zone_id),
-        template_id: parseInt(form.template_id),
-        date: form.date,
-        description: form.description || '',
-        equipment_flags: [],
-        status: 'PLANNED',
-        allocations: form.worker_ids.map(id => ({ worker_id: id, role: '?�업?? }))
-      };
-      await workApi.createPlan(payload);
-      onSuccess();
-    } catch (err) { 
-      console.error('?�업 배정 ?�러:', err);
-      alert(err.message || '?�업 배정 ?�패'); 
-    }
-  };
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '450px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�업 배정</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <select value={form.zone_id} onChange={e => setForm({ ...form, zone_id: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} required>
-            <option value="">구역 ?�택</option>
-            {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-          </select>
-          <select value={form.template_id} onChange={e => setForm({ ...form, template_id: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} required>
-            <option value="">?�업 ?�택</option>
-            {templates.map(t => <option key={t.id} value={t.id}>{t.work_type}</option>)}
-          </select>
-          <input type="text" placeholder="?�세 ?�명" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} />
-          <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', color: '#1e293b' }}>
-            {workers.map(w => (
-              <label key={w.id} style={{ display: 'block', color: '#1e293b' }}>
-                <input type="checkbox" checked={form.worker_ids.includes(w.id)} onChange={e => setForm({ ...form, worker_ids: e.target.checked ? [...form.worker_ids, w.id] : form.worker_ids.filter(id => id !== w.id) })} /> {w.full_name}
-              </label>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px' }}>취소</button>
-            <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none' }}>배정</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default DailyPlanManagement;

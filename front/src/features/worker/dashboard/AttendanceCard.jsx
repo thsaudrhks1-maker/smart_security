@@ -1,139 +1,102 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, Smartphone } from 'lucide-react';
-import { getMyTodayAttendance, checkIn, checkOut } from '@/api/attendanceApi';
 
-const AttendanceCard = ({ projectInfo, onStatusChange }) => {
+import React, { useState, useEffect } from 'react';
+import { checkIn, getMyAttendance } from '@/api/attendanceApi';
+import { Clock, MapPin, CheckCircle2, LogIn } from 'lucide-react';
+
+/**
+ * [WORKER] 출석(출근) 카드 컴포넌트
+ */
+const AttendanceCard = ({ projectInfo }) => {
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ?�간 ?�맷???�퍼 (HH:mm)
-  const formatTime = (dateStr) => {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-  };
-
-  // ?�늘??출근 ?�보 조회
   useEffect(() => {
-    loadAttendance();
+    loadStatus();
   }, []);
 
-  const loadAttendance = async () => {
+  const loadStatus = async () => {
     try {
-      const data = await getMyTodayAttendance();
-      setAttendance(data);
-      if (onStatusChange) onStatusChange(data);
+      const res = await getMyAttendance();
+      if (res.data && res.data.length > 0) {
+        setAttendance(res.data[0]);
+      }
     } catch (error) {
-      console.error("출근 ?�보 로드 ?�패:", error);
+      console.error("출근 정보 로드 실패:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCheckIn = async () => {
-    if (!confirm('?�재 ?�각?�로 출근 처리?�시겠습?�까?')) return;
+    if (!confirm('현재 시각으로 출근 처리하시겠습니까?')) return;
     try {
       if (!projectInfo || !projectInfo.project_id) {
-        // ?�로?�트 ID가 ?�을 경우 ?�외 처리 (?�림 메시지 구체??
-        alert('배정???�로?�트 ?�보가 ?�습?�다.\n관리자?�게 ?�로?�트 배정???�청?�세??');
+        alert('배정된 프로젝트 정보가 없습니다.\n관리자에게 프로젝트 배정을 요청하세요.');
         return;
       }
       const res = await checkIn({
-        project_id: projectInfo.project_id, // ?�?�보?�에??받아???�로?�트 ID
+        project_id: projectInfo.project_id,
         check_in_method: 'APP'
       });
-      setAttendance(res);
-      alert('출근 처리?�었?�니?? ?�늘???�전?�업 ?�세??');
+      setAttendance(res.data);
+      alert('출근 처리되었습니다. 오늘도 안전작업 하세요!');
+      loadStatus();
     } catch (error) {
       console.error(error);
-      alert('출근 처리???�패?�습?�다.');
+      alert('출근 처리에 실패했습니다.');
     }
   };
 
-  const handleCheckOut = async () => {
-    if (!confirm('?�근 처리?�시겠습?�까?')) return;
-    try {
-      const res = await checkOut(attendance.id);
-      setAttendance(res);
-      alert('?�근 처리?�었?�니?? 고생?�셨?�니??');
-    } catch (error) {
-      console.error(error);
-      alert('?�근 처리???�패?�습?�다.');
-    }
-  };
-
-  if (loading) return <div className="dashboard-card" style={{ background: '#f59e0b', color: 'white', minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>로딩�?..</div>;
+  if (loading) return null;
 
   return (
-    <div className="dashboard-card" style={{ background: '#f59e0b', color: 'white' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Clock size={16} /> 출역 ?�황
-        </div>
-        {attendance ? (
-          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-            {attendance.check_out_time ? '?�근?�료' : '근무�?}
-          </span>
-        ) : (
-          <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-            출근??
+    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Clock size={20} color="#3b82f6" /> 출역 관리
+        </h3>
+        {attendance && (
+          <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#16a34a', background: '#f0fdf4', padding: '4px 10px', borderRadius: '20px' }}>
+            출근 완료
           </span>
         )}
       </div>
 
-      <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
-        {attendance ? (
-          <div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-              {formatTime(attendance.check_in_time)}
+      {attendance ? (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '1rem', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+            <div style={{ fontSize: '2.5rem' }}>✅</div>
+            <div>
+              <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700' }}>출근 시간</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#0f172a' }}>
+                {new Date(attendance.check_in_time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>출근 ?�료</div>
-            
-            {!attendance.check_out_time && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleCheckOut(); }}
-                style={{ 
-                  marginTop: '10px', 
-                  width: '100%', 
-                  padding: '8px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  background: 'rgba(255,255,255,0.2)', 
-                  color: 'white', 
-                  fontWeight: 'bold',
-                  cursor: 'pointer' 
-                }}
-              >
-                ?�근?�기
-              </button>
-            )}
           </div>
-        ) : (
-          <div>
-            <div style={{ fontSize: '0.9rem', marginBottom: '8px', opacity: 0.9 }}>?�직 출근 기록???�습?�다.</div>
-            <button 
-              onClick={(e) => { e.stopPropagation(); handleCheckIn(); }}
-              style={{ 
-                width: '100%', 
-                padding: '10px', 
-                borderRadius: '8px', 
-                border: 'none', 
-                background: 'white', 
-                color: '#d97706', 
-                fontWeight: '800', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-            >
-              <Smartphone size={18} /> 출근체크
-            </button>
+          <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.85rem' }}>
+             <MapPin size={14} /> {projectInfo?.project_name || '현장'} 에서 출역 중
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+            오늘 현장에 도착하셨나요?<br/>버튼을 눌러 <strong>출근 체크</strong>를 해주세요.
+          </p>
+          <button
+            onClick={handleCheckIn}
+            style={{ 
+              width: '100%', padding: '1rem', background: '#3b82f6', color: 'white', 
+              border: 'none', borderRadius: '16px', fontWeight: '800', fontSize: '1rem',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            <LogIn size={20} /> 출근하기
+          </button>
+        </div>
+      )}
     </div>
   );
 };

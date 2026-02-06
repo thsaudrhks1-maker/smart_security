@@ -3,20 +3,18 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, ClipboardList, Map, AlertTriangle } from 'lucide-react';
 
 /**
- * ?�업?�용 ?�이?�웃(모바??
- * - 좁�? ?�이?�웃 (최�? 600px)
- * - ?�단 ?�비게이????�� ?�용
+ * Worker layout (mobile-first). Max width 600px, bottom nav.
  */
 const WorkerLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-    { path: '/worker', icon: LayoutDashboard, label: '?? },
-    { path: '/worker/work', icon: CheckSquare, label: '?�업' },
+    { path: '/worker', icon: LayoutDashboard, label: '대시보드' },
+    { path: '/worker/work', icon: CheckSquare, label: '작업' },
     { path: '/worker/attendance', icon: ClipboardList, label: '출근' },
-    { path: '/worker/safety', icon: Map, label: '?�전지?? },
-    { path: '/worker/report', icon: AlertTriangle, label: '?�고' },
+    { path: '/worker/safety', icon: Map, label: '안전지도' },
+    { path: '/worker/report', icon: AlertTriangle, label: '신고' },
   ];
 
   return (
@@ -35,13 +33,14 @@ const WorkerLayout = () => {
       }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/worker' && location.pathname.startsWith(item.path));
+          const Icon = item.icon;
           return (
             <div 
               key={item.path} 
               onClick={() => navigate(item.path)}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', color: isActive ? '#3b82f6' : '#94a3b8', flex: 1 }}
             >
-              <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
               <span style={{ fontSize: '0.75rem', fontWeight: isActive ? '700' : '500' }}>{item.label}</span>
             </div>
           );

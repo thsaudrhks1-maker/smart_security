@@ -1,69 +1,49 @@
+
 import React from 'react';
-import { Polygon, Popup, Tooltip } from 'react-leaflet';
+import { Rectangle, Tooltip, Popup } from 'react-leaflet';
 
 /**
- * 좌표�?기�??�로 ?�사각형 구역 컴포?�트.
- * ?�드?� ?�일 기�?: step=0.00025 균일 그리?? 2*HALF < step ??HALF=0.00012 (칸이 붙어 보이??겹치지 ?�음)
+ * [MANAGER/WORKER] 현장 구역(Zone) 맵 레이어
+ * 구역의 상태(작업 유무, 위험도)에 따라 색상을 달리하여 표시합니다.
  */
-const ZONE_SQUARE_HALF = 0.00012;
+const ZoneSquareLayer = ({ zone, hasWork, hasDanger, onClick }) => {
+    // 좌표 보정 (그리드 크기에 맞춤)
+    const pos = [Number(zone.lat), Number(zone.lng)];
+    const offset = 0.000025;
+    const bounds = [
+        [pos[0] - offset, pos[1] - offset],
+        [pos[0] + offset, pos[1] + offset]
+    ];
 
-export function getZoneSquarePositions(lat, lng, halfDeg = ZONE_SQUARE_HALF) {
-  const h = halfDeg;
-  return [
-    [lat - h, lng - h],
-    [lat - h, lng + h],
-    [lat + h, lng + h],
-    [lat + h, lng - h],
-  ];
-}
+    let color = '#94a3b8'; // 기본색 (회색)
+    let fillOpacity = 0.1;
 
-/**
- * ?�일 구역 ?�사각형 (Polygon). fillColor/fillOpacity�??�업·?�험·�?구역 구분.
- * ?�업/?�험 ?�으�??�색 반투명으�??�시.
- */
-export function ZoneSquare({ zone, fillColor = '#ffffff', fillOpacity = 0.55, strokeColor = 'rgba(0,0,0,0.4)', strokeWidth = 2, popupContent }) {
-  if (zone.lat == null || zone.lng == null) return null;
-  const positions = getZoneSquarePositions(Number(zone.lat), Number(zone.lng));
+    if (hasWork) {
+        color = '#3b82f6'; // 작업 중 (파란색)
+        fillOpacity = 0.3;
+    }
+    if (hasDanger) {
+        color = '#ef4444'; // 위험 (빨간색)
+        fillOpacity = 0.5;
+    }
 
-  return (
-    <Polygon
-      positions={positions}
-      pathOptions={{
-        fillColor,
-        fillOpacity,
-        color: strokeColor,
-        weight: strokeWidth,
-      }}
-    >
-      {popupContent != null && <Popup>{popupContent}</Popup>}
-    </Polygon>
-  );
-}
+    return (
+        <Rectangle
+            bounds={bounds}
+            pathOptions={{ color: color, weight: 1, fillOpacity: fillOpacity }}
+            eventHandlers={{ click: () => onClick && onClick(zone) }}
+        >
+            <Tooltip permanent direction="center" opacity={0.7} className="zone-label-tooltip">
+                <span style={{ fontSize: '0.6rem', fontWeight: 'bold', color: color }}>{zone.name}</span>
+            </Tooltip>
+            <Popup>
+                <div style={{ padding: '5px' }}>
+                    <strong>{zone.name} ({zone.level})</strong><br/>
+                    상태: {hasDanger ? '위험 관리 중' : (hasWork ? '내부 작업 중' : '정상')}
+                </div>
+            </Popup>
+        </Rectangle>
+    );
+};
 
-/**
- * pathOptions�??�겨??구역 ?�각??그리�?(?�일 ?�업 계획 ?�에???�상 ?�적 지?�용).
- */
-export function ZoneSquareStyled({ zone, pathOptions = {}, popupContent, tooltipContent, tooltipOptions = {} }) {
-  if (zone.lat == null || zone.lng == null) return null;
-  const positions = getZoneSquarePositions(Number(zone.lat), Number(zone.lng));
-  const defaultPath = {
-    fillColor: '#ffffff',
-    fillOpacity: 0.55,
-    color: 'rgba(0,0,0,0.4)',
-    weight: 2,
-  };
-  const merged = { ...defaultPath, ...pathOptions };
-
-  return (
-    <Polygon positions={positions} pathOptions={merged}>
-      {popupContent != null && <Popup>{popupContent}</Popup>}
-      {tooltipContent != null && (
-        <Tooltip {...tooltipOptions}>
-          {tooltipContent}
-        </Tooltip>
-      )}
-    </Polygon>
-  );
-}
-
-export { ZONE_SQUARE_HALF };
+export default ZoneSquareLayer;

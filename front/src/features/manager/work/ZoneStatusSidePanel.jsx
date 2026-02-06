@@ -1,103 +1,75 @@
-import React from 'react';
-import { X, ChevronDown, ChevronRight } from 'lucide-react';
 
-/**
- * 구역�??�황 리스???�이???�널 컴포?�트
- * @param {Array} zones - ?�체 구역 목록
- * @param {Array} filteredPlans - ?�재 ?�짜/?�장 기�? ?�터링된 계획 목록
- * @param {Boolean} isOpen - ?�널 ?�림 ?�태
- * @param {Function} onClose - ?�널 ?�기 ?�들??
- * @param {Number|null} expandedZoneId - ?�재 ?�장??구역 ID
- * @param {Function} setExpandedZoneId - ?�장 구역 ID 변�??�들??
- * @param {Array} WORK_TYPE_COLORS - ?�업 ?�형�??�상 배열
- */
-const ZoneStatusSidePanel = ({ 
-  zones, 
-  filteredPlans, 
-  isOpen, 
-  onClose, 
-  expandedZoneId, 
-  setExpandedZoneId,
-  WORK_TYPE_COLORS 
-}) => {
-  return (
-    <div style={{ 
-      position: 'absolute', top: 0, right: isOpen ? 0 : '-280px', 
-      width: '280px', height: '100%', background: 'rgba(255, 255, 255, 0.95)', 
-      borderLeft: '1px solid #e2e8f0', zIndex: 1000, transition: 'right 0.3s ease-in-out',
-      display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 15px rgba(0,0,0,0.05)',
-      backdropFilter: 'blur(8px)'
-    }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
-        <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>?�� 구역�??�황 리스??/span>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={16} /></button>
-      </div>
-      <div className="thin-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {zones.map(zone => {
-            const zonePlans = filteredPlans.filter(p => p.zone_id === zone.id);
-            const hasWork = zonePlans.length > 0;
-            const isExpanded = expandedZoneId === zone.id;
-            const workColor = hasWork ? WORK_TYPE_COLORS[filteredPlans.indexOf(zonePlans[0]) % WORK_TYPE_COLORS.length] : '#e2e8f0';
-            
-            return (
-              <div key={zone.id} style={{ 
-                background: 'white', borderRadius: '6px', border: '1px solid #f1f5f9', 
-                overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.01)',
-                transition: 'all 0.15s ease'
-              }}>
-                <div 
-                  onClick={() => setExpandedZoneId(isExpanded ? null : zone.id)}
-                  style={{ 
-                    padding: '4px 10px', borderLeft: `3px solid ${workColor}`, cursor: 'pointer',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: isExpanded ? '#f8fafc' : 'white'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: '800', fontSize: '0.75rem', color: isExpanded ? '#3b82f6' : '#000000' }}>
-                      {zone.id}. {zone.name}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {hasWork && <span style={{ fontSize: '0.55rem', color: '#3b82f6', fontWeight: '800', background: '#eff6ff', padding: '0 4px', borderRadius: '3px' }}>{zonePlans.length}�?/span>}
-                    {isExpanded ? <ChevronDown size={12} color="#3b82f6" /> : <ChevronRight size={12} color="#cbd5e1" />}
-                  </div>
+import React, { useState } from 'react';
+import { Search, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, X } from 'lucide-react';
+
+const ZoneStatusSidePanel = ({ zones = [], plans = [], risks = [], onClose }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [expandedZoneId, setExpandedZoneId] = useState(null);
+
+    const filteredZones = zones.filter(z => z.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return (
+        <div style={{ width: '320px', height: '100%', background: 'white', borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1.25rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>현장 구역 현황</h3>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+
+            <div style={{ padding: '1rem' }}>
+                <div style={{ position: 'relative' }}>
+                    <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                    <input 
+                        type="text" 
+                        placeholder="구역 이름 검색..." 
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        style={{ width: '100%', padding: '10px 10px 10px 35px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.85rem', outline: 'none' }}
+                    />
                 </div>
+            </div>
 
-                {isExpanded && (
-                  <div style={{ padding: '6px 10px', background: 'white', borderTop: '1px solid #f1f5f9' }}>
-                    {hasWork ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {zonePlans.map(p => (
-                          <div key={p.id} style={{ fontSize: '0.7rem' }}>
-                            <div style={{ fontWeight: '800', color: '#1e293b', marginBottom: '2px', fontSize: '0.65rem' }}>??{p.work_type}</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', paddingLeft: '8px' }}>
-                              {p.allocations?.map((a, idx) => (
-                                <span key={idx} style={{ 
-                                  background: '#f8fafc', border: '1px solid #e2e8f0', 
-                                  padding: '1px 4px', borderRadius: '3px', fontSize: '0.65rem', color: '#1e40af' 
-                                }}>
-                                  <span style={{ fontWeight: '800', marginRight: '3px' }}>{a.company_name?.slice(0,4)}</span>
-                                  {a.worker_name}
-                                </span>
-                              ))}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1rem 1rem' }}>
+                <div style={{ display: 'grid', gap: '8px' }}>
+                    {filteredZones.map(zone => {
+                        const zonePlans = plans.filter(p => p.zone_id === zone.id);
+                        const zoneRisks = risks.filter(r => r.zone_id === zone.id);
+                        const isExpanded = expandedZoneId === zone.id;
+
+                        return (
+                            <div key={zone.id} style={{ border: '1px solid #f1f5f9', borderRadius: '12px', overflow: 'hidden' }}>
+                                <div 
+                                    onClick={() => setExpandedZoneId(isExpanded ? null : zone.id)}
+                                    style={{ padding: '12px', background: isExpanded ? '#f8fafc' : 'white', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                >
+                                    <div>
+                                        <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{zone.name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{zone.level} | {zone.type}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        {zoneRisks.length > 0 && <AlertTriangle size={16} color="#ef4444" />}
+                                        {zonePlans.length > 0 && <CheckCircle2 size={16} color="#3b82f6" />}
+                                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                    </div>
+                                </div>
+                                {isExpanded && (
+                                    <div style={{ padding: '12px', background: '#fcfcfc', borderTop: '1px solid #f1f5f9', fontSize: '0.85rem' }}>
+                                        <div style={{ marginBottom: '8px' }}>
+                                            <div style={{ fontWeight: 'bold', color: '#64748b', fontSize: '0.75rem', marginBottom: '4px' }}>진행 작업</div>
+                                            {zonePlans.length === 0 ? '없음' : zonePlans.map(p => p.work_type).join(', ')}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 'bold', color: '#ef4444', fontSize: '0.75rem', marginBottom: '4px' }}>위험 요소</div>
+                                            {zoneRisks.length === 0 ? '정상' : zoneRisks.map(r => r.description).join(', ')}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: '0.65rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>배정 ?�음</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                        );
+                    })}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default ZoneStatusSidePanel;

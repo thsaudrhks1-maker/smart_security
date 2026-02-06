@@ -139,8 +139,13 @@ const ProjectDetail = () => {
                     <div style={{ height: '300px' }}>
                         <CommonMap 
                             center={[project.lat || 37.5665, project.lng || 126.9780]} 
-                            zoom={15} 
+                            zoom={16} 
                             markers={[{ lat: project.lat || 37.5665, lng: project.lng || 126.9780, title: project.name }]}
+                            gridConfig={{
+                              grid_rows: project.grid_rows,
+                              grid_cols: project.grid_cols,
+                              grid_spacing: project.grid_spacing
+                            }}
                         />
                     </div>
                 </InfoCard>

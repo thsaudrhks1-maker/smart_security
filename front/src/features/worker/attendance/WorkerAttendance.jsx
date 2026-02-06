@@ -1,151 +1,55 @@
-import React, { useEffect, useState } from 'react';
-import { ClipboardCheck, Calendar } from 'lucide-react';
+
+import React, { useState, useEffect } from 'react';
 import { getMyAttendance } from '@/api/attendanceApi';
-
-/**
- * ?�업??- ?�의 출근?�황 (기간�?
- * ?�짜, 출근 ?�각, ?�근 ?�각, 근로?�간, 근무?�사, ?�의 ?�트, ?�업?�용
- */
-const formatDate = (d) => {
-    if (!d) return '-';
-    const s = typeof d === 'string' ? d : d.slice(0, 10);
-    return s;
-};
-
-const formatTime = (dt) => {
-    if (!dt) return '-';
-    const s = typeof dt === 'string' ? dt : dt.slice(0, 19);
-    const part = s.split('T')[1];
-    return part ? part.slice(0, 5) : '-';
-};
-
-const formatWorkMinutes = (min) => {
-    if (min == null) return '-';
-    const h = Math.floor(min / 60);
-    const m = min % 60;
-    if (h === 0) return `${m}�?;
-    return m === 0 ? `${h}?�간` : `${h}?�간 ${m}�?;
-};
+import { Calendar, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 
 const WorkerAttendance = () => {
-    const [list, setList] = useState([]);
+    const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [range, setRange] = useState('7'); // '7' | '14' | '30'
 
     useEffect(() => {
         const load = async () => {
-            setLoading(true);
-            setError(null);
             try {
-                const end = new Date();
-                const days = parseInt(range, 10) || 7;
-                const start = new Date(end);
-                start.setDate(start.getDate() - (days - 1));
-                const startStr = start.toISOString().slice(0, 10);
-                const endStr = end.toISOString().slice(0, 10);
-                const data = await getMyAttendance(startStr, endStr);
-                setList(Array.isArray(data) ? data : []);
-            } catch (err) {
-                console.error('?�의 출근?�황 로드 ?�패:', err);
-                setError('출근 ?�역??불러?��? 못했?�니??');
-                setList([]);
-            } finally {
-                setLoading(false);
-            }
+                const res = await getMyAttendance();
+                setHistory(res.data || []);
+            } catch (e) { console.error(e); }
+            finally { setLoading(false); }
         };
         load();
-    }, [range]);
+    }, []);
 
     return (
-        <div style={{ padding: '1rem', background: '#f1f5f9', minHeight: '100%', paddingBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                <ClipboardCheck size={26} color="#3b82f6" />
-                <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>?�의 출근?�황</h1>
+        <div style={{ padding: '1.5rem', color: '#1e293b', paddingBottom: '100px' }}>
+            <div style={{ marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>🗓️ 나의 출역 기록</h1>
+                <p style={{ color: '#64748b' }}>현장에 투입되어 기록된 나의 출석 리스트입니다.</p>
             </div>
 
-            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calendar size={18} color="#64748b" />
-                <span style={{ fontSize: '0.85rem', color: '#64748b' }}>기간</span>
-                <select
-                    value={range}
-                    onChange={(e) => setRange(e.target.value)}
-                    style={{
-                        padding: '6px 10px',
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
-                        background: 'white',
-                        fontSize: '0.9rem',
-                    }}
-                >
-                    <option value="7">최근 7??/option>
-                    <option value="14">최근 14??/option>
-                    <option value="30">최근 30??/option>
-                </select>
-            </div>
-
-            {loading && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>
-            )}
-            {error && (
-                <div style={{ padding: '1rem', background: '#fef2f2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem' }}>
-                    {error}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>출결 데이터를 불러오는 중...</div>
+            ) : history.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '5rem 2rem', background: 'white', borderRadius: '24px', border: '1px dashed #cbd5e1', color: '#94a3b8' }}>
+                    출역 기록이 존재하지 않습니다.
                 </div>
-            )}
-            {!loading && !error && list.length === 0 && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    ?�당 기간 출근 기록???�습?�다.
-                </div>
-            )}
-            {!loading && list.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {list.map((row) => (
-                        <div
-                            key={row.id}
-                            style={{
-                                background: 'white',
-                                borderRadius: '12px',
-                                padding: '1rem',
-                                border: '1px solid #e2e8f0',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                                <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '1rem' }}>
-                                    {formatDate(row.date)}
-                                </span>
-                                <span style={{
-                                    fontSize: '0.75rem',
-                                    padding: '2px 8px',
-                                    borderRadius: '999px',
-                                    background: row.status === 'LATE' ? '#fef3c7' : '#dcfce7',
-                                    color: row.status === 'LATE' ? '#b45309' : '#166534',
-                                }}>
-                                    {row.status === 'LATE' ? '지�? : row.status === 'LEAVE_EARLY' ? '조퇴' : '?�상'}
-                                </span>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: '0.85rem', color: '#475569' }}>
-                                <span>출근</span>
-                                <span style={{ textAlign: 'right' }}>{formatTime(row.check_in_time)}</span>
-                                <span>?�근</span>
-                                <span style={{ textAlign: 'right' }}>{formatTime(row.check_out_time)}</span>
-                                <span>근로?�간</span>
-                                <span style={{ textAlign: 'right' }}>{formatWorkMinutes(row.work_minutes)}</span>
-                            </div>
-                            {(row.company_name || row.my_part) && (
-                                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9', fontSize: '0.8rem', color: '#64748b' }}>
-                                    {row.company_name && <span>{row.company_name}</span>}
-                                    {row.company_name && row.my_part && ' · '}
-                                    {row.my_part && <span>{row.my_part}</span>}
-                                </div>
-                            )}
-                            {row.work_description && (
-                                <div style={{ marginTop: '4px', fontSize: '0.8rem', color: '#475569' }}>
-                                    {row.work_description}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+            ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                   {history.map((item, idx) => (
+                       <div key={idx} style={{ background: 'white', padding: '1.25rem', borderRadius: '24px', border: '1px solid #e2e8f0', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                           <div style={{ width: '50px', height: '50px', background: '#f0fdf4', borderRadius: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <CheckCircle2 size={24} color="#10b981" />
+                           </div>
+                           <div style={{ flex: 1 }}>
+                               <div style={{ fontSize: '1rem', fontWeight: '900', color: '#0f172a' }}>{item.project_name || '현장 투입'}</div>
+                               <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', display: 'flex', gap: '8px' }}>
+                                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12}/> {new Date(item.check_in_time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12}/> {item.check_in_time.split('T')[0]}</span>
+                               </div>
+                           </div>
+                           <div style={{ padding: '6px 12px', background: '#f8fafc', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '800', color: '#64748b' }}>
+                               {item.check_in_method === 'APP' ? '앱 인증' : '수동 승인'}
+                           </div>
+                       </div>
+                   ))}
                 </div>
             )}
         </div>

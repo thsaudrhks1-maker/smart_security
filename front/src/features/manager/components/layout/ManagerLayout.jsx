@@ -1,12 +1,12 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  Users, 
-  ClipboardCheck, 
+import {
+  LayoutDashboard,
+  Briefcase,
+  Users,
+  ClipboardCheck,
   ClipboardList,
-  LogOut, 
+  LogOut,
   HardHat,
   FileText,
   ShieldAlert,
@@ -23,50 +23,50 @@ const ManagerLayout = () => {
   const path = location.pathname;
 
   const menu = [
-    { label: '?�?�보??, icon: LayoutDashboard, path: '/manager' },
-    { label: '?�일 ?�업 계획', icon: ClipboardList, path: '/manager/work' },
-    { label: '콘텐�??�람', icon: FileText, path: '/manager/contents' },
-    { label: '?�업 ?�치', icon: Map, path: '/manager/locations' },
-    { label: '?�력??관�?, icon: Briefcase, path: '/manager/companies' },
-    { label: '근로??관�?, icon: Users, path: '/manager/workers' },
-    { label: '출역 관�?, icon: ClipboardCheck, path: '/manager/attendance' },
-    { label: '?�전?�보 ?�람?�황', icon: FileText, path: '/manager/safety-info' },
-    { label: '?�반???�록/?�황', icon: ShieldAlert, path: '/manager/violations' },
-    { label: '근로???�치?�인', icon: MapPin, path: '/manager/location' },
-    { label: '?�전교육 ?�황', icon: GraduationCap, path: '/manager/education' },
-    { label: '?�장 공�?', icon: Megaphone, path: '/manager/notices' },
-    { label: '긴급 ?�림', icon: Bell, path: '/manager/emergency' },
+    { label: '대시보드', icon: LayoutDashboard, path: '/manager/dashboard' },
+    { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' },
+    { label: '콘텐츠 관리', icon: FileText, path: '/manager/contents' },
+    { label: '구역 관리', icon: Map, path: '/manager/locations' },
+    { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
+    { label: '작업자 관리', icon: Users, path: '/manager/workers' },
+    { label: '출퇴근 관리', icon: ClipboardCheck, path: '/manager/attendance' },
+    { label: '안전 정도 관리', icon: FileText, path: '/manager/safety-info' },
+    { label: '위반/신고', icon: ShieldAlert, path: '/manager/violations' },
+    { label: '위험 구역', icon: MapPin, path: '/manager/location' },
+    { label: '교육 관리', icon: GraduationCap, path: '/manager/education' },
+    { label: '공지 관리', icon: Megaphone, path: '/manager/notices' },
+    { label: '비상 연락', icon: Bell, path: '/manager/emergency' },
   ];
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden' }}>
-      {/* ?�이?�바 (Manager ?�용 - Dark Theme ?�용) */}
-      <aside style={{ 
-        width: '260px', 
+      {/* Sidebar (Smart Site manager) */}
+      <aside style={{
+        width: '260px',
         height: '100vh',
-        background: '#1e293b', // Admin�??�일??Dark Background
+        background: '#1e293b',
         color: '#ffffff',
-        display: 'flex', 
+        display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
         boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
         zIndex: 10
       }}>
-        {/* ?�더 */}
+        {/* Header */}
         <div style={{ padding: '24px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
           <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <HardHat size={28} color="#f59e0b" /> {/* ?�전�??�이�??��? */}
+            <HardHat size={28} color="#f59e0b" />
             Smart Site
           </h1>
           <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f59e0b', marginTop: '6px', paddingLeft: '36px', letterSpacing: '0.02em' }}>
-            ?�장 관리자
+            현장 관리자
           </div>
         </div>
 
-        {/* 메뉴 ?�역 */}
+        {/* Nav */}
         <nav style={{ flex: 1, padding: '10px 0' }}>
           {menu.map((item) => {
-            const isActive = path === item.path;
+            const isActive = path === item.path || (item.path !== '/manager/dashboard' && path.startsWith(item.path));
             const Icon = item.icon;
             return (
               <button
@@ -78,10 +78,10 @@ const ManagerLayout = () => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '13px 24px',
-                  background: isActive ? '#0f172a' : 'transparent', // ?�성???????�두??배경
-                  color: isActive ? '#ffffff' : '#94a3b8', // ?�성?????�색, ?�소 ?�색
+                  background: isActive ? '#0f172a' : 'transparent',
+                  color: isActive ? '#ffffff' : '#94a3b8',
                   border: 'none',
-                  borderLeft: isActive ? '3px solid #f59e0b' : '3px solid transparent', // ?�인??컬러: ?�전 주황??
+                  borderLeft: isActive ? '3px solid #f59e0b' : '3px solid transparent',
                   fontWeight: isActive ? '600' : '400',
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -108,9 +108,9 @@ const ManagerLayout = () => {
           })}
         </nav>
 
-        {/* ?�단 로그?�웃 */}
+        {/* Logout */}
         <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
-          <button 
+          <button
             onClick={() => navigate('/')}
             style={{
               width: '100%',
@@ -128,7 +128,7 @@ const ManagerLayout = () => {
               fontSize: '0.85rem',
               transition: 'all 0.2s'
             }}
-             onMouseEnter={(e) => {
+            onMouseEnter={(e) => {
               e.currentTarget.style.background = '#ef4444';
               e.currentTarget.style.color = 'white';
               e.currentTarget.style.borderColor = '#ef4444';
@@ -139,12 +139,12 @@ const ManagerLayout = () => {
               e.currentTarget.style.borderColor = '#475569';
             }}
           >
-            <LogOut size={16} /> 로그?�웃
+            <LogOut size={16} /> 로그아웃
           </button>
         </div>
       </aside>
 
-      {/* 메인 콘텐�?*/}
+      {/* Main content */}
       <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc', color: '#1e293b' }}>
         <Outlet />
       </main>
