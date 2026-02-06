@@ -16,6 +16,13 @@ import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
 
+// Manager
+import WorkerManagement from './features/manager/workers/WorkerManagement';
+import CompanyManagement from './features/manager/companies/CompanyManagement';
+import ManagerAttendance from './features/manager/attendance/ManagerAttendance';
+import ManagerContents from './features/manager/contents/ManagerContents';
+
+
 // Projects
 import ProjectList from './features/admin/projects/ProjectList';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
@@ -72,11 +79,13 @@ function App() {
               <Routes>
                 <Route path="dashboard" element={<ManagerDashboard />} />
                 <Route path="work" element={<DailyPlanManagement />} />
-                <Route path="contents" element={<ManagerDashboard />} />
+                <Route path="contents" element={<ManagerContents />} />
                 <Route path="locations" element={<ManagerDashboard />} />
-                <Route path="companies" element={<ManagerDashboard />} />
-                <Route path="workers" element={<ManagerDashboard />} />
-                <Route path="attendance" element={<ManagerDashboard />} />
+                <Route path="companies" element={<CompanyManagement />} />
+                <Route path="workers" element={<WorkerManagement />} />
+                <Route path="attendance" element={<ManagerAttendance />} />
+
+
                 <Route path="safety-info" element={<ManagerDashboard />} />
                 <Route path="violations" element={<ManagerDashboard />} />
                 <Route path="location" element={<ManagerDashboard />} />
