@@ -325,8 +325,15 @@ const CreateProject = () => {
                 />
              </div>
              <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.85rem', color: '#475569' }}>
-                <MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                선택된 좌표: {formData.lat.toFixed(6)}, {formData.lng.toFixed(6)}
+                <div style={{ marginBottom: '6px' }}>
+                  <MapPin size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  선택된 좌표: {formData.lat.toFixed(6)}, {formData.lng.toFixed(6)}
+                </div>
+                {formData.location_address && (
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #e2e8f0' }}>
+                    주소 (project_master에 자동 저장): {formData.location_address}
+                  </div>
+                )}
              </div>
            </div>
            
