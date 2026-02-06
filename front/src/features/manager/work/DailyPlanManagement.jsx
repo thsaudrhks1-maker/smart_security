@@ -44,30 +44,48 @@ const DailyPlanManagement = () => {
             } else {
                 siteId = Number(siteId);
             }
-            const [projRes, zoneRes, planRes, detailRes] = await Promise.all([
+            
+            const [projRes, zonesDetailRes, detailRes] = await Promise.all([
                 projectApi.getProject(siteId),
-                safetyApi.syncZonesByBlueprint(siteId),
-                workApi.getPlans({ project_id: siteId, d: selectedDate }),
+                projectApi.getZonesWithDetails(siteId, selectedDate),
                 projectApi.getProjectDetail(siteId)
             ]);
 
             const projectData = projRes.data?.data;
-            const rawZone = zoneRes?.data ?? zoneRes;
-            const planData = planRes.data || planRes;
+            const zonesWithDetails = zonesDetailRes?.data?.data || [];
 
             if (projectData) setProject(projectData);
             
-            const zoneList = Array.isArray(rawZone) && rawZone[0]?.zones
-                ? rawZone[0].zones
-                : Array.isArray(rawZone) ? rawZone : [];
-            setZones(zoneList);
-            setPlans(Array.isArray(planData) ? planData.data || planData : []);
+            // 구역별 상세 정보 (tasks, dangers 포함)
+            setZones(zonesWithDetails);
+            
+            // plans와 dangers를 별도로 추출하여 기존 로직 호환
+            const allPlans = [];
+            const allDangers = [];
+            
+            zonesWithDetails.forEach(zone => {
+                (zone.tasks || []).forEach(task => {
+                    allPlans.push({
+                        ...task,
+                        zone_name: zone.name,
+                        level: zone.level
+                    });
+                });
+                
+                (zone.dangers || []).forEach(danger => {
+                    allDangers.push({
+                        ...danger,
+                        zone_name: zone.name,
+                        level: zone.level
+                    });
+                });
+            });
+            
+            setPlans(allPlans);
+            setDangers(allDangers);
             
             // 승인된 작업자 목록
             setApprovedWorkers(detailRes?.data?.data?.approved_workers || []);
-            
-            // 위험 구역은 plans에서 추출하거나 별도 API 호출
-            setDangers([]);
         } catch (e) {
             console.error('데이터 로드 실패', e);
         } finally {
@@ -137,6 +155,7 @@ const DailyPlanManagement = () => {
                                 onZoneClick={handleZoneClick} 
                                 plans={plans} 
                                 risks={dangers}
+                                zones={zones}
                                 gridConfig={{ rows: parseInt(project.grid_rows), cols: parseInt(project.grid_cols), spacing: parseFloat(project.grid_spacing) }}
                             />
                         )}
@@ -937,27 +956,78 @@ const DangerCard = ({ danger, onDelete }) => {
     );
 };
 
-const PlanItem = ({ plan }) => (
-    <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9', marginBottom: '10px' }}>
-        <div style={{ fontWeight: '800' }}>{plan.zone_name}</div>
-        <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px' }}>
-            {plan.work_type} | {(plan.workers || []).length}명
+const PlanItem = ({ plan }) => {
+    const workers = Array.isArray(plan.workers) ? plan.workers : [];
+    const workerCount = workers.length;
+    
+    return (
+        <div style={{ 
+            padding: '12px', 
+            background: '#f8fafc', 
+            borderRadius: '16px', 
+            border: '1px solid #e2e8f0', 
+            marginBottom: '10px' 
+        }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#0f172a' }}>{plan.zone_name}</div>
+                <div style={{ 
+                    padding: '4px 8px', 
+                    background: '#dbeafe', 
+                    borderRadius: '6px',
+                    fontSize: '0.7rem',
+                    fontWeight: '800',
+                    color: '#1e40af'
+                }}>
+                    {workerCount}명
+                </div>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '700', marginBottom: '6px' }}>
+                {plan.work_type}
+            </div>
+            {workerCount > 0 && (
+                <div style={{ 
+                    fontSize: '0.75rem', 
+                    color: '#64748b',
+                    paddingTop: '6px',
+                    borderTop: '1px solid #e2e8f0'
+                }}>
+                    {workers.map((w, idx) => (
+                        <div key={idx} style={{ marginTop: '3px' }}>
+                            • {w.full_name} ({w.job_title})
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
-    </div>
-);
+    );
+};
 
 const DangerItem = ({ danger }) => (
     <div style={{ 
         padding: '12px', 
         background: '#fef2f2', 
         borderRadius: '16px', 
-        border: '1px solid #fca5a5', 
+        border: '1.5px solid #fca5a5', 
         marginBottom: '10px' 
     }}>
-        <div style={{ fontWeight: '800', color: '#991b1b' }}>{danger.zone_name}</div>
-        <div style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>
-            {danger.risk_type}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <div style={{ fontWeight: '800', color: '#991b1b', fontSize: '0.9rem' }}>{danger.zone_name}</div>
+            <div style={{ 
+                padding: '4px 8px', 
+                background: danger.color || '#dc2626', 
+                color: 'white',
+                borderRadius: '6px',
+                fontSize: '0.7rem',
+                fontWeight: '800'
+            }}>
+                {danger.danger_type || danger.risk_type}
+            </div>
         </div>
+        {danger.description && (
+            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                {danger.description}
+            </div>
+        )}
     </div>
 );
 

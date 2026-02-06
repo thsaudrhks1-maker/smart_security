@@ -16,6 +16,10 @@ export const projectApi = {
     deleteProject: (id) => client.delete(`/project/master/${id}`),
     // [PROJECT] 프로젝트 멤버(참여 인력) 조회
     getMembers: (id) => client.get(`/project/master/${id}/members`),
+    // [PROJECT] 구역별 작업/위험요소 상세 조회
+    getZonesWithDetails: (projectId, date) => client.get(`/project/locations/${projectId}/zones/details`, {
+        params: { date }
+    }),
 };
 
 export const { getProjects, getProject, createProject, deleteProject, getMembers } = projectApi;
