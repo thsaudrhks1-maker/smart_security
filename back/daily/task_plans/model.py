@@ -9,7 +9,7 @@ class daily_work_tasks(Base):
     id = Column(Integer, primary_key=True, index=True)
     site_id = Column(Integer, ForeignKey("project_sites.id", ondelete="CASCADE"), nullable=False)
     zone_id = Column(Integer, ForeignKey("project_zones.id", ondelete="CASCADE"), nullable=False)
-    template_id = Column(Integer, ForeignKey("content_work_templates.id"), nullable=False)
+    template_id = Column(Integer, ForeignKey("content_work_templates.id", ondelete="SET NULL"), nullable=True)
     date = Column(Date, nullable=False, index=True)
     description = Column(String, nullable=True)
     calculated_risk_score = Column(Integer, default=0)

@@ -11,6 +11,6 @@ class sys_users(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     role = Column(String, default="worker")
-    company_id = Column(Integer, nullable=True)
+    company_id = Column(Integer, ForeignKey("sys_companies.id", ondelete="CASCADE"), nullable=True)
     phone = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.now)

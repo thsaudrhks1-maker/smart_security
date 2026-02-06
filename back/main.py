@@ -1,17 +1,16 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
+from back.sys.users.router import router as users_router
+from back.sys.companies.router import router as companies_router
+from back.project.master.router import router as project_router
+from back.project.locations.router import router as locations_router
+from back.content.work_manuals.router import router as manuals_router
+from back.daily.attendance.router import router as attendance_router
+from back.daily.notices.router import router as notices_router
 
-# [Standard] 새 도메인 라우터 임포트
-from back.sys.router import router as sys_router
-from back.project.router import router as project_router
-from back.content.router import router as content_router
-from back.daily.router import router as daily_router
+app = FastAPI(title="Smart Security API")
 
-app = FastAPI(title="Smart Security Standard API")
-
-# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,12 +19,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# [Standard] 중앙 집중식 API 라우팅
-app.include_router(sys_router, prefix="/api/sys", tags=["System"])
-app.include_router(project_router, prefix="/api/project", tags=["Project"])
-app.include_router(content_router, prefix="/api/content", tags=["Content"])
-app.include_router(daily_router, prefix="/api/daily", tags=["Daily"])
+# [SYS]
+app.include_router(users_router, prefix="/api/sys/users", tags=["SYS_Users"])
+app.include_router(companies_router, prefix="/api/sys/companies", tags=["SYS_Companies"])
+
+# [PROJECT]
+app.include_router(project_router, prefix="/api/project/master", tags=["Project_Master"])
+app.include_router(locations_router, prefix="/api/project/locations", tags=["Project_Locations"])
+
+# [CONTENT]
+app.include_router(manuals_router, prefix="/api/content/manuals", tags=["Content_Manuals"])
+
+# [DAILY]
+app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])
+app.include_router(notices_router, prefix="/api/daily/notices", tags=["Daily_Notices"])
 
 @app.get("/")
 async def root():
-    return {"message": "Smart Security API is running with Global Standard Architecture"}
+    return {"message": "Smart Security Domain API is running"}

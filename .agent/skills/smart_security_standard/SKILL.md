@@ -62,7 +62,7 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
   - `daily_`: 매일 발생하는 운영 데이터 (예: `class daily_attendance`)
 
 ### 도메인별 매핑 테이블 가이드
-| 도메인 | 테이블명 기준 |
+| 도메인 | 테이블명 기준 |- **데이터 무결성(CASCADE):** 모든 외래키(ForeignKey) 정의 시 반드시 `ondelete="CASCADE"` 옵션을 포함하여 부모 데이터 삭제 시 관련 데이터가 꼬이지 않고 함께 정리되도록 강제한다.
 | :--- | :--- |
 | **SYS** | `sys_users`, `sys_companies`, `sys_emergency_alerts` |
 | **PROJECT** | `project_master`, `project_sites`, `project_zones`, `project_members`, `project_companies` |
