@@ -45,7 +45,29 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 ### D. 오류 자가 진단 (Self-Correction)
 - 명령어 실행 후 반드시 **로그를 끝까지 확인**하여 에러(`Fail`, `Traceback`)를 감지하고 수정한다.
 
-## 2. API 및 통신 표준 (API Standards)
+## 2. 데이터베이스 명명 규칙 (Database Naming Convention)
+
+### A. 참조 테이블 (Junction Table) 명명 규칙
+Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 **`_links`** 접미사를 사용합니다.
+
+**규칙:**
+- ✅ `{entity1}_{entity2}_links` 형식
+- ✅ 짧고 명확한 이름 사용
+- ❌ `allocations`, `mappings`, `relationships` 등 장황한 단어 사용 금지
+
+**예시:**
+- ❌ `daily_worker_allocations` (너무 김)
+- ✅ `daily_worker_links`
+- ✅ `project_user_links`
+- ✅ `zone_danger_links`
+- ✅ `site_equipment_links`
+
+**적용 대상:**
+- 작업일보 ↔ 작업자: `daily_worker_links`
+- 프로젝트 ↔ 사용자: `project_user_links`
+- 프로젝트 ↔ 협력사: `project_company_links`
+
+## 3. API 및 통신 표준 (API Standards)
 
 ### A. URL 경로 구조 (API Prefixing)
 - **`/api` 접두어 필수**: 백엔드 데이터 요청과 프론트엔드 라우팅을 명확히 구분하기 위해 모든 백엔드 엔드포인트는 `/api` 접두어를 사용한다.

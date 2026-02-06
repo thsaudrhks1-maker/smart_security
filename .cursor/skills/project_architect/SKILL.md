@@ -37,6 +37,26 @@ back/
 4.  **API 버전:** URL은 반드시 `/api/v1/[feature_name]` 형식을 따릅니다.
 5.  **의존성 방향:** `Router` -> `Service` -> `Repository` -> `Model` (역방향 참조 금지)
 
+### [참조 테이블 명명 규칙]
+Many-to-Many 관계를 위한 중간 테이블(Junction Table)은 **`_links`** 접미사를 사용합니다.
+
+**형식:**
+```python
+# model.py 예시
+class DailyWorkerLinks(Base):
+    __tablename__ = "daily_worker_links"
+    id = Column(Integer, primary_key=True)
+    daily_id = Column(Integer, ForeignKey("daily_work_plans.id"))
+    worker_id = Column(Integer, ForeignKey("workers.id"))
+```
+
+**예시:**
+- ✅ `daily_worker_links` (작업일보 ↔ 작업자)
+- ✅ `project_user_links` (프로젝트 ↔ 사용자)
+- ✅ `zone_danger_links` (구역 ↔ 위험요소)
+- ❌ `daily_worker_allocations` (너무 김, 금지)
+- ❌ `project_members` (불명확, 금지)
+
 ## 2. ⚛️ 프론트엔드 구조 (React + Vite)
 - **공통 UI:** `src/components/common/` (버튼, 카드 등)
 - **기능 UI:** `src/features/[feature_name]/` (해당 기능 전용 컴포넌트)

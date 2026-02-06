@@ -19,6 +19,16 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 
 ---
 
+## 2. 프론트엔드 UI/UX 표준 (UI Standards)
+
+### A. 가독성 및 색상 (Aesthetics)
+- **라이트 모드 우선 (Main Rule)**: 모든 화면은 **밝은 배경(#f8fafc, #ffffff)**을 기본으로 한다.
+- **글자색 시인성**: 배경이 밝으므로 글씨는 무조건 **어두운색(#0f172a, #1e293b, #334155)**을 사용한다.
+- **흰색 글씨 금지**: 버튼 내부 등 특수한 경우를 제외하고 메인 텍스트에 흰색(#ffffff)이나 연한 회색을 사용하지 않는다. (스크린샷 가독성 저하 방지)
+- **프리미엄 미니멀리즘**: `lucide-react` 아이콘과 부드러운 그림자(`box-shadow`)를 사용하여 모던한 느낌을 유지한다.
+
+---
+
 ## 1. 프로젝트 통합 행동 강령 (Global Rules)
 
 ### A. 언어 및 소통 (Language)
@@ -35,7 +45,29 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 ### D. 오류 자가 진단 (Self-Correction)
 - 명령어 실행 후 반드시 **로그를 끝까지 확인**하여 에러(`Fail`, `Traceback`)를 감지하고 수정한다.
 
-## 2. API 및 통신 표준 (API Standards)
+## 2. 데이터베이스 명명 규칙 (Database Naming Convention)
+
+### A. 참조 테이블 (Junction Table) 명명 규칙
+Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 **`_links`** 접미사를 사용합니다.
+
+**규칙:**
+- ✅ `{entity1}_{entity2}_links` 형식
+- ✅ 짧고 명확한 이름 사용
+- ❌ `allocations`, `mappings`, `relationships` 등 장황한 단어 사용 금지
+
+**예시:**
+- ❌ `daily_worker_allocations` (너무 김)
+- ✅ `daily_worker_links`
+- ✅ `project_user_links`
+- ✅ `zone_danger_links`
+- ✅ `site_equipment_links`
+
+**적용 대상:**
+- 작업일보 ↔ 작업자: `daily_worker_links`
+- 프로젝트 ↔ 사용자: `project_user_links`
+- 프로젝트 ↔ 협력사: `project_company_links`
+
+## 3. API 및 통신 표준 (API Standards)
 
 ### A. URL 경로 구조 (API Prefixing)
 - **`/api` 접두어 필수**: 백엔드 데이터 요청과 프론트엔드 라우팅을 명확히 구분하기 위해 모든 백엔드 엔드포인트는 `/api` 접두어를 사용한다.
@@ -44,3 +76,28 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 - **중앙 집중식 관리**:
   - **백엔드**: `back/main.py`에서 `include_router(..., prefix="/api")`를 통해 일괄 적용한다. 개별 라우터 파일의 `prefix`에는 `/api`를 붙이지 않는다.
   - **프론트엔드**: `src/api/client.js`의 `baseURL`에 `/api`를 포함시킨다. 개별 API 라이브러리(예: `workApi.js`)에서는 `/api`를 생략하고 하위 경로만 작성한다.
+
+## 3. 데이터 처리 및 날짜 표준 (Data & Date Standards)
+
+### A. 날짜 및 시간 생성 (Application-Level Timestamps)
+- **DB 자동 생성 금지**: `NOW()`, `CURRENT_TIMESTAMP`, `DEFAULT NOW()` 등 DB 엔진에서 자동으로 시간을 생성하는 기능을 지양한다.
+- **애플리케이션 계층 생성**: 모든 날짜와 시간은 백엔드(Service/Repository) 또는 프론트엔드에서 명시적으로 생성하여 데이터베이스에 전달한다.
+- **이유**: 시점의 일관성 유지, 비즈니스 로직에서의 시간 제어권 확보, 테스트 용이성을 위함이다.
+- **파이썬 기준**: `datetime.now()`를 사용하여 전달한다.
+
+## 4. 데이터베이스 구조 및 네이밍 표준 (Database Naming Standard)
+
+- **테이블 및 클래스 네이밍 컨벤션:** 데이터의 성격과 생명 주기에 따라 4가지 접두어를 사용하며, **파이썬 클래스명도 테이블명과 동일하게 `snake_case`로 작성**하여 1:1 매핑을 강제한다. (PascalCase 지양)
+  - `sys_`: 시스템 전역 기초 정보 (예: `class sys_users`)
+  - `project_`: 프로젝트 물리적 구조 및 소속 (예: `class project_master`)
+  - `content_`: 안전/작업 가이드 및 마스터 지식 (예: `class content_safety_gear`)
+  - `daily_`: 매일 발생하는 운영 데이터 (예: `class daily_attendance`)
+
+### 도메인별 매핑 테이블 가이드
+| 도메인 | 테이블명 기준 |- **데이터 무결성(CASCADE):** 모든 외래키(ForeignKey) 정의 시 반드시 `ondelete="CASCADE"` 옵션을 포함하여 부모 데이터 삭제 시 관련 데이터가 꼬이지 않고 함께 정리되도록 강제한다.
+| :--- | :--- |
+| **SYS** | `sys_users`, `sys_companies`, `sys_emergency_alerts` |
+| **PROJECT** | `project_master`, `project_sites`, `project_zones`, `project_members`, `project_companies` |
+| **CONTENT** | `content_work_templates`, `content_safety_gear`, `content_work_gear_map` |
+| **DAILY** | `daily_attendance`, `daily_weather`, `daily_notices`, `daily_work_tasks`, `daily_worker_allocations`, `daily_safety_logs`, `daily_danger_zones`, `daily_danger_images`, `daily_violations` |
+
