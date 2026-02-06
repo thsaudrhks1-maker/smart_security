@@ -43,16 +43,23 @@ const ManagerDashboard = () => {
 
     const loadDashboardData = async () => {
         try {
-            const siteId = user?.project_id || 1;
             const today = new Date().toISOString().split('T')[0];
+            let siteId = user?.project_id;
 
-            // 데이터 로드 시도
+            if (!siteId) {
+                const listRes = await projectApi.getProjects().catch(() => ({ data: { data: [] } }));
+                const list = listRes?.data?.data || [];
+                if (list.length > 0) siteId = list[0].id;
+            }
+            siteId = siteId || 1;
+
             const [projRes, attRes] = await Promise.all([
-                projectApi.getProject(siteId).catch(() => ({ data: { data: { name: '현장 정보 없음' } } })),
+                projectApi.getProject(siteId).catch(() => ({ data: { data: null } })),
                 attendanceApi.getAttendance(siteId, today).catch(() => ({ data: { data: [] } }))
             ]);
 
             if (projRes?.data?.data) setProject(projRes.data.data);
+            else setProject({ name: '현장 정보 없음', location_address: '-', start_date: null, end_date: null });
             
             const attList = attRes?.data?.data || [];
             setStats({

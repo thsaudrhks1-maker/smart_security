@@ -1,12 +1,15 @@
 
-from back.database import fetch_all, fetch_one, insert_and_return
+from back.database import fetch_all, fetch_one
 
 class locations_repository:
-    """[PROJECT_LOCATIONS] 사이트 및 구역 데이터 접근"""
+    """[PROJECT_LOCATIONS] 프로젝트·구역 데이터 접근 (project_sites 미사용, project_master + project_zones만 사용)"""
     @staticmethod
-    async def get_sites_by_project(pid: int):
-        return await fetch_all("SELECT * FROM project_sites WHERE project_id = :pid", {"pid": pid})
+    async def get_project(pid: int):
+        return await fetch_one("SELECT id, name FROM project_master WHERE id = :pid", {"pid": pid})
 
     @staticmethod
-    async def get_zones_by_site(sid: int):
-        return await fetch_all("SELECT * FROM project_zones WHERE site_id = :sid ORDER BY level, name", {"sid": sid})
+    async def get_zones_by_project(pid: int):
+        return await fetch_all(
+            "SELECT * FROM project_zones WHERE project_id = :pid ORDER BY level, name",
+            {"pid": pid}
+        )

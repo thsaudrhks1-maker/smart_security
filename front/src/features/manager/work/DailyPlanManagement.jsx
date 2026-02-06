@@ -35,7 +35,14 @@ const DailyPlanManagement = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const siteId = user?.project_id || 1;
+            let siteId = user?.project_id;
+            if (!siteId) {
+                const listRes = await projectApi.getProjects().catch(() => ({ data: { data: [] } }));
+                const list = listRes?.data?.data || [];
+                siteId = list.length > 0 ? list[0].id : 1;
+            } else {
+                siteId = Number(siteId);
+            }
             const [projRes, zoneRes, planRes] = await Promise.all([
                 projectApi.getProject(siteId),
                 safetyApi.syncZonesByBlueprint(siteId),
@@ -43,11 +50,15 @@ const DailyPlanManagement = () => {
             ]);
 
             const projectData = projRes.data?.data;
-            const zoneData = zoneRes.data || zoneRes;
+            const rawZone = zoneRes?.data ?? zoneRes;
             const planData = planRes.data || planRes;
 
             if (projectData) setProject(projectData);
-            setZones(Array.isArray(zoneData) ? zoneData : []);
+            // API: [{ id, name, zones }] → 구역 목록은 첫 번째 사이트의 zones
+            const zoneList = Array.isArray(rawZone) && rawZone[0]?.zones
+                ? rawZone[0].zones
+                : Array.isArray(rawZone) ? rawZone : [];
+            setZones(zoneList);
             setPlans(Array.isArray(planData) ? planData.data || planData : []);
             setRisks([]); 
         } catch (e) {

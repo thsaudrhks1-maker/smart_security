@@ -114,12 +114,17 @@ const CommonMap = ({
                 [startLat - (r + 1) * latStep, startLng + (c + 1) * lngStep]
               ];
 
+              const centerLat = (b[0][0] + b[1][0]) / 2;
+              const centerLng = (b[0][1] + b[1][1]) / 2;
               cells.push(
                 <Rectangle 
                   key={`cell-${zoneName}`} 
                   bounds={b} 
                   eventHandlers={{
-                    click: () => onZoneClick && onZoneClick({ name: zoneName, level: highlightLevel }),
+                    click: () => {
+                      if (onZoneClick) onZoneClick({ name: zoneName, level: highlightLevel });
+                      if (onMapClick) onMapClick({ lat: centerLat, lng: centerLng });
+                    },
                     mouseover: (e) => {
                       e.target.setStyle({ weight: 4, color: '#3b82f6', fillOpacity: 0.5 });
                     },
