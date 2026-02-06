@@ -22,8 +22,9 @@ const ManagerAttendance = () => {
             
             if (projectId) {
                 setProjectInfo(dash.project_info);
-                const data = await attendanceApi.getProjectAttendance(projectId, selectedDate);
-                setAttendanceList(data || []);
+                const response = await attendanceApi.getAttendance(projectId, selectedDate);
+                setAttendanceList(response.data || []);
+
             }
         } catch (error) {
             console.error('출역 데이터 로드 중 오류 발생:', error);
