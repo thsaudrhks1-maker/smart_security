@@ -112,27 +112,31 @@ const CommonMap = ({
                 totalWorkers += Array.isArray(workers) ? workers.length : 0;
               });
 
-              // 스타일 결정
+              // 스타일 결정 (개선된 시인성)
               let fillColor = 'transparent';
-              let fillOpacity = 0.05;
-              let strokeColor = '#cbd5e1';
+              let fillOpacity = 0.08;
+              let strokeColor = '#94a3b8';
               let strokeWeight = 2.5;
+              let dashArray = null;
 
               if (hasRisk && hasPlan) {
-                // 위험 + 작업 동시 존재
-                fillColor = '#fbbf24';
-                fillOpacity = 0.35;
-                strokeColor = '#f59e0b';
-                strokeWeight = 3;
+                // 위험 + 작업 동시 존재 (노란색 배경 + 굵은 빨간 테두리)
+                fillColor = '#fef08a';
+                fillOpacity = 0.45;
+                strokeColor = '#dc2626';
+                strokeWeight = 5;
               } else if (hasRisk) {
-                fillColor = '#ef4444';
-                fillOpacity = 0.3;
-                strokeColor = '#b91c1c';
-                strokeWeight = 3;
+                // 위험 영역만 (빨간 테두리 강조)
+                fillColor = '#fecaca';
+                fillOpacity = 0.35;
+                strokeColor = '#dc2626';
+                strokeWeight = 5;
               } else if (hasPlan) {
-                fillColor = '#3b82f6';
-                fillOpacity = 0.2;
+                // 작업 영역만 (파란 테두리 강조)
+                fillColor = '#bfdbfe';
+                fillOpacity = 0.3;
                 strokeColor = '#2563eb';
+                strokeWeight = 5;
               }
 
               const b = [
@@ -159,7 +163,11 @@ const CommonMap = ({
                       if (onMapClick) onMapClick({ lat: centerLat, lng: centerLng });
                     },
                     mouseover: (e) => {
-                      e.target.setStyle({ weight: 4, color: '#3b82f6', fillOpacity: 0.5 });
+                      e.target.setStyle({ 
+                        weight: 6, 
+                        color: hasRisk ? '#991b1b' : hasPlan ? '#1e3a8a' : '#475569', 
+                        fillOpacity: 0.6 
+                      });
                     },
                     mouseout: (e) => {
                       e.target.setStyle({ 

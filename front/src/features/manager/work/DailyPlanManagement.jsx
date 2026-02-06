@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { projectApi } from '@/api/projectApi';
 import { safetyApi } from '@/api/safetyApi';
 import { workApi } from '@/api/workApi';
+import { dangerApi } from '@/api/dangerApi';
 import { 
   Calendar, Map as MapIcon, Layers, Plus, 
   Users, AlertTriangle, CheckCircle2, ChevronRight, X,
@@ -215,8 +216,13 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
     });
     
     const [dangerForm, setDangerForm] = useState({
-        risk_type: '',
-        description: ''
+        mode: 'template', // 'template' or 'custom'
+        danger_info_id: '',
+        custom_type: '',
+        custom_icon: 'alert-triangle',
+        custom_color: '#ef4444',
+        description: '',
+        risk_level: 3
     });
     
     const [workTemplates, setWorkTemplates] = useState([
@@ -228,9 +234,12 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
         { id: 6, work_type: '배관 작업' },
         { id: 7, work_type: '마감 작업' }
     ]);
+    
+    const [dangerTemplates, setDangerTemplates] = useState([]);
 
     useEffect(() => {
         loadZoneDetail();
+        loadDangerTemplates();
     }, [zone.id, date]);
 
     const loadZoneDetail = async () => {
@@ -245,12 +254,28 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
             setLoading(false);
         }
     };
+    
+    const loadDangerTemplates = async () => {
+        try {
+            const res = await dangerApi.getDangerInfoList();
+            setDangerTemplates(res.data || []);
+        } catch (e) {
+            console.error('위험 요소 템플릿 로드 실패', e);
+        }
+    };
 
     const handleCreateTask = async () => {
         if (!taskForm.work_info_id) {
             alert('작업 종류를 선택해주세요.');
             return;
         }
+        
+        // 중복 체크: 이미 위험 구역이 설정된 곳에는 작업 추가 불가
+        if (dangers.length > 0) {
+            alert('⚠️ 이 구역은 이미 위험 구역으로 설정되어 있습니다.\n작업 구역과 위험 구역을 동시에 설정할 수 없습니다.\n먼저 위험 구역을 삭제한 후 작업을 추가해주세요.');
+            return;
+        }
+        
         try {
             await workApi.createTask({
                 project_id: projectId,
@@ -319,22 +344,61 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
     };
 
     const handleCreateDanger = async () => {
-        if (!dangerForm.risk_type) {
-            alert('위험 유형을 입력해주세요.');
-            return;
-        }
         try {
+            // 중복 체크: 이미 작업이 있는 구역에는 위험 구역 추가 불가
+            if (tasks.length > 0) {
+                alert('⚠️ 이 구역에는 이미 작업 계획이 존재합니다.\n작업 구역과 위험 구역을 동시에 설정할 수 없습니다.\n먼저 작업 계획을 삭제한 후 위험 구역을 추가해주세요.');
+                return;
+            }
+            
+            let dangerInfoId = null;
+            
+            if (dangerForm.mode === 'template') {
+                // 기존 템플릿 사용
+                if (!dangerForm.danger_info_id) {
+                    alert('위험 요소를 선택해주세요.');
+                    return;
+                }
+                dangerInfoId = parseInt(dangerForm.danger_info_id);
+            } else {
+                // 새로운 위험 요소 생성
+                if (!dangerForm.custom_type) {
+                    alert('위험 유형을 입력해주세요.');
+                    return;
+                }
+                const newDangerInfo = await dangerApi.createDangerInfo({
+                    danger_type: dangerForm.custom_type,
+                    icon: dangerForm.custom_icon,
+                    color: dangerForm.custom_color,
+                    description: dangerForm.description,
+                    risk_level: parseInt(dangerForm.risk_level)
+                });
+                dangerInfoId = newDangerInfo.data.id;
+            }
+            
+            // 위험 구역 생성
             await workApi.createDanger({
                 zone_id: zone.id,
                 date: date,
-                risk_type: dangerForm.risk_type,
+                danger_info_id: dangerInfoId,
                 description: dangerForm.description
             });
+            
             alert('위험 구역이 추가되었습니다.');
             setMode('view');
-            setDangerForm({ risk_type: '', description: '' });
+            setDangerForm({ 
+                mode: 'template',
+                danger_info_id: '',
+                custom_type: '',
+                custom_icon: 'alert-triangle',
+                custom_color: '#ef4444',
+                description: '',
+                risk_level: 3
+            });
             loadZoneDetail();
+            loadDangerTemplates(); // 새로 추가된 템플릿 반영
         } catch (e) {
+            console.error('위험 구역 추가 오류:', e);
             alert('위험 구역 추가 중 오류가 발생했습니다.');
         }
     };
@@ -600,46 +664,204 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                                     border: '1px solid #fecaca' 
                                 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {/* 모드 선택 */}
                                         <div>
-                                            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
-                                                위험 유형
+                                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                입력 방식
                                             </label>
-                                            <input 
-                                                type="text"
-                                                value={dangerForm.risk_type} 
-                                                onChange={e => setDangerForm({...dangerForm, risk_type: e.target.value})}
-                                                placeholder="예: 낙하물, 감전, 중장비"
-                                                style={{ 
-                                                    width: '100%', 
-                                                    padding: '12px', 
-                                                    borderRadius: '12px', 
-                                                    border: '1px solid #fecaca',
-                                                    fontSize: '0.9rem'
-                                                }}
-                                            />
+                                            <div style={{ display: 'flex', gap: '10px' }}>
+                                                <button
+                                                    onClick={() => setDangerForm({...dangerForm, mode: 'template'})}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '10px',
+                                                        borderRadius: '10px',
+                                                        border: dangerForm.mode === 'template' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                                                        background: dangerForm.mode === 'template' ? '#fee2e2' : 'white',
+                                                        fontWeight: '700',
+                                                        fontSize: '0.85rem',
+                                                        cursor: 'pointer',
+                                                        color: dangerForm.mode === 'template' ? '#991b1b' : '#64748b'
+                                                    }}
+                                                >
+                                                    템플릿 선택
+                                                </button>
+                                                <button
+                                                    onClick={() => setDangerForm({...dangerForm, mode: 'custom'})}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '10px',
+                                                        borderRadius: '10px',
+                                                        border: dangerForm.mode === 'custom' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+                                                        background: dangerForm.mode === 'custom' ? '#fee2e2' : 'white',
+                                                        fontWeight: '700',
+                                                        fontSize: '0.85rem',
+                                                        cursor: 'pointer',
+                                                        color: dangerForm.mode === 'custom' ? '#991b1b' : '#64748b'
+                                                    }}
+                                                >
+                                                    직접 입력
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
-                                                상세 설명
-                                            </label>
-                                            <textarea 
-                                                value={dangerForm.description} 
-                                                onChange={e => setDangerForm({...dangerForm, description: e.target.value})}
-                                                placeholder="위험 요소에 대한 상세 설명"
-                                                rows={3}
-                                                style={{ 
-                                                    width: '100%', 
-                                                    padding: '12px', 
-                                                    borderRadius: '12px', 
-                                                    border: '1px solid #fecaca',
-                                                    fontSize: '0.9rem',
-                                                    resize: 'vertical'
-                                                }}
-                                            />
-                                        </div>
+
+                                        {dangerForm.mode === 'template' ? (
+                                            /* 템플릿 선택 모드 */
+                                            <>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                        위험 요소 선택
+                                                    </label>
+                                                    <select
+                                                        value={dangerForm.danger_info_id}
+                                                        onChange={e => setDangerForm({...dangerForm, danger_info_id: e.target.value})}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '12px', 
+                                                            borderRadius: '12px', 
+                                                            border: '1px solid #fecaca',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    >
+                                                        <option value="">선택하세요</option>
+                                                        {dangerTemplates.map(dt => (
+                                                            <option key={dt.id} value={dt.id}>
+                                                                {dt.danger_type} (위험도: {dt.risk_level})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                        상세 설명 (선택)
+                                                    </label>
+                                                    <textarea 
+                                                        value={dangerForm.description} 
+                                                        onChange={e => setDangerForm({...dangerForm, description: e.target.value})}
+                                                        placeholder="추가 설명이 필요한 경우 입력"
+                                                        rows={2}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '12px', 
+                                                            borderRadius: '12px', 
+                                                            border: '1px solid #fecaca',
+                                                            fontSize: '0.9rem',
+                                                            resize: 'vertical'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            /* 커스텀 입력 모드 */
+                                            <>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                        위험 유형 (새로 추가)
+                                                    </label>
+                                                    <input 
+                                                        type="text"
+                                                        value={dangerForm.custom_type} 
+                                                        onChange={e => setDangerForm({...dangerForm, custom_type: e.target.value})}
+                                                        placeholder="예: 소음, 분진, 진동"
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '12px', 
+                                                            borderRadius: '12px', 
+                                                            border: '1px solid #fecaca',
+                                                            fontSize: '0.9rem'
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                    <div>
+                                                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                            아이콘
+                                                        </label>
+                                                        <input 
+                                                            type="text"
+                                                            value={dangerForm.custom_icon} 
+                                                            onChange={e => setDangerForm({...dangerForm, custom_icon: e.target.value})}
+                                                            placeholder="alert-triangle"
+                                                            style={{ 
+                                                                width: '100%', 
+                                                                padding: '12px', 
+                                                                borderRadius: '12px', 
+                                                                border: '1px solid #fecaca',
+                                                                fontSize: '0.85rem'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                            색상
+                                                        </label>
+                                                        <input 
+                                                            type="color"
+                                                            value={dangerForm.custom_color} 
+                                                            onChange={e => setDangerForm({...dangerForm, custom_color: e.target.value})}
+                                                            style={{ 
+                                                                width: '100%', 
+                                                                height: '44px',
+                                                                borderRadius: '12px', 
+                                                                border: '1px solid #fecaca',
+                                                                cursor: 'pointer'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                        위험도 ({dangerForm.risk_level})
+                                                    </label>
+                                                    <input 
+                                                        type="range"
+                                                        min="1"
+                                                        max="5"
+                                                        value={dangerForm.risk_level}
+                                                        onChange={e => setDangerForm({...dangerForm, risk_level: e.target.value})}
+                                                        style={{ width: '100%' }}
+                                                    />
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b', marginTop: '4px' }}>
+                                                        <span>낮음 (1)</span>
+                                                        <span>매우 높음 (5)</span>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                                                        상세 설명
+                                                    </label>
+                                                    <textarea 
+                                                        value={dangerForm.description} 
+                                                        onChange={e => setDangerForm({...dangerForm, description: e.target.value})}
+                                                        placeholder="위험 요소에 대한 상세 설명"
+                                                        rows={2}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            padding: '12px', 
+                                                            borderRadius: '12px', 
+                                                            border: '1px solid #fecaca',
+                                                            fontSize: '0.9rem',
+                                                            resize: 'vertical'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                        
                                         <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
                                             <button 
-                                                onClick={() => setMode('view')}
+                                                onClick={() => {
+                                                    setMode('view');
+                                                    setDangerForm({ 
+                                                        mode: 'template',
+                                                        danger_info_id: '',
+                                                        custom_type: '',
+                                                        custom_icon: 'alert-triangle',
+                                                        custom_color: '#ef4444',
+                                                        description: '',
+                                                        risk_level: 3
+                                                    });
+                                                }}
                                                 style={{ 
                                                     flex: 1, 
                                                     padding: '12px', 
@@ -665,7 +887,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                                                     cursor: 'pointer'
                                                 }}
                                             >
-                                                저장
+                                                {dangerForm.mode === 'custom' ? '생성 후 추가' : '추가'}
                                             </button>
                                         </div>
                                     </div>
@@ -991,8 +1213,8 @@ const PlanItem = ({ plan }) => {
                     paddingTop: '6px',
                     borderTop: '1px solid #e2e8f0'
                 }}>
-                    {workers.map((w, idx) => (
-                        <div key={idx} style={{ marginTop: '3px' }}>
+                    {workers.map((w) => (
+                        <div key={w.id || w.worker_id} style={{ marginTop: '3px' }}>
                             • {w.full_name} ({w.job_title})
                         </div>
                     ))}

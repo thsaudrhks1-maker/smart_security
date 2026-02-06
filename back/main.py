@@ -6,6 +6,7 @@ from back.sys.companies.router import router as companies_router
 from back.project.master.router import router as project_router
 from back.project.locations.router import router as locations_router
 from back.content.work_info.router import router as work_info_router
+from back.content.danger_info.router import router as danger_info_router
 from back.daily.attendance.router import router as attendance_router
 from back.daily.notices.router import router as notices_router
 from back.daily.task_plans.router import router as task_plans_router
@@ -36,6 +37,7 @@ app.include_router(locations_router, prefix="/api/project/locations", tags=["Pro
 
 # [CONTENT]
 app.include_router(work_info_router, prefix="/api/content/work_info", tags=["Content_WorkInfo"])
+app.include_router(danger_info_router, prefix="/api/content/danger_info", tags=["Content_DangerInfo"])
 
 # [DAILY]
 app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])

@@ -38,8 +38,8 @@ class safety_logs_repository:
     async def create_danger_zone(data: dict):
         """위험 구역 생성"""
         sql = """
-            INSERT INTO daily_danger_zones (zone_id, date, risk_type, description)
-            VALUES (:zone_id, :date, :risk_type, :description)
+            INSERT INTO daily_danger_zones (zone_id, date, danger_info_id, risk_type, description)
+            VALUES (:zone_id, :date, :danger_info_id, :risk_type, :description)
             RETURNING *
         """
         return await insert_and_return(sql, data)

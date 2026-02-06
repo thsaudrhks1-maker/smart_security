@@ -23,12 +23,17 @@ async def login(req: UserLogin):
     if not user:
         raise HTTPException(status_code=401, detail="인증 실패")
     
+    # 사용자의 프로젝트 정보 조회
+    project_id = await users_repository.get_user_project(user["id"])
+    
     # 프론트엔드가 기대하는 평면 구조(Flat UI structure)로 반환
     return {
         "success": True,
         "access_token": "fake-jwt-token", # 현재 세션 방식
+        "user_id": user["id"],
         "username": user["username"],
         "full_name": user["full_name"],
         "role": user["role"],
-        "company_id": user["company_id"]
+        "company_id": user["company_id"],
+        "project_id": project_id
     }

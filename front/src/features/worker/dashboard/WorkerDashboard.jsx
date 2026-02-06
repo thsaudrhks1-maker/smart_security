@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { safetyApi } from '@/api/safetyApi';
+import { projectApi } from '@/api/projectApi';
 import { workApi } from '@/api/workApi';
 import { Shield, Bell, Map as MapIcon, Info, LayoutDashboard } from 'lucide-react';
 import CommonMap from '@/components/common/CommonMap';
@@ -16,34 +17,37 @@ const WorkerDashboard = () => {
     const [project, setProject] = useState(null);
     const [zones, setZones] = useState([]);
     const [plans, setPlans] = useState([]);
-    const [risks, setRisks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentLevel, setCurrentLevel] = useState('1F');
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [selectedZone, setSelectedZone] = useState(null);
-    const [selectedRisk, setSelectedRisk] = useState(null);
 
     const loadData = async () => {
         try {
+            const projectId = user?.project_id || 1;
             const today = new Date().toISOString().split('T')[0];
-            const [zonesRes, plansRes, risksRes] = await Promise.all([
-                safetyApi.getZones(),
-                workApi.getPlans({ date: today }),
-                safetyApi.getDailyDangerZones(today)
-            ]);
-            setZones(zonesRes || []);
-            setPlans(plansRes || []);
-            setRisks(risksRes || []);
             
-            if (zonesRes?.length > 0) {
-              setProject({
-                lat: zonesRes[0].lat,
-                lng: zonesRes[0].lng,
-                id: zonesRes[0].site_id
-              });
+            const [projectRes, zonesRes, plansRes] = await Promise.all([
+                projectApi.getProject(projectId),
+                projectApi.getZonesWithDetails(projectId, today),
+                workApi.getPlans({ date: today })
+            ]);
+            
+            if (projectRes?.data) {
+                setProject({
+                    id: projectRes.data.id,
+                    lat: projectRes.data.lat || 37.5013068,
+                    lng: projectRes.data.lng || 127.0398106,
+                    grid_rows: projectRes.data.grid_rows || 4,
+                    grid_cols: projectRes.data.grid_cols || 3
+                });
             }
+            
+            setZones(zonesRes?.data || []);
+            setPlans(plansRes || []);
         } catch (e) {
             console.error('근로자 대시보드 로드 실패', e);
         } finally {
@@ -51,9 +55,14 @@ const WorkerDashboard = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, []);
+    useEffect(() => { loadData(); }, [user]);
 
     const myPlan = plans.find(p => p.worker_ids?.includes(user?.id));
+    
+    // 통계 계산
+    const dangerCount = zones.filter(z => z.dangers?.length > 0).length;
+    const taskCount = zones.filter(z => z.tasks?.length > 0).length;
+    const levels = ['B1', '1F', '2F', '3F'];
 
     return (
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem', color: '#1e293b', paddingBottom: '100px' }}>
@@ -79,25 +88,57 @@ const WorkerDashboard = () => {
             {/* 핵심 요약 카드 */}
             <DashboardCards 
               zonesCount={zones.length} 
-              risksCount={risks.length} 
+              risksCount={dangerCount} 
               myWorkZone={myPlan ? myPlan.zone_name : '미배정'} 
             />
 
             {/* 실시간 현장 지도 영역 */}
             <section style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MapIcon size={20} color="#3b82f6" /> 실시간 현장 지도
                 </h3>
+                <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem', fontWeight: '800' }}>
+                  <span style={{ color: '#2563eb' }}>작업 {taskCount}</span>
+                  <span style={{ color: '#dc2626' }}>위험 {dangerCount}</span>
+                </div>
               </div>
+              
+              {/* 층 선택 버튼 */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '0.75rem', overflowX: 'auto' }}>
+                {levels.map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setCurrentLevel(level)}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: currentLevel === level ? '#3b82f6' : '#f1f5f9',
+                      color: currentLevel === level ? 'white' : '#64748b',
+                      fontWeight: '800',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              
               <div style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
                 {project && (
                   <CommonMap 
                     center={[project.lat, project.lng]}
-                    zoom={18}
-                    markers={risks.map(r => ({ lat: r.lat, lng: r.lng, title: `위험: ${r.risk_type}`, color: 'red' }))}
-                    onMapClick={(e) => {
-                      setSelectedZone({ lat: e.latlng.lat, lng: e.latlng.lng, id: 1, name: '선택 구역' });
+                    zoom={19}
+                    gridRows={project.grid_rows}
+                    gridCols={project.grid_cols}
+                    highlightLevel={currentLevel}
+                    zones={zones}
+                    onZoneClick={(zoneData) => {
+                      setSelectedZone(zoneData);
                       setIsReportModalOpen(true);
                     }}
                   />

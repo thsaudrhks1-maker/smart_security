@@ -24,3 +24,14 @@ class users_repository:
             RETURNING *
         """
         return await insert_and_return(sql, data)
+    
+    @staticmethod
+    async def get_user_project(user_id: int):
+        """사용자가 속한 프로젝트 ID 조회"""
+        result = await fetch_one("""
+            SELECT pu.project_id
+            FROM project_users pu
+            WHERE pu.user_id = :uid AND pu.status = 'ACTIVE'
+            LIMIT 1
+        """, {"uid": user_id})
+        return result["project_id"] if result else None
