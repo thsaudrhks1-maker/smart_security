@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 
 /**
- * Admin용 네비게이션 사이드바
- * Dark Theme (검정 바탕 + 밝은 글씨) - 상무님 Pick
+ * Admin???�비게이???�이?�바
+ * Dark Theme (검??바탕 + 밝�? 글?? - ?�무??Pick
  */
 const NavSidebar = () => {
   const navigate = useNavigate();
@@ -28,32 +28,32 @@ const NavSidebar = () => {
   const { user, logout } = useAuth();
   const currentPath = location.pathname;
 
-  // 메뉴 설정
+  // 메뉴 ?�정
   const menuConfig = [
     { category: "Main", items: [
-      { icon: LayoutDashboard, label: "대시보드", path: "/admin", implemented: true },
+      { icon: LayoutDashboard, label: "?�?�보??, path: "/admin", implemented: true },
     ]},
     { category: "Project & Work", items: [
-      { icon: Folder, label: "현장 관리", path: "/admin/projects", implemented: true },
-      { icon: Users, label: "근로자 관리", path: "/admin/workers", implemented: false }, 
-      { icon: Building2, label: "협력사(고객사) 관리", path: "/admin/companies", implemented: true },
-      { icon: Briefcase, label: "작업 관리", path: "/admin/work", implemented: false },
+      { icon: Folder, label: "?�장 관�?, path: "/admin/projects", implemented: true },
+      { icon: Users, label: "근로??관�?, path: "/admin/workers", implemented: false }, 
+      { icon: Building2, label: "?�력??고객?? 관�?, path: "/admin/companies", implemented: true },
+      { icon: Briefcase, label: "?�업 관�?, path: "/admin/work", implemented: false },
     ]},
     { category: "Safety & Content", items: [
-      { icon: ShieldAlert, label: "안전 관제 센터", path: "/admin/map", implemented: false },
-      { icon: FileText, label: "콘텐츠 관리", path: "/admin/contents", implemented: true },
-      { icon: CheckSquare, label: "체크리스트 관리", path: "/admin/checklist", implemented: false },
-      { icon: Globe, label: "외국인 콘텐츠 관리", path: "/admin/global", implemented: false },
+      { icon: ShieldAlert, label: "?�전 관???�터", path: "/admin/map", implemented: false },
+      { icon: FileText, label: "콘텐�?관�?, path: "/admin/contents", implemented: true },
+      { icon: CheckSquare, label: "체크리스??관�?, path: "/admin/checklist", implemented: false },
+      { icon: Globe, label: "?�국??콘텐�?관�?, path: "/admin/global", implemented: false },
     ]},
     { category: "System", items: [
-      { icon: Settings, label: "유형 관리", path: "/admin/types", implemented: false },
-      { icon: Wrench, label: "장비 관리", path: "/admin/equipments", implemented: false },
-      { icon: Megaphone, label: "시스템 공지", path: "/admin/notice", implemented: false },
+      { icon: Settings, label: "?�형 관�?, path: "/admin/types", implemented: false },
+      { icon: Wrench, label: "?�비 관�?, path: "/admin/equipments", implemented: false },
+      { icon: Megaphone, label: "?�스??공�?", path: "/admin/notice", implemented: false },
     ]}
   ];
 
   const handleLogout = () => {
-    if (window.confirm('로그아웃 하시겠습니까?')) {
+    if (window.confirm('로그?�웃 ?�시겠습?�까?')) {
       logout();
       navigate('/');
     }
@@ -70,7 +70,7 @@ const NavSidebar = () => {
           display: 'flex', 
           alignItems: 'center', 
           gap: '12px',
-          background: isActive ? '#0f172a' : 'transparent', // 더 어두운 배경으로 강조
+          background: isActive ? '#0f172a' : 'transparent', // ???�두??배경?�로 강조
           color: implemented ? (isActive ? '#ffffff' : '#94a3b8') : '#ef4444',
           border: 'none',
           borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
@@ -79,7 +79,7 @@ const NavSidebar = () => {
           padding: '13px 20px',
           textAlign: 'left',
           fontSize: '0.9rem',
-          fontWeight: isActive ? '600' : '400', // 선택 안된건 얇게
+          fontWeight: isActive ? '600' : '400', // ?�택 ?�된�??�게
           position: 'relative'
         }}
         onMouseEnter={(e) => {
@@ -115,7 +115,7 @@ const NavSidebar = () => {
       zIndex: 100,
       boxShadow: '4px 0 10px rgba(0,0,0,0.3)'
     }}>
-      {/* 헤더 */}
+      {/* ?�더 */}
       <div style={{ padding: '24px 20px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
         <h1 style={{ 
           fontSize: '1.25rem', 
@@ -154,7 +154,7 @@ const NavSidebar = () => {
           </div>
         ))}
         
-        {/* 범례 */}
+        {/* 범�? */}
         <div style={{ 
           margin: '20px', 
           padding: '12px', 
@@ -168,11 +168,11 @@ const NavSidebar = () => {
           border: '1px solid rgba(239, 68, 68, 0.2)'
         }}>
           <AlertCircle size={14} />
-          <span>붉은색 메뉴는 준비 중입니다</span>
+          <span>붉�???메뉴??준�?중입?�다</span>
         </div>
       </div>
 
-      {/* 하단 유저 프로필 및 로그아웃 */}
+      {/* ?�단 ?��? ?�로??�?로그?�웃 */}
       <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -216,7 +216,7 @@ const NavSidebar = () => {
             e.currentTarget.style.borderColor = '#475569';
           }}
         >
-          <LogOut size={16} /> 로그아웃
+          <LogOut size={16} /> 로그?�웃
         </button>
       </div>
     </nav>

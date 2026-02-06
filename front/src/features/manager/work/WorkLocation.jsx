@@ -136,8 +136,8 @@ export default function WorkLocation() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) return alert('구역명을 입력해주세요.');
-    if (!siteId) return alert('현장을 선택해주세요.');
+    if (!formData.name.trim()) return alert('구역명을 ?�력?�주?�요.');
+    if (!siteId) return alert('?�장???�택?�주?�요.');
     setSubmitting(true);
     try {
       const default_hazards = formData.default_hazards_text
@@ -160,7 +160,7 @@ export default function WorkLocation() {
       const data = await safetyApi.getZones(siteId);
       setZones(data || []);
     } catch (err) {
-      alert('저장 실패: ' + (err.response?.data?.detail || err.message));
+      alert('?�???�패: ' + (err.response?.data?.detail || err.message));
     } finally {
       setSubmitting(false);
     }
@@ -179,31 +179,31 @@ export default function WorkLocation() {
     setShowForm(true);
   };
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 중...</div>;
-  if (!projectId || !project) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>배정된 프로젝트가 없습니다.</div>;
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>;
+  if (!projectId || !project) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>배정???�로?�트가 ?�습?�다.</div>;
 
   return (
     <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <MapPin color="#3b82f6" size={28} /> 작업 위치 설정
+          <MapPin color="#3b82f6" size={28} /> ?�업 ?�치 ?�정
         </h1>
-        <p style={{ color: '#64748b', marginTop: '6px' }}>프로젝트 위치 기반 그리드 및 구역을 관리합니다.</p>
+        <p style={{ color: '#64748b', marginTop: '6px' }}>?�로?�트 ?�치 기반 그리??�?구역??관리합?�다.</p>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: '600', color: '#475569' }}>프로젝트:</span>
+        <span style={{ fontWeight: '600', color: '#475569' }}>?�로?�트:</span>
         <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold' }}>{project.name}</span>
       </div>
 
       <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <label style={{ fontWeight: '600', color: '#475569' }}>현장</label>
+        <label style={{ fontWeight: '600', color: '#475569' }}>?�장</label>
         <select
           value={siteId || ''}
           onChange={(e) => setSiteId(e.target.value ? Number(e.target.value) : null)}
           style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', minWidth: '150px' }}
         >
-          <option value="">선택</option>
+          <option value="">?�택</option>
           {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
 
@@ -213,52 +213,51 @@ export default function WorkLocation() {
               onClick={() => setShowConfig(!showConfig)}
               style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #64748b', background: 'white', cursor: 'pointer' }}
             >
-              ⚙️ {showConfig ? '설정 닫기' : '그리드 설정'}
+              ?�️ {showConfig ? '?�정 ?�기' : '그리???�정'}
             </button>
             <button
               onClick={async () => {
-                if (window.confirm('기존 구역이 재생성됩니다. 계속하시겠습니까?')) {
+                if (window.confirm('기존 구역???�생?�됩?�다. 계속?�시겠습?�까?')) {
                   try {
                     setLoading(true);
                     await safetyApi.generateSiteGrid(siteId);
                     const data = await safetyApi.getZones(siteId);
                     setZones(data || []);
-                    alert('완료되었습니다.');
+                    alert('?�료?�었?�니??');
                   } catch (e) { alert(e.message); } finally { setLoading(false); }
                 }
               }}
               style={{ padding: '8px 12px', borderRadius: '8px', background: '#3b82f6', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
             >
-              🔄 그리드 재생성
-            </button>
+              ?�� 그리???�생??            </button>
           </div>
         )}
       </div>
 
       {showConfig && project && (
         <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>📐 그리드 및 층수 설정</h3>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>?�� 그리??�?층수 ?�정</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '1rem', alignItems: 'flex-end' }}>
             <label><span>격자 간격</span><input type="number" value={configData.grid_spacing} onChange={e => setConfigData({...configData, grid_spacing: parseFloat(e.target.value)})} /></label>
-            <label><span>가로</span><input type="number" value={configData.grid_cols} onChange={e => setConfigData({...configData, grid_cols: parseInt(e.target.value)})} /></label>
-            <label><span>세로</span><input type="number" value={configData.grid_rows} onChange={e => setConfigData({...configData, grid_rows: parseInt(e.target.value)})} /></label>
-            <label><span>지하</span><input type="number" value={configData.basement_floors} onChange={e => setConfigData({...configData, basement_floors: parseInt(e.target.value)})} /></label>
-            <label><span>지상</span><input type="number" value={configData.ground_floors} onChange={e => setConfigData({...configData, ground_floors: parseInt(e.target.value)})} /></label>
+            <label><span>가�?/span><input type="number" value={configData.grid_cols} onChange={e => setConfigData({...configData, grid_cols: parseInt(e.target.value)})} /></label>
+            <label><span>?�로</span><input type="number" value={configData.grid_rows} onChange={e => setConfigData({...configData, grid_rows: parseInt(e.target.value)})} /></label>
+            <label><span>지??/span><input type="number" value={configData.basement_floors} onChange={e => setConfigData({...configData, basement_floors: parseInt(e.target.value)})} /></label>
+            <label><span>지??/span><input type="number" value={configData.ground_floors} onChange={e => setConfigData({...configData, ground_floors: parseInt(e.target.value)})} /></label>
             <button 
               onClick={async () => {
                 await updateProject(projectId, configData);
                 const up = await getProjectById(projectId);
                 setProject(up);
-                alert('저장되었습니다.');
+                alert('?�?�되?�습?�다.');
               }}
               style={{ padding: '10px', background: '#1e293b', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-            >저장</button>
+            >?�??/button>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', overflowX: 'auto' }}>
-        <button onClick={() => setSelectedLevel('ALL')} style={{ padding: '6px 12px', borderRadius: '20px', background: selectedLevel === 'ALL' ? '#1e293b' : 'white', color: selectedLevel === 'ALL' ? 'white' : '#64748b', cursor: 'pointer' }}>전체</button>
+        <button onClick={() => setSelectedLevel('ALL')} style={{ padding: '6px 12px', borderRadius: '20px', background: selectedLevel === 'ALL' ? '#1e293b' : 'white', color: selectedLevel === 'ALL' ? 'white' : '#64748b', cursor: 'pointer' }}>?�체</button>
         {levels.map(l => (
           <button key={l} onClick={() => setSelectedLevel(l)} style={{ padding: '6px 12px', borderRadius: '20px', background: selectedLevel === l ? '#1e293b' : 'white', color: selectedLevel === l ? 'white' : '#64748b', cursor: 'pointer' }}>{l}</button>
         ))}
@@ -272,7 +271,7 @@ export default function WorkLocation() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>구역 목록 ({selectedLevel})</h2>
-            <button onClick={() => { resetForm(); setShowForm(true); }} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>+ 추가</button>
+            <button onClick={() => { resetForm(); setShowForm(true); }} style={{ padding: '8px 16px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>+ 추�?</button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
@@ -292,14 +291,14 @@ export default function WorkLocation() {
       {showForm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '400px' }}>
-              <h3>{editingZone ? '수정' : '추가'}</h3>
+              <h3>{editingZone ? '?�정' : '추�?'}</h3>
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <input placeholder="구역명" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required style={{ padding: '8px' }} />
+                <input placeholder="구역�? value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required style={{ padding: '8px' }} />
                 <select value={formData.level} onChange={e => setFormData({...formData, level: e.target.value})} style={{ padding: '8px' }}>
                   {levels.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>저장</button>
+                  <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px' }}>?�??/button>
                   <button type="button" onClick={resetForm} style={{ flex: 1, padding: '10px', background: '#f1f5f9', border: 'none', borderRadius: '8px' }}>취소</button>
                 </div>
               </form>

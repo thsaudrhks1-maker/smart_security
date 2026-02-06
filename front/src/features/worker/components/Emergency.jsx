@@ -8,8 +8,7 @@ const Emergency = () => {
   const [countdown, setCountdown] = useState(null);
 
   const handleSOS = () => {
-    // 3초 카운트다운 후 신고 접수 시뮬레이션
-    setCountdown(3);
+    // 3�?카운?�다?????�고 ?�수 ?��??�이??    setCountdown(3);
   };
 
   useEffect(() => {
@@ -18,7 +17,7 @@ const Emergency = () => {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      alert('관제실과 안전 관리자에게 긴급 알림이 전송되었습니다!\n(현재 위치: 서울빌딩 2층)');
+      alert('관?�실�??�전 관리자?�게 긴급 ?�림???�송?�었?�니??\n(?�재 ?�치: ?�울빌딩 2�?');
       setCountdown(null);
     }
   }, [countdown]);
@@ -33,8 +32,8 @@ const Emergency = () => {
 
       <div className="emergency-container animate-fade-in">
         <div style={{ marginBottom: '2rem' }}>
-          <h1 className="text-danger" style={{ fontSize: '2.5rem' }}>긴급 상황 통보</h1>
-          <p>사고 발생 시 아래 버튼을 길게 누르세요.</p>
+          <h1 className="text-danger" style={{ fontSize: '2.5rem' }}>긴급 ?�황 ?�보</h1>
+          <p>?�고 발생 ???�래 버튼??길게 ?�르?�요.</p>
         </div>
 
         <button className="sos-button" onClick={handleSOS}>
@@ -49,11 +48,11 @@ const Emergency = () => {
         </button>
 
         <div className="glass-panel" style={{ padding: '1.5rem', marginTop: '2rem', width: '100%' }}>
-          <h3>⛑️ 자동 조치 사항</h3>
+          <h3>?�️ ?�동 조치 ?�항</h3>
           <ul style={{ textAlign: 'left', marginTop: '1rem', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-            <li>현장 관리자에게 비상 알림 발송</li>
-            <li>인근 근로자에게 대피 경보 발송</li>
-            <li>현재 GPS 위치 자동 전송</li>
+            <li>?�장 관리자?�게 비상 ?�림 발송</li>
+            <li>?�근 근로?�에�??�??경보 발송</li>
+            <li>?�재 GPS ?�치 ?�동 ?�송</li>
           </ul>
         </div>
       </div>

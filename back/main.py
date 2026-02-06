@@ -11,9 +11,15 @@ from back.daily.notices.router import router as notices_router
 
 app = FastAPI(title="Smart Security API")
 
+# CORS 해결: allow_origins를 와일드카드(*) 대신 실제 주소로 명시
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3500",
+        "http://localhost:5173",  # Vite 기본 포트
+        "http://127.0.0.1:3500",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

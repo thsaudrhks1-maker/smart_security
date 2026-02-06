@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import apiClient from '../../../api/client';
 
 /**
- * 근로자 위험 신고 모달
- * - Zone 클릭 시 위험 요소 신고
- * - 사진 업로드 지원
- */
+ * 근로???�험 ?�고 모달
+ * - Zone ?�릭 ???�험 ?�소 ?�고
+ * - ?�진 ?�로??지?? */
 function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
   const [riskType, setRiskType] = useState('FALL');
   const [description, setDescription] = useState('');
@@ -22,7 +21,7 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
     setLoading(true);
 
     try {
-      // 1. 신고 생성
+      // 1. ?�고 ?�성
       const reportData = {
         zone_id: zone.id,
         risk_type: riskType,
@@ -33,7 +32,7 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
       const reportRes = await apiClient.post('/safety/reports', reportData);
       const reportId = reportRes.data.id;
 
-      // 2. 사진 업로드 (여러 장)
+      // 2. ?�진 ?�로??(?�러 ??
       for (const image of images) {
         const formData = new FormData();
         formData.append('file', image);
@@ -42,12 +41,12 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
         });
       }
 
-      alert('신고가 접수되었습니다. 관리자 승인 후 위험 구역으로 표시됩니다.');
+      alert('?�고가 ?�수?�었?�니?? 관리자 ?�인 ???�험 구역?�로 ?�시?�니??');
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('신고 실패:', error);
-      alert('신고 처리 중 오류가 발생했습니다.');
+      console.error('?�고 ?�패:', error);
+      alert('?�고 처리 �??�류가 발생?�습?�다.');
     } finally {
       setLoading(false);
     }
@@ -79,17 +78,17 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
         overflowY: 'auto',
         boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }}>
-        <h2 style={{ margin: '0 0 20px 0', color: '#d32f2f' }}>⚠️ 위험 요소 신고</h2>
+        <h2 style={{ margin: '0 0 20px 0', color: '#d32f2f' }}>?�️ ?�험 ?�소 ?�고</h2>
         
         <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#fff3e0', borderRadius: '8px' }}>
-          <strong>신고 구역:</strong> {zone?.level} {zone?.name}
+          <strong>?�고 구역:</strong> {zone?.level} {zone?.name}
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* 위험 유형 */}
+          {/* ?�험 ?�형 */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              위험 유형 <span style={{ color: 'red' }}>*</span>
+              ?�험 ?�형 <span style={{ color: 'red' }}>*</span>
             </label>
             <select
               value={riskType}
@@ -103,25 +102,25 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
                 fontSize: '14px'
               }}
             >
-              <option value="FALL">낙하물 위험</option>
-              <option value="HEAVY_EQUIPMENT">중장비 작업</option>
-              <option value="FIRE">화재 위험</option>
-              <option value="ELECTRIC">감전 위험</option>
-              <option value="COLLAPSE">붕괴 위험</option>
-              <option value="ETC">기타</option>
+              <option value="FALL">?�하�??�험</option>
+              <option value="HEAVY_EQUIPMENT">중장�??�업</option>
+              <option value="FIRE">?�재 ?�험</option>
+              <option value="ELECTRIC">감전 ?�험</option>
+              <option value="COLLAPSE">붕괴 ?�험</option>
+              <option value="ETC">기�?</option>
             </select>
           </div>
 
-          {/* 상세 설명 */}
+          {/* ?�세 ?�명 */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              상세 설명 <span style={{ color: 'red' }}>*</span>
+              ?�세 ?�명 <span style={{ color: 'red' }}>*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
-              placeholder="위험 요소를 자세히 설명해주세요 (예: 천장 마감재가 고정되지 않아 낙하 위험)"
+              placeholder="?�험 ?�소�??�세???�명?�주?�요 (?? 천장 마감?��? 고정?��? ?�아 ?�하 ?�험)"
               rows={4}
               style={{
                 width: '100%',
@@ -134,10 +133,10 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
             />
           </div>
 
-          {/* 사진 업로드 */}
+          {/* ?�진 ?�로??*/}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              사진 첨부 (최대 5장)
+              ?�진 첨�? (최�? 5??
             </label>
             <input
               type="file"
@@ -154,8 +153,7 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
             />
             {images.length > 0 && (
               <div style={{ marginTop: '8px', color: '#666', fontSize: '13px' }}>
-                {images.length}개 파일 선택됨
-              </div>
+                {images.length}�??�일 ?�택??              </div>
             )}
           </div>
 
@@ -190,13 +188,13 @@ function DangerReportModal({ open, onClose, zone, projectId, onSuccess }) {
                 fontSize: '14px'
               }}
             >
-              {loading ? '처리중...' : '신고 접수'}
+              {loading ? '처리�?..' : '?�고 ?�수'}
             </button>
           </div>
         </form>
 
         <div style={{ marginTop: '20px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', fontSize: '13px', color: '#666' }}>
-          💡 <strong>안내:</strong> 신고 접수 후 관리자 승인이 필요합니다. 승인 시 해당 구역이 주황색 테두리로 표시됩니다.
+          ?�� <strong>?�내:</strong> ?�고 ?�수 ??관리자 ?�인???�요?�니?? ?�인 ???�당 구역??주황???�두리로 ?�시?�니??
         </div>
       </div>
     </div>

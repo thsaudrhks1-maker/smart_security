@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../../api/client';
 
 /**
- * 매니저 신고 승인 모달
- * - 근로자 신고 내용 확인
- * - 사진 확인
- * - 승인/반려 처리
+ * 매니?� ?�고 ?�인 모달
+ * - 근로???�고 ?�용 ?�인
+ * - ?�진 ?�인
+ * - ?�인/반려 처리
  */
 function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
   const [images, setImages] = useState([]);
@@ -18,17 +18,15 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
       return;
     }
 
-    // 해당 Zone의 모든 PENDING 신고 사진 가져오기
-    const allPendingReports = report.allPendingReports || [report];
-    console.log('🔍 [매니저 모달] 모든 PENDING 신고:', allPendingReports);
+    // ?�당 Zone??모든 PENDING ?�고 ?�진 가?�오�?    const allPendingReports = report.allPendingReports || [report];
+    console.log('?�� [매니?� 모달] 모든 PENDING ?�고:', allPendingReports);
 
     setLoading(true);
     
-    // 모든 신고의 사진을 병렬로 가져오기
-    Promise.all(
+    // 모든 ?�고???�진??병렬�?가?�오�?    Promise.all(
       allPendingReports.map(r => {
         const reportId = r.id || r.danger_zone_id;
-        console.log(`🔍 API 호출: /safety/reports/${reportId}/images`);
+        console.log(`?�� API ?�출: /safety/reports/${reportId}/images`);
         return apiClient.get(`/safety/reports/${reportId}/images`)
           .then(res => ({
             reportId: reportId,
@@ -36,17 +34,17 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             images: res.data || []
           }))
           .catch(err => {
-            console.error(`❌ 사진 로드 실패 (신고 ${reportId}):`, err);
+            console.error(`???�진 로드 ?�패 (?�고 ${reportId}):`, err);
             return { reportId: reportId, reportDesc: r.description, images: [] };
           });
       })
     )
     .then(results => {
-      // 모든 신고의 사진을 하나의 배열로 통합
+      // 모든 ?�고???�진???�나??배열�??�합
       const allImages = results.flatMap(r => 
         r.images.map(img => ({ ...img, reportId: r.reportId, reportDesc: r.reportDesc }))
       );
-      console.log('✅ 전체 사진 로드 성공:', allImages);
+      console.log('???�체 ?�진 로드 ?�공:', allImages);
       setImages(allImages);
     })
     .finally(() => setLoading(false));
@@ -57,26 +55,26 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
     const reportCount = allReports.length;
     
     if (!window.confirm(
-      `이 구역의 ${reportCount}개 신고를 모두 승인하시겠습니까?\n승인 시 해당 구역이 빨간색 위험 구역으로 표시됩니다.`
+      `??구역??${reportCount}�??�고�?모두 ?�인?�시겠습?�까?\n?�인 ???�당 구역??빨간???�험 구역?�로 ?�시?�니??`
     )) {
       return;
     }
 
     setProcessing(true);
     try {
-      // 모든 신고 승인
+      // 모든 ?�고 ?�인
       await Promise.all(
         allReports.map(r => {
           const reportId = r.id || r.danger_zone_id;
           return apiClient.post(`/safety/reports/${reportId}/approve`);
         })
       );
-      alert(`${reportCount}개 신고가 승인되었습니다.`);
+      alert(`${reportCount}�??�고가 ?�인?�었?�니??`);
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('승인 실패:', error);
-      alert('승인 처리 중 오류가 발생했습니다.');
+      console.error('?�인 ?�패:', error);
+      alert('?�인 처리 �??�류가 발생?�습?�다.');
     } finally {
       setProcessing(false);
     }
@@ -87,26 +85,26 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
     const reportCount = allReports.length;
     
     if (!window.confirm(
-      `이 구역의 ${reportCount}개 신고를 모두 반려하시겠습니까?\n반려 시 위험 구역에서 제외됩니다.`
+      `??구역??${reportCount}�??�고�?모두 반려?�시겠습?�까?\n반려 ???�험 구역?�서 ?�외?�니??`
     )) {
       return;
     }
 
     setProcessing(true);
     try {
-      // 모든 신고 반려
+      // 모든 ?�고 반려
       await Promise.all(
         allReports.map(r => {
           const reportId = r.id || r.danger_zone_id;
           return apiClient.post(`/safety/reports/${reportId}/reject`);
         })
       );
-      alert(`${reportCount}개 신고가 반려되었습니다.`);
+      alert(`${reportCount}�??�고가 반려?�었?�니??`);
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error('반려 실패:', error);
-      alert('반려 처리 중 오류가 발생했습니다.');
+      console.error('반려 ?�패:', error);
+      alert('반려 처리 �??�류가 발생?�습?�다.');
     } finally {
       setProcessing(false);
     }
@@ -138,7 +136,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
         overflowY: 'auto',
         boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
       }}>
-        {/* 헤더 */}
+        {/* ?�더 */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -148,8 +146,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
           borderBottom: '2px solid #f97316'
         }}>
           <h2 style={{ margin: 0, color: '#f97316', fontSize: '20px' }}>
-            🔔 근로자 위험 신고 검토
-          </h2>
+            ?�� 근로???�험 ?�고 검??          </h2>
           <span style={{
             padding: '8px 16px',
             borderRadius: '8px',
@@ -159,11 +156,10 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             fontWeight: 'bold',
             border: '2px solid #f97316'
           }}>
-            승인 대기
-          </span>
+            ?�인 ?��?          </span>
         </div>
 
-        {/* 구역 정보 */}
+        {/* 구역 ?�보 */}
         <div style={{ 
           marginBottom: '20px', 
           padding: '16px', 
@@ -172,7 +168,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
           border: '2px solid #fbbf24'
         }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '6px', color: '#92400e' }}>
-            📍 신고 위치
+            ?�� ?�고 ?�치
           </div>
           <div style={{ fontSize: '15px', color: '#78350f' }}>
             {report.zoneName || `구역 #${report.zone_id}`} ({report.zoneLevel || report.level || '-'})
@@ -186,15 +182,15 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
               fontSize: '13px',
               color: '#713f12'
             }}>
-              ⚠️ 이 구역에 {report.allPendingReports.length}개의 신고가 있습니다
+              ?�️ ??구역??{report.allPendingReports.length}개의 ?�고가 ?�습?�다
             </div>
           )}
         </div>
 
-        {/* 위험 유형 */}
+        {/* ?�험 ?�형 */}
         <div style={{ marginBottom: '18px' }}>
           <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', fontSize: '15px' }}>
-            ⚠️ 위험 유형
+            ?�️ ?�험 ?�형
           </div>
           <div style={{ 
             padding: '12px', 
@@ -209,10 +205,10 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
           </div>
         </div>
 
-        {/* 신고 내용 */}
+        {/* ?�고 ?�용 */}
         <div style={{ marginBottom: '20px' }}>
           <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#1e293b', fontSize: '15px' }}>
-            📝 신고 내용
+            ?�� ?�고 ?�용
           </div>
           <div style={{ 
             padding: '14px', 
@@ -224,19 +220,19 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             color: '#334155',
             border: '1px solid #cbd5e1'
           }}>
-            {report.description || '상세 설명 없음'}
+            {report.description || '?�세 ?�명 ?�음'}
           </div>
         </div>
 
-        {/* 신고 사진 */}
+        {/* ?�고 ?�진 */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
-            사진 로딩 중...
+            ?�진 로딩 �?..
           </div>
         ) : images.length > 0 ? (
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontWeight: 'bold', marginBottom: '12px', color: '#1e293b', fontSize: '15px' }}>
-              📷 첨부 사진 ({images.length}장)
+              ?�� 첨�? ?�진 ({images.length}??
             </div>
             <div style={{ 
               display: 'grid', 
@@ -259,7 +255,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
                 >
                   <img 
                     src={`http://localhost:8500/static/danger_zone_images/${img.image_name}`}
-                    alt={`신고 사진 ${img.id}`}
+                    alt={`?�고 ?�진 ${img.id}`}
                     style={{ 
                       width: '100%', 
                       height: '180px', 
@@ -301,7 +297,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
             fontSize: '14px',
             marginBottom: '24px'
           }}>
-            첨부된 사진이 없습니다.
+            첨�????�진???�습?�다.
           </div>
         )}
 
@@ -343,7 +339,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
               fontWeight: 'bold'
             }}
           >
-            {processing ? '처리중...' : '반려'}
+            {processing ? '처리�?..' : '반려'}
           </button>
           <button
             onClick={handleApprove}
@@ -359,7 +355,7 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
               fontWeight: 'bold'
             }}
           >
-            {processing ? '처리중...' : '✅ 승인'}
+            {processing ? '처리�?..' : '???�인'}
           </button>
         </div>
 
@@ -372,25 +368,25 @@ function DangerReportApprovalModal({ open, onClose, report, onSuccess }) {
           color: '#92400e',
           border: '1px solid #fde047'
         }}>
-          💡 <strong>안내:</strong> 승인 시 해당 구역이 빨간색 위험 구역으로 전환되어 모든 근로자에게 표시됩니다.
+          ?�� <strong>?�내:</strong> ?�인 ???�당 구역??빨간???�험 구역?�로 ?�환?�어 모든 근로?�에�??�시?�니??
         </div>
       </div>
     </div>
   );
 }
 
-// 위험 유형 한글 라벨
+// ?�험 ?�형 ?��? ?�벨
 function getRiskTypeLabel(riskType) {
   const labels = {
-    'FALL': '낙하물 위험',
-    'HEAVY_EQUIPMENT': '중장비 작업',
-    'FIRE': '화재 위험',
-    'ELECTRIC': '감전 위험',
-    'COLLAPSE': '붕괴 위험',
-    'ETC': '기타 위험',
+    'FALL': '?�하�??�험',
+    'HEAVY_EQUIPMENT': '중장�??�업',
+    'FIRE': '?�재 ?�험',
+    'ELECTRIC': '감전 ?�험',
+    'COLLAPSE': '붕괴 ?�험',
+    'ETC': '기�? ?�험',
     'CAUTION': '주의 구역'
   };
-  return labels[riskType] || riskType || '위험 구역';
+  return labels[riskType] || riskType || '?�험 구역';
 }
 
 export default DangerReportApprovalModal;

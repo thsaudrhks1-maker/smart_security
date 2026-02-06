@@ -7,6 +7,18 @@ class users_service:
     @staticmethod
     async def authenticate(username: str, password: str):
         user = await users_repository.get_by_username(username)
-        if user and bcrypt.checkpw(password.encode('utf-8'), user['hashed_password'].encode('utf-8')):
-            return user
+        if not user:
+            return None
+            
+        # DB의 password가 bytes일 수도, str일 수도 있으므로 안전하게 처리
+        db_pw = user['hashed_password']
+        if isinstance(db_pw, str):
+            db_pw = db_pw.encode('utf-8')
+            
+        try:
+            if bcrypt.checkpw(password.encode('utf-8'), db_pw):
+                return user
+        except Exception as e:
+            print(f"Password check error: {e}")
+            
         return None

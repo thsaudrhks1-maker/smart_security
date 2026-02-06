@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 
 /**
- * 근로자 대시보드 전용 카드 컴포넌트 모음
+ * 근로???�?�보???�용 카드 컴포?�트 모음
  */
 
 export const WorkCard = ({ plan, count, onClick }) => (
@@ -23,7 +23,7 @@ export const WorkCard = ({ plan, count, onClick }) => (
   >
     <div>
       <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <Briefcase size={18} /> 금일 나의 작업
+        <Briefcase size={18} /> 금일 ?�의 ?�업
       </div>
       {plan ? (
         <>
@@ -53,7 +53,7 @@ export const WorkCard = ({ plan, count, onClick }) => (
               alignItems: 'center',
               gap: '4px'
             }}>
-              <AlertTriangle size={12} /> 위험도 {plan.calculated_risk_score}
+              <AlertTriangle size={12} /> ?�험??{plan.calculated_risk_score}
             </div>
           )}
           <div style={{ fontSize: '0.8rem', opacity: 0.9, marginTop: '0.5rem' }}>
@@ -61,12 +61,12 @@ export const WorkCard = ({ plan, count, onClick }) => (
           </div>
           {count > 1 && (
               <div style={{ fontSize: '0.75rem', marginTop: '6px', opacity: 0.8 }}>
-                  + 외 {count - 1}건
+                  + ??{count - 1}�?
               </div>
           )}
         </>
       ) : (
-        <div style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '1rem' }}>배정된 작업이 없습니다.</div>
+        <div style={{ opacity: 0.8, fontSize: '0.9rem', marginTop: '1rem' }}>배정???�업???�습?�다.</div>
       )}
     </div>
     <div style={{ alignSelf: 'flex-end' }}>
@@ -83,7 +83,7 @@ export const WeatherCard = ({ weather }) => (
           {weather?.temperature || '-'}
         </div>
         <div style={{ fontSize: '0.8rem' }}>
-          {weather?.condition || '정보없음'}
+          {weather?.condition || '?�보?�음'}
         </div>
       </div>
       <Cloud size={24} style={{ opacity: 0.8 }} />
@@ -98,10 +98,10 @@ export const EmergencyAlertCard = ({ alert, onClick }) => (
     className="dashboard-card"
   >
     <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <Bell size={14} /> 긴급알림
+      <Bell size={14} /> 긴급?�림
     </div>
     <div style={{ fontSize: '0.9rem', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-      {alert?.title || '알림 없음'}
+      {alert?.title || '?�림 ?�음'}
     </div>
      {alert && (
       <div style={{ 
@@ -129,7 +129,7 @@ export const RiskCard = ({ risks, onClick }) => (
   >
     <div>
       <div style={{ fontSize: '0.9rem', fontWeight: '700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <AlertTriangle size={18} /> 위험지역
+        <AlertTriangle size={18} /> ?�험지??
       </div>
       {risks.length > 0 ? (
         <div>
@@ -141,13 +141,13 @@ export const RiskCard = ({ risks, onClick }) => (
           </div>
           {risks.length > 1 && (
             <div style={{ fontSize: '0.75rem', marginTop: '4px', opacity: 0.8 }}>
-              외 {risks.length - 1}건
+              ??{risks.length - 1}�?
             </div>
           )}
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
-          <CheckCircle size={20} /> 안전함
+          <CheckCircle size={20} /> ?�전??
         </div>
       )}
     </div>
@@ -163,11 +163,11 @@ export const SafetyInfoCard = ({ count, onClick }) => (
      style={{ background: '#10b981', color: 'white' }} 
      className="dashboard-card"
   >
-    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem' }}>일일 안전정보</div>
+    <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem' }}>?�일 ?�전?�보</div>
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{ textAlign: 'center' }}>
          <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>{count || 0}</span>
-         <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '2px' }}>건</span>
+         <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '2px' }}>�?/span>
       </div>
       <FileText size={20} style={{ opacity: 0.5 }} />
     </div>
@@ -190,9 +190,9 @@ export const NoticeBar = ({ notice, onClick }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <Bell size={18} />
       <div>
-        <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '2px' }}>공지사항</div>
+        <div style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '2px' }}>공�??�항</div>
         <div style={{ fontSize: '0.9rem' }}>
-          {notice ? notice.title : '등록된 공지가 없습니다.'}
+          {notice ? notice.title : '?�록??공�?가 ?�습?�다.'}
         </div>
       </div>
     </div>
@@ -203,12 +203,12 @@ export const NoticeBar = ({ notice, onClick }) => (
 export const StatCards = ({ violations, incidentFreeDays }) => (
   <>
     <div key="violation" style={{ background: '#8b5cf6', color: 'white', textAlign: 'center' }} className="dashboard-card">
-        <div style={{ fontSize: '0.7rem' }}>안전위반</div>
-        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{violations || 0}건</div>
+        <div style={{ fontSize: '0.7rem' }}>?�전?�반</div>
+        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{violations || 0}�?/div>
     </div>
     <div key="accident-free" style={{ background: '#6366f1', color: 'white', textAlign: 'center' }} className="dashboard-card">
-        <div style={{ fontSize: '0.7rem' }}>무재해</div>
-        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{incidentFreeDays || 0}일</div>
+        <div style={{ fontSize: '0.7rem' }}>무재??/div>
+        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{incidentFreeDays || 0}??/div>
     </div>
   </>
 );

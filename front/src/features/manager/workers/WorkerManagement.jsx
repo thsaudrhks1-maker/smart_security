@@ -31,12 +31,12 @@ const WorkerManagement = () => {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>👷 근로자 관리</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>?�� 근로??관�?/h1>
         <div style={{ position: 'relative' }}>
           <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input 
             type="text" 
-            placeholder="이름, 업체, 직종 검색..." 
+            placeholder="?�름, ?�체, 직종 검??.." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ 
@@ -53,17 +53,17 @@ const WorkerManagement = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
             <tr>
-              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>이름</th>
-              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>소속 업체</th>
+              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>?�름</th>
+              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>?�속 ?�체</th>
               <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>직종</th>
-              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>연락처</th>
-              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>승인 상태</th>
-              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>출역 상태</th>
+              <th style={{ padding: '1rem', textAlign: 'left', color: '#64748b' }}>?�락�?/th>
+              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>?�인 ?�태</th>
+              <th style={{ padding: '1rem', textAlign: 'center', color: '#64748b' }}>출역 ?�태</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center' }}>로딩 중...</td></tr>
+              <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center' }}>로딩 �?..</td></tr>
             ) : filteredWorkers.length > 0 ? (
               filteredWorkers.map(worker => (
                 <tr key={worker.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -88,7 +88,7 @@ const WorkerManagement = () => {
                           background: worker.member_status === 'ACTIVE' ? '#dbeafe' : '#f1f5f9',
                           color: worker.member_status === 'ACTIVE' ? '#2563eb' : '#64748b'
                       }}>
-                          {worker.member_status === 'ACTIVE' ? '승인완료' : '대기중'}
+                          {worker.member_status === 'ACTIVE' ? '?�인?�료' : '?�기중'}
                       </span>
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'center' }}>
@@ -98,14 +98,14 @@ const WorkerManagement = () => {
                       </span>
                     ) : (
                       <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.9rem' }}>
-                        <UserX size={14} /> 미출근
+                        <UserX size={14} /> 미출�?
                       </span>
                     )}
                   </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>데이터가 없습니다.</td></tr>
+              <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>?�이?��? ?�습?�다.</td></tr>
             )}
           </tbody>
         </table>

@@ -11,7 +11,7 @@ import { workerApi } from '@/api/workerApi';
 import BuildingSectionView from '@/features/manager/work/BuildingSectionView';
 import UniversalBlueprintMap from '@/components/common/map/UniversalBlueprintMap';
 
-// --- 아이콘 리소스 설정 ---
+// --- ?�이�?리소???�정 ---
 const createIcon = (colorUrl) => new L.Icon({
     iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/${colorUrl}`,
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -51,16 +51,15 @@ const SafetyMap = () => {
         const init = async () => {
             try {
                 setLoading(true);
-                // 1. 근로자 대시보드에서 프로젝트 ID 가져오기
-                const dash = await workerApi.getDashboard();
+                // 1. 근로???�?�보?�에???�로?�트 ID 가?�오�?                const dash = await workerApi.getDashboard();
                 const pid = dash?.project?.id;
                 if (!pid) return;
 
-                // 2. 프로젝트 상세 정보 (층수 등)
+                // 2. ?�로?�트 ?�세 ?�보 (층수 ??
                 const proj = await getProjectById(pid);
                 setProject(proj);
 
-                // 3. 구역 및 위험 정보
+                // 3. 구역 �??�험 ?�보
                 const [riskData, zoneData] = await Promise.all([
                     mapApi.getRisks(),
                     safetyApi.getZones(null, pid)
@@ -68,10 +67,9 @@ const SafetyMap = () => {
                 setRisks(riskData || []);
                 setZones(zoneData || []);
 
-                // 기본 층수 설정 (현재 배정된 작업이 있다면 그 층으로, 없으면 1F)
-                // TODO: 근로자 배정 층 찾기 로직 추가 가능
-            } catch (error) {
-                console.error("데이터 로딩 실패:", error);
+                // 기본 층수 ?�정 (?�재 배정???�업???�다�?�?층으�? ?�으�?1F)
+                // TODO: 근로??배정 �?찾기 로직 추�? 가??            } catch (error) {
+                console.error("?�이??로딩 ?�패:", error);
             } finally {
                 setLoading(false);
             }
@@ -79,7 +77,7 @@ const SafetyMap = () => {
         init();
     }, []);
 
-    // 층수 리스트 생성
+    // 층수 리스???�성
     const levels = useMemo(() => {
         if (!project) return ['1F'];
         const res = [];
@@ -88,24 +86,24 @@ const SafetyMap = () => {
         return res;
     }, [project]);
 
-    // 필터링된 구역 (현재 층만)
+    // ?�터링된 구역 (?�재 층만)
     const filteredZones = useMemo(() => {
         return zones.filter(z => z.level === selectedLevel);
     }, [zones, selectedLevel]);
 
     const center = project ? [project.location_lat, project.location_lng] : [37.5665, 126.9780];
 
-    if (loading) return <div style={{padding:'20px', textAlign:'center'}}>현장 데이터를 불러오는 중...</div>;
+    if (loading) return <div style={{padding:'20px', textAlign:'center'}}>?�장 ?�이?��? 불러?�는 �?..</div>;
 
     return (
       <div className="floor-viewer" style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8fafc' }}>
         
-        {/* 헤더 */}
+        {/* ?�더 */}
         <header style={{ flexShrink: 0, padding:'12px 20px', background:'#1e293b', color:'white', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
-                <button onClick={() => navigate(-1)} style={{background:'transparent', border:'1px solid #475569', color:'white', padding:'6px 12px', borderRadius:'6px', cursor:'pointer' }}>◀</button>
+                <button onClick={() => navigate(-1)} style={{background:'transparent', border:'1px solid #475569', color:'white', padding:'6px 12px', borderRadius:'6px', cursor:'pointer' }}>?�</button>
                 <div>
-                    <h2 style={{margin:0, fontSize:'1.1rem'}}>🛡️ 안전 모니터링</h2>
+                    <h2 style={{margin:0, fontSize:'1.1rem'}}>?���??�전 모니?�링</h2>
                     <div style={{fontSize:'11px', color:'#94a3b8'}}>{project?.name}</div>
                 </div>
             </div>
@@ -114,7 +112,7 @@ const SafetyMap = () => {
             </div>
         </header>
 
-        {/* 메인 콘텐츠 영역 (단면도 + 지도) */}
+        {/* 메인 콘텐�??�역 (?�면??+ 지?? */}
         <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
             {project && (
                 <BuildingSectionView 
@@ -126,7 +124,7 @@ const SafetyMap = () => {
                 />
             )}
 
-            {/* 지도 영역 */}
+            {/* 지???�역 */}
             <div style={{ flex: 1, position: 'relative' }}>
                 <UniversalBlueprintMap
                     role="WORKER"
@@ -137,20 +135,20 @@ const SafetyMap = () => {
                     height="100%"
                     blueprintUrl={floorPlanUrl}
                 >
-                    {/* 위험 요소 (실시간 마커 등 - 필요시 추가 연동) */}
+                    {/* ?�험 ?�소 (?�시�?마커 ??- ?�요??추�? ?�동) */}
                 </UniversalBlueprintMap>
 
-                {/* 하단 정보 배지 */}
+                {/* ?�단 ?�보 배�? */}
                 <div style={{ position:'absolute', bottom:20, left:20, right:20, zIndex:1000, display:'flex', flexDirection:'column', gap:'10px' }}>
                     <div style={{ background:'rgba(255,255,255,0.95)', padding:'12px 16px', borderRadius:'12px', boxShadow:'0 4px 12px rgba(0,0,0,0.1)', border:'1px solid #e2e8f0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                         <div>
-                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>현재 층</div>
+                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>?�재 �?/div>
                             <div style={{fontSize:'1rem', fontWeight:'900', color:'#1e293b'}}>{selectedLevel}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>위험 요소</div>
+                            <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'2px'}}>?�험 ?�소</div>
                             <div style={{fontSize:'0.9rem', fontWeight:'800', color: risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length > 0 ? '#ef4444' : '#10b981'}}>
-                                {risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length}건 감지
+                                {risks.filter(r => filteredZones.some(z => z.id === r.zone_id)).length}�?감�?
                             </div>
                         </div>
                     </div>

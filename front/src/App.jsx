@@ -1,105 +1,72 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
-import RoleRedirect from '@/components/common/RoleRedirect';
-import ProtectedRoute from '@/components/common/ProtectedRoute';
-import PagePlaceholder from '@/components/common/PagePlaceholder';
-import Login from '@/features/auth/Login';
-import Register from '@/features/auth/Register';
 
-// 관리자 전용 (데스크탑)
-import AdminLayout from '@/features/admin/components/layout/AdminLayout';
-import AdminDashboard from '@/features/admin/dashboard/AdminDashboard';
-import ProjectList from '@/features/admin/projects/ProjectList';
-import CreateProject from '@/features/admin/projects/CreateProject';
-import ProjectDetail from '@/features/admin/projects/ProjectDetail';
-import CompanyList from '@/features/admin/companies/CompanyList';
-import AdminContents from '@/features/admin/contents/AdminContents';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import MainLayout from './components/layout/MainLayout';
 
-// 현장 관리자 (현장 소장)
-import ManagerLayout from '@/features/manager/components/layout/ManagerLayout';
-import ManagerDashboard from '@/features/manager/dashboard/ManagerDashboard';
-import PartnerManagement from '@/features/manager/partners/PartnerManagement';
-import WorkerManagement from '@/features/manager/workers/WorkerManagement'; // [NEW]
-import CompanyManagement from '@/features/manager/companies/CompanyManagement'; // [NEW]
-import DailyPlanManagement from '@/features/manager/work/DailyPlanManagement';
-import WorkLocation from '@/features/manager/work/WorkLocation';
-import ManagerContents from '@/features/manager/contents/ManagerContents';
-import ManagerAttendance from '@/features/manager/attendance/ManagerAttendance';
-import ManagerNotice from '@/features/manager/notice/ManagerNotice';
+// Auth
+import Login from './features/auth/Login';
+import Register from './features/auth/Register';
 
-// 작업자 전용 (모바일)
-import WorkerLayout from '@/features/worker/components/layout/WorkerLayout';
-import WorkerDashboard from '@/features/worker/dashboard/WorkerDashboard';
-import WorkList from '@/features/worker/work/WorkList';
-import SafetyMap from '@/features/worker/safety/SafetyMap';
-import WorkerAttendance from '@/features/worker/attendance/WorkerAttendance';
-import Emergency from '@/features/worker/components/Emergency';
+// Dashboards
+import AdminDashboard from './features/admin/dashboard/AdminDashboard';
+import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
+import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
+
+// Projects
+import ProjectList from './features/admin/projects/ProjectList';
+import ProjectDetail from './features/admin/projects/ProjectDetail';
+import CreateProject from './features/admin/projects/CreateProject';
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>로딩 중...</div>;
+  if (!user) return <Navigate to="/" replace />;
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // 레이아웃 적용
+  return <MainLayout>{children}</MainLayout>;
+};
+
+const DashboardRedirect = () => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/" replace />;
+  
+  if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  if (user.role === 'manager') return <Navigate to="/manager/dashboard" replace />;
+  return <Navigate to="/worker/dashboard" replace />;
+};
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {/* 로그인 */}
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          {/* 대시보드 (역할 자동 분기) */}
-          <Route path="/dashboard" element={<RoleRedirect />} />
-          
-          {/* 1. 관리자 전용 (데스크탑) - ADMIN only */}
-          <Route 
-            path="/admin/*" 
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="projects" element={<ProjectList />} />
-            <Route path="projects/create" element={<CreateProject />} />
-            <Route path="projects/:id" element={<ProjectDetail />} />
-            <Route path="companies" element={<CompanyList />} />
-            <Route path="contents" element={<AdminContents />} />
-          </Route>
-          
-          {/* 2. 현장 관리자 (현장 소장) - MANAGER & ADMIN */}
-          <Route 
-            path="/manager/*" 
-            element={
-              <ProtectedRoute allowedRoles={['manager', 'safety_manager', 'admin']}>
-                <ManagerLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<ManagerDashboard />} />
-            <Route path="work" element={<DailyPlanManagement />} />
-            <Route path="locations" element={<WorkLocation />} />
-            <Route path="partners" element={<PartnerManagement />} />
-            <Route path="workers" element={<WorkerManagement />} />
-            <Route path="companies" element={<CompanyManagement />} />
-            <Route path="contents" element={<ManagerContents />} />
-            <Route path="attendance" element={<ManagerAttendance />} />
-            <Route path="notices" element={<ManagerNotice />} />
-          </Route>
+          <Route path="/dashboard" element={<DashboardRedirect />} />
 
-          {/* 3. 작업자 전용 (모바일) - WORKER only */}
-          <Route 
-            path="/worker/*" 
-            element={
-              <ProtectedRoute allowedRoles={['worker', 'admin']}>
-                <WorkerLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<WorkerDashboard />} />
-            <Route path="work" element={<WorkList />} />
-            <Route path="attendance" element={<WorkerAttendance />} />
-            <Route path="safety" element={<SafetyMap />} />
-            <Route path="emergency" element={<Emergency />} />
-            <Route path="report" element={<PagePlaceholder title="위험 신고" />} />
-          </Route>
+          {/* Admin Routes */}
+          <Route path="/admin/*" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <Routes>
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="projects" element={<ProjectList />} />
+                <Route path="projects/create" element={<CreateProject />} />
+                <Route path="projects/:id" element={<ProjectDetail />} />
+                {/* 나머지 페이지들도 여기에 추가 예정 */}
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Manager/Worker Routes도 비슷한 방식으로 확장 가능 */}
+          <Route path="/manager/dashboard" element={<ProtectedRoute allowedRoles={['manager']}><ManagerDashboard /></ProtectedRoute>} />
+          <Route path="/worker/dashboard" element={<ProtectedRoute allowedRoles={['worker']}><WorkerDashboard /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

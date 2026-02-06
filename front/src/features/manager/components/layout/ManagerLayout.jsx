@@ -23,28 +23,28 @@ const ManagerLayout = () => {
   const path = location.pathname;
 
   const menu = [
-    { label: '대시보드', icon: LayoutDashboard, path: '/manager' },
-    { label: '일일 작업 계획', icon: ClipboardList, path: '/manager/work' },
-    { label: '콘텐츠 열람', icon: FileText, path: '/manager/contents' },
-    { label: '작업 위치', icon: Map, path: '/manager/locations' },
-    { label: '협력사 관리', icon: Briefcase, path: '/manager/companies' },
-    { label: '근로자 관리', icon: Users, path: '/manager/workers' },
-    { label: '출역 관리', icon: ClipboardCheck, path: '/manager/attendance' },
-    { label: '안전정보 열람현황', icon: FileText, path: '/manager/safety-info' },
-    { label: '위반자 등록/현황', icon: ShieldAlert, path: '/manager/violations' },
-    { label: '근로자 위치확인', icon: MapPin, path: '/manager/location' },
-    { label: '안전교육 현황', icon: GraduationCap, path: '/manager/education' },
-    { label: '현장 공지', icon: Megaphone, path: '/manager/notices' },
-    { label: '긴급 알림', icon: Bell, path: '/manager/emergency' },
+    { label: '?�?�보??, icon: LayoutDashboard, path: '/manager' },
+    { label: '?�일 ?�업 계획', icon: ClipboardList, path: '/manager/work' },
+    { label: '콘텐�??�람', icon: FileText, path: '/manager/contents' },
+    { label: '?�업 ?�치', icon: Map, path: '/manager/locations' },
+    { label: '?�력??관�?, icon: Briefcase, path: '/manager/companies' },
+    { label: '근로??관�?, icon: Users, path: '/manager/workers' },
+    { label: '출역 관�?, icon: ClipboardCheck, path: '/manager/attendance' },
+    { label: '?�전?�보 ?�람?�황', icon: FileText, path: '/manager/safety-info' },
+    { label: '?�반???�록/?�황', icon: ShieldAlert, path: '/manager/violations' },
+    { label: '근로???�치?�인', icon: MapPin, path: '/manager/location' },
+    { label: '?�전교육 ?�황', icon: GraduationCap, path: '/manager/education' },
+    { label: '?�장 공�?', icon: Megaphone, path: '/manager/notices' },
+    { label: '긴급 ?�림', icon: Bell, path: '/manager/emergency' },
   ];
 
   return (
     <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden' }}>
-      {/* 사이드바 (Manager 전용 - Dark Theme 적용) */}
+      {/* ?�이?�바 (Manager ?�용 - Dark Theme ?�용) */}
       <aside style={{ 
         width: '260px', 
         height: '100vh',
-        background: '#1e293b', // Admin과 동일한 Dark Background
+        background: '#1e293b', // Admin�??�일??Dark Background
         color: '#ffffff',
         display: 'flex', 
         flexDirection: 'column',
@@ -52,18 +52,18 @@ const ManagerLayout = () => {
         boxShadow: '4px 0 10px rgba(0,0,0,0.3)',
         zIndex: 10
       }}>
-        {/* 헤더 */}
+        {/* ?�더 */}
         <div style={{ padding: '24px', background: '#0f172a', borderBottom: '1px solid #334155' }}>
           <h1 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            <HardHat size={28} color="#f59e0b" /> {/* 안전모 아이콘 유지 */}
+            <HardHat size={28} color="#f59e0b" /> {/* ?�전�??�이�??��? */}
             Smart Site
           </h1>
           <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#f59e0b', marginTop: '6px', paddingLeft: '36px', letterSpacing: '0.02em' }}>
-            현장 관리자
+            ?�장 관리자
           </div>
         </div>
 
-        {/* 메뉴 영역 */}
+        {/* 메뉴 ?�역 */}
         <nav style={{ flex: 1, padding: '10px 0' }}>
           {menu.map((item) => {
             const isActive = path === item.path;
@@ -78,10 +78,10 @@ const ManagerLayout = () => {
                   alignItems: 'center',
                   gap: '12px',
                   padding: '13px 24px',
-                  background: isActive ? '#0f172a' : 'transparent', // 활성화 시 더 어두운 배경
-                  color: isActive ? '#ffffff' : '#94a3b8', // 활성화 시 흰색, 평소 회색
+                  background: isActive ? '#0f172a' : 'transparent', // ?�성???????�두??배경
+                  color: isActive ? '#ffffff' : '#94a3b8', // ?�성?????�색, ?�소 ?�색
                   border: 'none',
-                  borderLeft: isActive ? '3px solid #f59e0b' : '3px solid transparent', // 포인트 컬러: 안전 주황색
+                  borderLeft: isActive ? '3px solid #f59e0b' : '3px solid transparent', // ?�인??컬러: ?�전 주황??
                   fontWeight: isActive ? '600' : '400',
                   cursor: 'pointer',
                   textAlign: 'left',
@@ -108,7 +108,7 @@ const ManagerLayout = () => {
           })}
         </nav>
 
-        {/* 하단 로그아웃 */}
+        {/* ?�단 로그?�웃 */}
         <div style={{ padding: '16px', borderTop: '1px solid #334155', background: '#0f172a' }}>
           <button 
             onClick={() => navigate('/')}
@@ -139,12 +139,12 @@ const ManagerLayout = () => {
               e.currentTarget.style.borderColor = '#475569';
             }}
           >
-            <LogOut size={16} /> 로그아웃
+            <LogOut size={16} /> 로그?�웃
           </button>
         </div>
       </aside>
 
-      {/* 메인 콘텐츠 */}
+      {/* 메인 콘텐�?*/}
       <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc', color: '#1e293b' }}>
         <Outlet />
       </main>

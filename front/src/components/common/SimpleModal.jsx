@@ -30,7 +30,7 @@ const SimpleModal = ({ isOpen, onClose, title, children }) => {
         animation: 'slideUp 0.3s ease-out'
       }} onClick={e => e.stopPropagation()}>
         
-        {/* 헤더 */}
+        {/* ?�더 */}
         <div style={{
           padding: '1.25rem',
           borderBottom: '1px solid #e2e8f0',
@@ -59,7 +59,7 @@ const SimpleModal = ({ isOpen, onClose, title, children }) => {
           </button>
         </div>
 
-        {/* 컨텐츠 */}
+        {/* 컨텐�?*/}
         <div style={{ padding: '1.5rem' }}>
           {children}
         </div>

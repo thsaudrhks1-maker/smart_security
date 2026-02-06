@@ -41,17 +41,17 @@ const ManagerNotice = () => {
       setShowModal(false);
       loadInitialData();
     } catch (err) {
-      alert('공지 등록 실패');
+      alert('공�? ?�록 ?�패');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
+    if (!window.confirm('??��?�시겠습?�까?')) return;
     try {
       await noticeApi.deleteNotice(id);
       loadInitialData();
     } catch (err) {
-      alert('삭제 실패');
+      alert('??�� ?�패');
     }
   };
 
@@ -60,25 +60,25 @@ const ManagerNotice = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Megaphone color="#f59e0b" size={28} /> 공지사항 관리
+            <Megaphone color="#f59e0b" size={28} /> 공�??�항 관�?
           </h1>
-          <p style={{ color: '#64748b', marginTop: '5px' }}>현장 근로자들에게 실시간으로 안전 공지 및 안내 사항을 전달합니다.</p>
+          <p style={{ color: '#64748b', marginTop: '5px' }}>?�장 근로?�들?�게 ?�시간으�??�전 공�? �??�내 ?�항???�달?�니??</p>
         </div>
         <button 
           onClick={() => setShowModal(true)}
           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
         >
-          <Plus size={20} /> 공지 작성
+          <Plus size={20} /> 공�? ?�성
         </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>로딩 중...</div>
+          <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>로딩 �?..</div>
         ) : notices.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem', background: 'white', borderRadius: '20px', border: '2px dashed #e2e8f0', color: '#94a3b8' }}>
             <Megaphone size={48} style={{ marginBottom: '1rem', opacity: 0.3 }} />
-            <p>등록된 공지사항이 없습니다.</p>
+            <p>?�록??공�??�항???�습?�다.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -98,7 +98,7 @@ const ManagerNotice = () => {
                 <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{notice.content}</p>
                 <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '15px', fontSize: '0.8rem', color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={14} /> {new Date(notice.created_at).toLocaleDateString()}</span>
-                    <span>✍️ {notice.author_name || '관리자'}</span>
+                    <span>?�️ {notice.author_name || '관리자'}</span>
                 </div>
               </div>
             ))}
@@ -110,27 +110,27 @@ const ManagerNotice = () => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
           <div style={{ background: 'white', borderRadius: '20px', width: '500px', padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>새 공지사항 작성</h2>
+              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700' }}>??공�??�항 ?�성</h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <label>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>제목</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>?�목</div>
                 <input 
                   type="text" 
                   value={formData.title} 
                   onChange={e => setFormData({...formData, title: e.target.value})}
-                  placeholder="공지 제목을 입력하세요"
+                  placeholder="공�? ?�목???�력?�세??
                   style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none' }}
                   required
                 />
               </label>
               <label>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>내용</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: '600', marginBottom: '6px' }}>?�용</div>
                 <textarea 
                   value={formData.content} 
                   onChange={e => setFormData({...formData, content: e.target.value})}
-                  placeholder="전달하실 내용을 입력하세요..."
+                  placeholder="?�달?�실 ?�용???�력?�세??.."
                   rows={5}
                   style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', resize: 'none' }}
                   required
@@ -142,13 +142,13 @@ const ManagerNotice = () => {
                   checked={formData.is_important}
                   onChange={e => setFormData({...formData, is_important: e.target.checked})}
                 />
-                <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>중요 공지로 설정 (상단 고정 및 강조)</span>
+                <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>중요 공�?�??�정 (?�단 고정 �?강조)</span>
               </label>
               <button 
                 type="submit"
                 style={{ marginTop: '1rem', padding: '14px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', cursor: 'pointer' }}
               >
-                등록하기
+                ?�록?�기
               </button>
             </form>
           </div>

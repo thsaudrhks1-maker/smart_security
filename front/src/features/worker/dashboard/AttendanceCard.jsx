@@ -6,14 +6,14 @@ const AttendanceCard = ({ projectInfo, onStatusChange }) => {
   const [attendance, setAttendance] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 시간 포맷팅 헬퍼 (HH:mm)
+  // ?�간 ?�맷???�퍼 (HH:mm)
   const formatTime = (dateStr) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  // 오늘의 출근 정보 조회
+  // ?�늘??출근 ?�보 조회
   useEffect(() => {
     loadAttendance();
   }, []);
@@ -24,59 +24,59 @@ const AttendanceCard = ({ projectInfo, onStatusChange }) => {
       setAttendance(data);
       if (onStatusChange) onStatusChange(data);
     } catch (error) {
-      console.error("출근 정보 로드 실패:", error);
+      console.error("출근 ?�보 로드 ?�패:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCheckIn = async () => {
-    if (!confirm('현재 시각으로 출근 처리하시겠습니까?')) return;
+    if (!confirm('?�재 ?�각?�로 출근 처리?�시겠습?�까?')) return;
     try {
       if (!projectInfo || !projectInfo.project_id) {
-        // 프로젝트 ID가 없을 경우 예외 처리 (알림 메시지 구체화)
-        alert('배정된 프로젝트 정보가 없습니다.\n관리자에게 프로젝트 배정을 요청하세요.');
+        // ?�로?�트 ID가 ?�을 경우 ?�외 처리 (?�림 메시지 구체??
+        alert('배정???�로?�트 ?�보가 ?�습?�다.\n관리자?�게 ?�로?�트 배정???�청?�세??');
         return;
       }
       const res = await checkIn({
-        project_id: projectInfo.project_id, // 대시보드에서 받아온 프로젝트 ID
+        project_id: projectInfo.project_id, // ?�?�보?�에??받아???�로?�트 ID
         check_in_method: 'APP'
       });
       setAttendance(res);
-      alert('출근 처리되었습니다. 오늘도 안전작업 하세요!');
+      alert('출근 처리?�었?�니?? ?�늘???�전?�업 ?�세??');
     } catch (error) {
       console.error(error);
-      alert('출근 처리에 실패했습니다.');
+      alert('출근 처리???�패?�습?�다.');
     }
   };
 
   const handleCheckOut = async () => {
-    if (!confirm('퇴근 처리하시겠습니까?')) return;
+    if (!confirm('?�근 처리?�시겠습?�까?')) return;
     try {
       const res = await checkOut(attendance.id);
       setAttendance(res);
-      alert('퇴근 처리되었습니다. 고생하셨습니다!');
+      alert('?�근 처리?�었?�니?? 고생?�셨?�니??');
     } catch (error) {
       console.error(error);
-      alert('퇴근 처리에 실패했습니다.');
+      alert('?�근 처리???�패?�습?�다.');
     }
   };
 
-  if (loading) return <div className="dashboard-card" style={{ background: '#f59e0b', color: 'white', minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>로딩중...</div>;
+  if (loading) return <div className="dashboard-card" style={{ background: '#f59e0b', color: 'white', minHeight: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>로딩�?..</div>;
 
   return (
     <div className="dashboard-card" style={{ background: '#f59e0b', color: 'white' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <div style={{ fontSize: '0.8rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Clock size={16} /> 출역 현황
+          <Clock size={16} /> 출역 ?�황
         </div>
         {attendance ? (
           <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-            {attendance.check_out_time ? '퇴근완료' : '근무중'}
+            {attendance.check_out_time ? '?�근?�료' : '근무�?}
           </span>
         ) : (
           <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>
-            출근전
+            출근??
           </span>
         )}
       </div>
@@ -87,7 +87,7 @@ const AttendanceCard = ({ projectInfo, onStatusChange }) => {
             <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
               {formatTime(attendance.check_in_time)}
             </div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>출근 완료</div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>출근 ?�료</div>
             
             {!attendance.check_out_time && (
               <button 
@@ -104,13 +104,13 @@ const AttendanceCard = ({ projectInfo, onStatusChange }) => {
                   cursor: 'pointer' 
                 }}
               >
-                퇴근하기
+                ?�근?�기
               </button>
             )}
           </div>
         ) : (
           <div>
-            <div style={{ fontSize: '0.9rem', marginBottom: '8px', opacity: 0.9 }}>아직 출근 기록이 없습니다.</div>
+            <div style={{ fontSize: '0.9rem', marginBottom: '8px', opacity: 0.9 }}>?�직 출근 기록???�습?�다.</div>
             <button 
               onClick={(e) => { e.stopPropagation(); handleCheckIn(); }}
               style={{ 

@@ -2,14 +2,14 @@ import React from 'react';
 import { X, ChevronDown, ChevronRight } from 'lucide-react';
 
 /**
- * 구역별 현황 리스트 사이드 패널 컴포넌트
- * @param {Array} zones - 전체 구역 목록
- * @param {Array} filteredPlans - 현재 날짜/현장 기준 필터링된 계획 목록
- * @param {Boolean} isOpen - 패널 열림 상태
- * @param {Function} onClose - 패널 닫기 핸들러
- * @param {Number|null} expandedZoneId - 현재 확장된 구역 ID
- * @param {Function} setExpandedZoneId - 확장 구역 ID 변경 핸들러
- * @param {Array} WORK_TYPE_COLORS - 작업 유형별 색상 배열
+ * 구역�??�황 리스???�이???�널 컴포?�트
+ * @param {Array} zones - ?�체 구역 목록
+ * @param {Array} filteredPlans - ?�재 ?�짜/?�장 기�? ?�터링된 계획 목록
+ * @param {Boolean} isOpen - ?�널 ?�림 ?�태
+ * @param {Function} onClose - ?�널 ?�기 ?�들??
+ * @param {Number|null} expandedZoneId - ?�재 ?�장??구역 ID
+ * @param {Function} setExpandedZoneId - ?�장 구역 ID 변�??�들??
+ * @param {Array} WORK_TYPE_COLORS - ?�업 ?�형�??�상 배열
  */
 const ZoneStatusSidePanel = ({ 
   zones, 
@@ -29,7 +29,7 @@ const ZoneStatusSidePanel = ({
       backdropFilter: 'blur(8px)'
     }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
-        <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>📍 구역별 현황 리스트</span>
+        <span style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>?�� 구역�??�황 리스??/span>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={16} /></button>
       </div>
       <div className="thin-scroll" style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
@@ -60,7 +60,7 @@ const ZoneStatusSidePanel = ({
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {hasWork && <span style={{ fontSize: '0.55rem', color: '#3b82f6', fontWeight: '800', background: '#eff6ff', padding: '0 4px', borderRadius: '3px' }}>{zonePlans.length}건</span>}
+                    {hasWork && <span style={{ fontSize: '0.55rem', color: '#3b82f6', fontWeight: '800', background: '#eff6ff', padding: '0 4px', borderRadius: '3px' }}>{zonePlans.length}�?/span>}
                     {isExpanded ? <ChevronDown size={12} color="#3b82f6" /> : <ChevronRight size={12} color="#cbd5e1" />}
                   </div>
                 </div>
@@ -71,7 +71,7 @@ const ZoneStatusSidePanel = ({
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {zonePlans.map(p => (
                           <div key={p.id} style={{ fontSize: '0.7rem' }}>
-                            <div style={{ fontWeight: '800', color: '#1e293b', marginBottom: '2px', fontSize: '0.65rem' }}>• {p.work_type}</div>
+                            <div style={{ fontWeight: '800', color: '#1e293b', marginBottom: '2px', fontSize: '0.65rem' }}>??{p.work_type}</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', paddingLeft: '8px' }}>
                               {p.allocations?.map((a, idx) => (
                                 <span key={idx} style={{ 
@@ -87,7 +87,7 @@ const ZoneStatusSidePanel = ({
                         ))}
                       </div>
                     ) : (
-                      <div style={{ fontSize: '0.65rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>배정 없음</div>
+                      <div style={{ fontSize: '0.65rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>배정 ?�음</div>
                     )}
                   </div>
                 )}

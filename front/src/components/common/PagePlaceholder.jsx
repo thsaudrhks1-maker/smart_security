@@ -14,8 +14,8 @@ const PagePlaceholder = ({ title, children }) => {
         <h2>{title}</h2>
       </header>
       <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', minHeight: '300px' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>준비 중인 화면입니다.</p>
-        <p style={{ fontSize: '3rem', marginTop: '1rem' }}>🚧</p>
+        <p style={{ color: 'var(--text-secondary)' }}>준�?중인 ?�면?�니??</p>
+        <p style={{ fontSize: '3rem', marginTop: '1rem' }}>?��</p>
         {children}
       </div>
     </div>

@@ -3,20 +3,20 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, ClipboardList, Map, AlertTriangle } from 'lucide-react';
 
 /**
- * 작업자용 레이아웃(모바일)
- * - 좁은 레이아웃 (최대 600px)
- * - 하단 네비게이션 탭바 적용
+ * ?�업?�용 ?�이?�웃(모바??
+ * - 좁�? ?�이?�웃 (최�? 600px)
+ * - ?�단 ?�비게이????�� ?�용
  */
 const WorkerLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-    { path: '/worker', icon: LayoutDashboard, label: '홈' },
-    { path: '/worker/work', icon: CheckSquare, label: '작업' },
+    { path: '/worker', icon: LayoutDashboard, label: '?? },
+    { path: '/worker/work', icon: CheckSquare, label: '?�업' },
     { path: '/worker/attendance', icon: ClipboardList, label: '출근' },
-    { path: '/worker/safety', icon: Map, label: '안전지도' },
-    { path: '/worker/report', icon: AlertTriangle, label: '신고' },
+    { path: '/worker/safety', icon: Map, label: '?�전지?? },
+    { path: '/worker/report', icon: AlertTriangle, label: '?�고' },
   ];
 
   return (

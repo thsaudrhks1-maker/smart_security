@@ -3,10 +3,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * 대시보드 진입점 (Dashboard Layout)
- * - 사용자의 역할(Role)을 확인하여 적절한 대시보드로 리다이렉트합니다.
- * - 관리자/소장/안전관리자 -> /admin (AdminDashboard Layout)
- * - 작업자 -> /worker (WorkerDashboard Layout)
+ * ?�?�보??진입??(Dashboard Layout)
+ * - ?�용?�의 ??��(Role)???�인?�여 ?�절???�?�보?�로 리다?�렉?�합?�다.
+ * - 관리자/?�장/?�전관리자 -> /admin (AdminDashboard Layout)
+ * - ?�업??-> /worker (WorkerDashboard Layout)
  */
 const RoleRedirect = () => {
   const { user, loading } = useAuth();
@@ -20,15 +20,15 @@ const RoleRedirect = () => {
       return;
     }
 
-    // 역할별 리다이렉트
+    // ??���?리다?�렉??
     if (user.role === 'admin') {
       navigate('/admin', { replace: true });
-    } else if (user.role === 'manager' || user.role === 'safety_manager') { // 중간 관리자 (소장, 안전관리자)
+    } else if (user.role === 'manager' || user.role === 'safety_manager') { // 중간 관리자 (?�장, ?�전관리자)
       navigate('/manager', { replace: true });
     } else if (user.role === 'worker') {
       navigate('/worker', { replace: true });
     } else {
-      // 역할이 없는 경우 (예외 처리)
+      // ??��???�는 경우 (?�외 처리)
       console.warn("User has no role assigned:", user);
       navigate('/', { replace: true });
     }
@@ -53,7 +53,7 @@ const RoleRedirect = () => {
         animation: 'spin 1s linear infinite' 
       }}></div>
       <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-      <div style={{ color: '#64748b', fontWeight: '500' }}>대시보드로 이동 중...</div>
+      <div style={{ color: '#64748b', fontWeight: '500' }}>?�?�보?�로 ?�동 �?..</div>
     </div>
   );
 };

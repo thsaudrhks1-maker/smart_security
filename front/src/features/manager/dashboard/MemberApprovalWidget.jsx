@@ -24,26 +24,26 @@ const MemberApprovalWidget = ({ projectId }) => {
   }, [projectId]);
 
   const handleApprove = async (userId) => {
-    if (!window.confirm('이 근로자를 승인하시겠습니까?')) return;
+    if (!window.confirm('??근로?��? ?�인?�시겠습?�까?')) return;
     
     try {
       await approveProjectMembers(projectId, [userId], 'APPROVE');
       // 목록 갱신 (Optimistic update)
       setMembers(prev => prev.filter(m => m.user_id !== userId));
     } catch (err) {
-      alert('처리에 실패했습니다.');
+      alert('처리???�패?�습?�다.');
       console.error(err);
     }
   };
 
-  if (loading) return <div style={{ padding: '1rem', color: '#64748b' }}>데이터 조회 중...</div>;
+  if (loading) return <div style={{ padding: '1rem', color: '#64748b' }}>?�이??조회 �?..</div>;
   
   if (members.length === 0) {
       return (
           <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', minHeight: '200px' }}>
               <CheckCircle size={40} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-              <p style={{ margin: 0, fontWeight: '700', color: '#1e293b' }}>승인 대기 인원이 없습니다.</p>
-              <span style={{ fontSize: '0.85rem', marginTop: '4px', color: '#1e293b' }}>모든 근로자가 작업 투입 가능 상태입니다.</span>
+              <p style={{ margin: 0, fontWeight: '700', color: '#1e293b' }}>?�인 ?��??�원???�습?�다.</p>
+              <span style={{ fontSize: '0.85rem', marginTop: '4px', color: '#1e293b' }}>모든 근로?��? ?�업 ?�입 가???�태?�니??</span>
           </div>
       );
   }
@@ -52,7 +52,7 @@ const MemberApprovalWidget = ({ projectId }) => {
     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#334155', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <UserCheck size={20} color="#f59e0b" /> 
-        승인 대기 인원 <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{members.length}</span>
+        ?�인 ?��??�원 <span style={{ background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem' }}>{members.length}</span>
       </h3>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '300px', overflowY: 'auto' }}>
@@ -64,7 +64,7 @@ const MemberApprovalWidget = ({ projectId }) => {
                 <span style={{ fontWeight: '600', color: '#3b82f6' }}>{member.role_name}</span> | {member.company_name}
               </div>
               <div style={{ fontSize: '0.8rem', color: '#1e293b', marginTop: '2px' }}>
-                 신청일: {new Date(member.joined_at).toLocaleDateString()}
+                 ?�청?? {new Date(member.joined_at).toLocaleDateString()}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -74,7 +74,7 @@ const MemberApprovalWidget = ({ projectId }) => {
                     onMouseOver={(e) => e.target.style.background = '#2563eb'}
                     onMouseOut={(e) => e.target.style.background = '#3b82f6'}
                 >
-                    승인
+                    ?�인
                 </button>
             </div>
           </div>

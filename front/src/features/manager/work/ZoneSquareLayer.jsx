@@ -2,8 +2,8 @@ import React from 'react';
 import { Polygon, Popup, Tooltip } from 'react-leaflet';
 
 /**
- * 좌표를 기준으로 정사각형 구역 컴포넌트.
- * 시드와 동일 기준: step=0.00025 균일 그리드. 2*HALF < step → HALF=0.00012 (칸이 붙어 보이되 겹치지 않음)
+ * 좌표�?기�??�로 ?�사각형 구역 컴포?�트.
+ * ?�드?� ?�일 기�?: step=0.00025 균일 그리?? 2*HALF < step ??HALF=0.00012 (칸이 붙어 보이??겹치지 ?�음)
  */
 const ZONE_SQUARE_HALF = 0.00012;
 
@@ -18,8 +18,8 @@ export function getZoneSquarePositions(lat, lng, halfDeg = ZONE_SQUARE_HALF) {
 }
 
 /**
- * 단일 구역 정사각형 (Polygon). fillColor/fillOpacity로 작업·위험·빈 구역 구분.
- * 작업/위험 없으면 흰색 반투명으로 표시.
+ * ?�일 구역 ?�사각형 (Polygon). fillColor/fillOpacity�??�업·?�험·�?구역 구분.
+ * ?�업/?�험 ?�으�??�색 반투명으�??�시.
  */
 export function ZoneSquare({ zone, fillColor = '#ffffff', fillOpacity = 0.55, strokeColor = 'rgba(0,0,0,0.4)', strokeWidth = 2, popupContent }) {
   if (zone.lat == null || zone.lng == null) return null;
@@ -41,7 +41,7 @@ export function ZoneSquare({ zone, fillColor = '#ffffff', fillOpacity = 0.55, st
 }
 
 /**
- * pathOptions만 넘겨서 구역 사각형 그리기 (일일 작업 계획 등에서 색상 동적 지정용).
+ * pathOptions�??�겨??구역 ?�각??그리�?(?�일 ?�업 계획 ?�에???�상 ?�적 지?�용).
  */
 export function ZoneSquareStyled({ zone, pathOptions = {}, popupContent, tooltipContent, tooltipOptions = {} }) {
   if (zone.lat == null || zone.lng == null) return null;

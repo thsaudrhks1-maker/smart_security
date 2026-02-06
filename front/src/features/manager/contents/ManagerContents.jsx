@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FileText, HardHat, Shield, ChevronDown, ChevronRight } from 'lucide-react';
 import { workApi } from '@/api/workApi';
 
-const TAB = { PROCESS: '공정', RULES: '안전수칙', EQUIPMENT: '안전공구' };
+const TAB = { PROCESS: '공정', RULES: '?�전?�칙', EQUIPMENT: '?�전공구' };
 
 /**
- * 현장 관리자 - 콘텐츠 열람 (최고관리자가 등록한 공정·안전장비·안전수칙)
- * 일일 작업 계획 및 작업자 배치 시 참고
+ * ?�장 관리자 - 콘텐�??�람 (최고관리자가 ?�록??공정·?�전?�비·?�전?�칙)
+ * ?�일 ?�업 계획 �??�업??배치 ??참고
  */
 const ManagerContents = () => {
   const [activeTab, setActiveTab] = useState(TAB.PROCESS);
@@ -37,20 +37,20 @@ const ManagerContents = () => {
   const allRules = resources.flatMap((r) => (r.safety_rules || []).map((text) => ({ resourceName: r.name, text })));
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 중...</div>;
+    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>;
   }
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px' }}>
       <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
         <FileText size={28} color="#f59e0b" />
-        콘텐츠 열람
+        콘텐�??�람
       </h1>
       <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
-        최고관리자가 등록한 공정·장구류·안전수칙입니다. 일일 작업 계획 및 작업자 배치 시 참고하세요.
+        최고관리자가 ?�록??공정·?�구류·안?�수칙입?�다. ?�일 ?�업 계획 �??�업??배치 ??참고?�세??
       </p>
 
-      {/* 카테고리 토글 */}
+      {/* 카테고리 ?��? */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         {[TAB.PROCESS, TAB.EQUIPMENT, TAB.RULES].map((tab) => (
           <button
@@ -78,10 +78,10 @@ const ManagerContents = () => {
         ))}
       </div>
 
-      {/* 공정 리스트 */}
+      {/* 공정 리스??*/}
       {activeTab === TAB.PROCESS && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>공정 목록 ({templates.length}건)</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>공정 목록 ({templates.length}�?</div>
           {templates.map((t) => {
             const isExpanded = expandedId === `t-${t.id}`;
             return (
@@ -106,14 +106,13 @@ const ManagerContents = () => {
                   {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                   {t.work_type}
                   <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b' }}>
-                    위험도 {t.base_risk_score} · 장구류 {t.required_resources?.length ?? 0}종
-                  </span>
+                    ?�험??{t.base_risk_score} · ?�구�?{t.required_resources?.length ?? 0}�?                  </span>
                 </button>
                 {isExpanded && (
                   <div style={{ padding: '16px', borderTop: '1px solid #e2e8f0' }}>
                     {t.checklist_items?.length > 0 && (
                       <div style={{ marginBottom: '12px' }}>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>점검 항목</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?��? ??��</div>
                         <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#334155' }}>
                           {t.checklist_items.map((item, i) => (
                             <li key={i}>{item}</li>
@@ -123,7 +122,7 @@ const ManagerContents = () => {
                     )}
                     {t.required_resources?.length > 0 && (
                       <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>필요 안전공구</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?�요 ?�전공구</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {t.required_resources.map((r) => (
                             <span key={r.id} style={{ background: '#fffbeb', color: '#b45309', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem' }}>
@@ -141,10 +140,10 @@ const ManagerContents = () => {
         </div>
       )}
 
-      {/* 안전공구 리스트 */}
+      {/* ?�전공구 리스??*/}
       {activeTab === TAB.EQUIPMENT && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>안전공구·장비 목록 ({resources.length}건)</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>?�전공구·?�비 목록 ({resources.length}�?</div>
           {resources.map((r) => {
             const isExpanded = expandedId === `r-${r.id}`;
             return (
@@ -175,7 +174,7 @@ const ManagerContents = () => {
                     {r.description && <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '10px' }}>{r.description}</p>}
                     {r.safety_rules?.length > 0 && (
                       <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>안전수칙</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>?�전?�칙</div>
                         <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.9rem', color: '#334155' }}>
                           {r.safety_rules.map((rule, i) => (
                             <li key={i}>{rule}</li>
@@ -191,12 +190,12 @@ const ManagerContents = () => {
         </div>
       )}
 
-      {/* 안전수칙 리스트 */}
+      {/* ?�전?�칙 리스??*/}
       {activeTab === TAB.RULES && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>안전수칙 ({allRules.length}건)</div>
+          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '6px' }}>?�전?�칙 ({allRules.length}�?</div>
           {allRules.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>등록된 안전수칙이 없습니다.</div>
+            <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>?�록???�전?�칙???�습?�다.</div>
           ) : (
             allRules.map((item, i) => (
               <div key={i} style={{ padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem' }}>

@@ -1,256 +1,55 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
 :root {
-  /* Futuristic Neon Theme */
-  --bg-primary: #050b14;   /* Darker Navy/Black */
-  --bg-secondary: #0f172a; /* Card Background */
-  --accent-primary: #f97316; /* Neon Orange */
-  --accent-secondary: #0ea5e9; /* Neon Blue */
-  --accent-danger: #ef4444;    /* Danger Red */
-  
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-dark: #1e293b;
-
-  --glass-bg: rgba(15, 23, 42, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #f8fafc;
+  color: #1e293b;
 }
 
 body {
-  font-family: var(--font-main);
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  overflow: hidden; /* Full screen dashboard app */
+  margin: 0;
+  min-height: 100vh;
 }
 
-/* Glassmorphism Utility */
-.glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+/* 🚀 프리미엄 슬림 & 투명 스크롤바 표준 */
+
+/* 1. 전체 스크롤바 너비 설정 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Dashboard Grid Layout (Desktop Default) */
-.dashboard-grid-with-nav {
-  display: grid;
-  grid-template-columns: 80px 280px 1fr 320px; /* Nav | Status | Map | Alerts */
-  grid-template-rows: 1fr 280px;
-  gap: var(--spacing-md);
-  height: 100vh;
-  padding: var(--spacing-md);
-  overflow: hidden;
-}
-
-/* Sidebar (Desktop) */
-.sidebar-panel {
-  grid-column: 1; 
-  grid-row: 1 / span 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem 0;
-  z-index: 50;
-}
-.logo-container { margin-bottom: 2rem; }
-.nav-menu-main { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
-.nav-menu-bottom { display: flex; flex-direction: column; gap: 0.5rem; }
-
-/* Desktop Areas */
-.area-status { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: var(--spacing-md); overflow-y: auto; }
-.area-map { grid-column: 3; grid-row: 1; position: relative; overflow: hidden; }
-.area-sidebar-right { grid-column: 4; grid-row: 1 / span 2; display: flex; flex-direction: column; gap: var(--spacing-md); height: 100%; overflow: hidden; }
-.area-bottom { grid-column: 3; grid-row: 2; display: flex; gap: var(--spacing-md); overflow-x: auto; padding-bottom: 4px; }
-
-/* Tablet Layout (Hide Right Sidebar, Adjust Grid) */
-@media (max-width: 1400px) {
-  .dashboard-grid-with-nav {
-    grid-template-columns: 80px 260px 1fr;
-    grid-template-rows: 1fr 240px;
-  }
-  .area-sidebar-right { display: none; } 
-  .area-bottom { grid-column: 2 / span 2; grid-row: 2; }
-  .area-status { grid-column: 2; grid-row: 1; }
-  .area-map { grid-column: 3; grid-row: 1; }
-}
-
-/* Mobile Layout (Single Column + Bottom Nav) */
-@media (max-width: 768px) {
-  .dashboard-grid-with-nav {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: var(--spacing-sm);
-    padding-bottom: 80px; /* Space for Bottom Nav */
-    overflow-y: auto;
-    gap: var(--spacing-md);
-  }
-
-  /* 1. Sidebar -> Bottom Navigation Bar */
-  .sidebar-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 70px;
-    flex-direction: row;
-    justify-content: space-around;
-    padding: 0.5rem;
-    background: rgba(15, 23, 42, 0.95); /* More opaque for visibility */
-    border-radius: 16px 16px 0 0;
-    border: 1px solid var(--glass-border);
-    border-bottom: none;
-  }
-  
-  .logo-container { display: none; } /* Hide logo on mobile nav */
-  .nav-menu-main { flex-direction: row; justify-content: space-around; width: 100%; }
-  .nav-menu-bottom { display: none; } /* Hide settings/logout on mobile nav for simplicity */
-  
-  /* 2. Map (Show First!) */
-  .area-map { 
-    order: 1; 
-    height: 45vh; 
-    min-height: 300px;
-    flex-shrink: 0; 
-  }
-
-  /* 3. Status Stats (Show Second) */
-  .area-status { 
-    order: 2; 
-    overflow: visible; 
-  }
-
-  /* 4. Jobs (Show Last) */
-  .area-bottom { 
-    order: 3; 
-    flex-direction: column; 
-    overflow-x: visible; 
-  }
-  
-  /* Hide Right Sidebar */
-  .area-sidebar-right { display: none; }
-}
-
-/* Typography & Components */
-h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; }
-.text-xs { font-size: 0.75rem; }
-.text-sm { font-size: 0.875rem; }
-.text-xl { font-size: 1.25rem; }
-.text-2xl { font-size: 1.5rem; }
-
-.text-accent { color: var(--accent-primary); }
-.text-blue { color: var(--accent-secondary); }
-.text-danger { color: var(--accent-danger); }
-.text-muted { color: var(--text-muted); }
-.text-dark { color: var(--text-dark) !important; }
-
-.card-light {
-  background: white;
-  color: var(--text-dark);
-}
-
-/* Manager 페이지 전용: 밝은 배경에 어두운 텍스트 강제 */
-main[style*="background: #f8fafc"] {
-  color: var(--text-dark);
-}
-
-main[style*="background: #f8fafc"] h1,
-main[style*="background: #f8fafc"] h2,
-main[style*="background: #f8fafc"] h3,
-main[style*="background: #f8fafc"] h4,
-main[style*="background: #f8fafc"] p,
-main[style*="background: #f8fafc"] div,
-main[style*="background: #f8fafc"] span,
-main[style*="background: #f8fafc"] label {
-  color: var(--text-dark);
-}
-
-/* input, select 폼 요소 */
-main[style*="background: #f8fafc"] input:not([type="checkbox"]):not([type="radio"]),
-main[style*="background: #f8fafc"] select,
-main[style*="background: #f8fafc"] textarea {
-  color: var(--text-dark);
-  background: white;
-}
-
-/* 버튼은 제외 (이미 명시적 색상 있음) */
-main[style*="background: #f8fafc"] button[style*="color:"] {
-  /* 버튼은 그대로 유지 */
-}
-
-/* Custom Scrollbar (Slim & Transparent) */
-::-webkit-scrollbar { 
-  width: 4px; 
-  height: 4px; 
-}
-::-webkit-scrollbar-track { 
-  background: transparent; 
-}
-::-webkit-scrollbar-thumb { 
-  background: rgba(0, 0, 0, 0.05); 
-  border-radius: 10px; 
-  transition: background 0.3s;
-}
-::-webkit-scrollbar-thumb:hover { 
-  background: rgba(0, 0, 0, 0.15); 
-}
-
-/* 일일 작업 계획: 라우터 전체·카드 내부 모두 최대한 얇은 투명 스크롤 */
-.daily-plan-body-scroll,
-.daily-plan-thin-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
-}
-.daily-plan-body-scroll::-webkit-scrollbar,
-.daily-plan-thin-scroll::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.daily-plan-body-scroll::-webkit-scrollbar-track,
-.daily-plan-thin-scroll::-webkit-scrollbar-track {
+/* 2. 스크롤바 트랙 (배경) - 투명 유지 */
+::-webkit-scrollbar-track {
   background: transparent;
 }
-.daily-plan-body-scroll::-webkit-scrollbar-thumb,
-.daily-plan-thin-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.12);
+
+/* 3. 스크롤바 핸들 (바) - 둥글고 반투명하게 */
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3); /* 슬레이트 400 반투명 */
   border-radius: 10px;
-}
-.daily-plan-body-scroll::-webkit-scrollbar-thumb:hover,
-.daily-plan-thin-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.22);
+  transition: all 0.2s;
 }
 
-/* Dark mode scrollbar support */
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
-  }
+/* 4. 마우스 호버 시 조금 더 선명하게 */
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
 }
 
-/* Animation Utility */
-.animate-pulse-red { animation: pulseRed 2s infinite; }
-@keyframes pulseRed {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+/* 5. 파이어폭스 대응 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+/* 유틸리티: 텍스트 시인성 강제 (Skill 적용) */
+.text-premium {
+  color: #0f172a !important;
+}
+
+.text-sub {
+  color: #475569 !important;
 }

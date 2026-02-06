@@ -3,8 +3,8 @@ import { ClipboardCheck, Calendar } from 'lucide-react';
 import { getMyAttendance } from '@/api/attendanceApi';
 
 /**
- * 작업자 - 나의 출근현황 (기간별)
- * 날짜, 출근 시각, 퇴근 시각, 근로시간, 근무회사, 나의 파트, 작업내용
+ * ?�업??- ?�의 출근?�황 (기간�?
+ * ?�짜, 출근 ?�각, ?�근 ?�각, 근로?�간, 근무?�사, ?�의 ?�트, ?�업?�용
  */
 const formatDate = (d) => {
     if (!d) return '-';
@@ -23,8 +23,8 @@ const formatWorkMinutes = (min) => {
     if (min == null) return '-';
     const h = Math.floor(min / 60);
     const m = min % 60;
-    if (h === 0) return `${m}분`;
-    return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+    if (h === 0) return `${m}�?;
+    return m === 0 ? `${h}?�간` : `${h}?�간 ${m}�?;
 };
 
 const WorkerAttendance = () => {
@@ -47,8 +47,8 @@ const WorkerAttendance = () => {
                 const data = await getMyAttendance(startStr, endStr);
                 setList(Array.isArray(data) ? data : []);
             } catch (err) {
-                console.error('나의 출근현황 로드 실패:', err);
-                setError('출근 내역을 불러오지 못했습니다.');
+                console.error('?�의 출근?�황 로드 ?�패:', err);
+                setError('출근 ?�역??불러?��? 못했?�니??');
                 setList([]);
             } finally {
                 setLoading(false);
@@ -61,7 +61,7 @@ const WorkerAttendance = () => {
         <div style={{ padding: '1rem', background: '#f1f5f9', minHeight: '100%', paddingBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                 <ClipboardCheck size={26} color="#3b82f6" />
-                <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>나의 출근현황</h1>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>?�의 출근?�황</h1>
             </div>
 
             <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -78,14 +78,14 @@ const WorkerAttendance = () => {
                         fontSize: '0.9rem',
                     }}
                 >
-                    <option value="7">최근 7일</option>
-                    <option value="14">최근 14일</option>
-                    <option value="30">최근 30일</option>
+                    <option value="7">최근 7??/option>
+                    <option value="14">최근 14??/option>
+                    <option value="30">최근 30??/option>
                 </select>
             </div>
 
             {loading && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 중...</div>
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>로딩 �?..</div>
             )}
             {error && (
                 <div style={{ padding: '1rem', background: '#fef2f2', color: '#b91c1c', borderRadius: '8px', marginBottom: '1rem' }}>
@@ -94,7 +94,7 @@ const WorkerAttendance = () => {
             )}
             {!loading && !error && list.length === 0 && (
                 <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    해당 기간 출근 기록이 없습니다.
+                    ?�당 기간 출근 기록???�습?�다.
                 </div>
             )}
             {!loading && list.length > 0 && (
@@ -121,15 +121,15 @@ const WorkerAttendance = () => {
                                     background: row.status === 'LATE' ? '#fef3c7' : '#dcfce7',
                                     color: row.status === 'LATE' ? '#b45309' : '#166534',
                                 }}>
-                                    {row.status === 'LATE' ? '지각' : row.status === 'LEAVE_EARLY' ? '조퇴' : '정상'}
+                                    {row.status === 'LATE' ? '지�? : row.status === 'LEAVE_EARLY' ? '조퇴' : '?�상'}
                                 </span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', fontSize: '0.85rem', color: '#475569' }}>
                                 <span>출근</span>
                                 <span style={{ textAlign: 'right' }}>{formatTime(row.check_in_time)}</span>
-                                <span>퇴근</span>
+                                <span>?�근</span>
                                 <span style={{ textAlign: 'right' }}>{formatTime(row.check_out_time)}</span>
-                                <span>근로시간</span>
+                                <span>근로?�간</span>
                                 <span style={{ textAlign: 'right' }}>{formatWorkMinutes(row.work_minutes)}</span>
                             </div>
                             {(row.company_name || row.my_part) && (

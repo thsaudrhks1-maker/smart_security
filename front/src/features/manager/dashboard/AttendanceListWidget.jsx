@@ -36,8 +36,8 @@ const AttendanceListWidget = ({ projectId }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PRESENT': return { bg: '#dcfce7', text: '#16a34a', label: '정상출근' };
-      case 'LATE': return { bg: '#fef9c3', text: '#ca8a04', label: '지각' };
+      case 'PRESENT': return { bg: '#dcfce7', text: '#16a34a', label: '?�상출근' };
+      case 'LATE': return { bg: '#fef9c3', text: '#ca8a04', label: '지�? };
       case 'LEAVE_EARLY': return { bg: '#ffedd5', text: '#ea580c', label: '조퇴' };
       case 'ABSENT': return { bg: '#fee2e2', text: '#dc2626', label: '결근' };
       default: return { bg: '#f1f5f9', text: '#64748b', label: status };
@@ -61,7 +61,7 @@ const AttendanceListWidget = ({ projectId }) => {
       height: '100%',
       minHeight: '500px'
     }}>
-      {/* 위젯 헤더 */}
+      {/* ?�젯 ?�더 */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -77,7 +77,7 @@ const AttendanceListWidget = ({ projectId }) => {
           gap: '8px',
           margin: 0
         }}>
-          <Users size={20} color="#6366f1" /> 실시간 출역 현황
+          <Users size={20} color="#6366f1" /> ?�시�?출역 ?�황
         </h3>
         
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -116,7 +116,7 @@ const AttendanceListWidget = ({ projectId }) => {
         </div>
       </div>
 
-      {/* 통계 요약 */}
+      {/* ?�계 ?�약 */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(3, 1fr)', 
@@ -124,8 +124,8 @@ const AttendanceListWidget = ({ projectId }) => {
         marginBottom: '1.5rem' 
       }}>
         <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '4px' }}>전체</div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{attendance.length}명</div>
+          <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '4px' }}>?�체</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e293b' }}>{attendance.length}�?/div>
         </div>
         <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
           <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginBottom: '4px' }}>출근</div>
@@ -134,15 +134,15 @@ const AttendanceListWidget = ({ projectId }) => {
           </div>
         </div>
         <div style={{ background: '#fef2f2', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.75rem', color: '#ef4444', marginBottom: '4px' }}>미출근</div>
+          <div style={{ fontSize: '0.75rem', color: '#ef4444', marginBottom: '4px' }}>미출�?/div>
           <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#dc2626' }}>0</div>
         </div>
       </div>
 
-      {/* 리스트 영역 */}
+      {/* 리스???�역 */}
       <div style={{ flex: 1, overflowY: 'auto', marginRight: '-8px', paddingRight: '8px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>데이터 로딩 중...</div>
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>?�이??로딩 �?..</div>
         ) : attendance.length === 0 ? (
           <div style={{ 
             textAlign: 'center', 
@@ -153,7 +153,7 @@ const AttendanceListWidget = ({ projectId }) => {
             borderRadius: '8px',
             border: '1px dashed #e2e8f0'
           }}>
-            해당 날짜의 출역 기록이 없습니다.
+            ?�당 ?�짜??출역 기록???�습?�다.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -170,7 +170,7 @@ const AttendanceListWidget = ({ projectId }) => {
                   transition: 'transform 0.1s ease',
                   cursor: 'pointer'
                 }}>
-                  {/* 프로필 아바타 (이름 첫글자) */}
+                  {/* ?�로???�바?� (?�름 첫�??? */}
                   <div style={{ 
                     width: '40px', 
                     height: '40px', 
@@ -186,7 +186,7 @@ const AttendanceListWidget = ({ projectId }) => {
                     {item.full_name[0]}
                   </div>
 
-                  {/* 정보 */}
+                  {/* ?�보 */}
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                       <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.95rem' }}>{item.full_name}</span>
@@ -203,7 +203,7 @@ const AttendanceListWidget = ({ projectId }) => {
                     </div>
                   </div>
 
-                  {/* 시간 및 상태 */}
+                  {/* ?�간 �??�태 */}
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ 
                       fontSize: '0.75rem', 
@@ -228,7 +228,7 @@ const AttendanceListWidget = ({ projectId }) => {
         )}
       </div>
 
-      {/* 하단 푸터 */}
+      {/* ?�단 ?�터 */}
       <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f1f5f9' }}>
         <button style={{ 
           width: '100%', 
@@ -245,7 +245,7 @@ const AttendanceListWidget = ({ projectId }) => {
           gap: '4px',
           cursor: 'pointer'
         }}>
-          상세 출역 리포트 보기 <ChevronRight size={16} />
+          ?�세 출역 리포??보기 <ChevronRight size={16} />
         </button>
       </div>
     </div>

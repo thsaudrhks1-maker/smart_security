@@ -1,5 +1,5 @@
 
-from back.database import fetch_one, insert_and_return
+from back.database import fetch_one, fetch_all, insert_and_return
 from typing import Dict, Any
 
 class users_repository:
@@ -7,6 +7,14 @@ class users_repository:
     @staticmethod
     async def get_by_username(username: str):
         return await fetch_one("SELECT * FROM sys_users WHERE username = :u", {"u": username})
+
+    @staticmethod
+    async def get_all():
+        return await fetch_all("SELECT * FROM sys_users")
+
+    @staticmethod
+    async def get_by_company(company_id: int):
+        return await fetch_all("SELECT * FROM sys_users WHERE company_id = :cid", {"cid": company_id})
 
     @staticmethod
     async def create(data: Dict[str, Any]):

@@ -26,7 +26,7 @@ const ManagerAttendance = () => {
                 setAttendanceList(data || []);
             }
         } catch (error) {
-            console.error('출역 데이터 로드 실패:', error);
+            console.error('출역 ?�이??로드 ?�패:', error);
         } finally {
             setLoading(false);
         }
@@ -41,13 +41,13 @@ const ManagerAttendance = () => {
 
     return (
         <div style={{ padding: '2rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* 데이터 헤더 */}
+            {/* ?�이???�더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Users color="#3b82f6" size={28} /> 출역 관리
+                        <Users color="#3b82f6" size={28} /> 출역 관�?
                     </h1>
-                    <p style={{ color: '#64748b', marginTop: '5px' }}>{projectInfo?.name || '프로젝트'}의 일별 근로자 투입 현황을 확인합니다.</p>
+                    <p style={{ color: '#64748b', marginTop: '5px' }}>{projectInfo?.name || '?�로?�트'}???�별 근로???�입 ?�황???�인?�니??</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
@@ -63,13 +63,13 @@ const ManagerAttendance = () => {
                 </div>
             </div>
 
-            {/* 통계 카드 */}
+            {/* ?�계 카드 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
                 {[
-                    { label: '총 투입 인원', value: attendanceList.length, unit: '명', color: '#3b82f6', icon: Users },
-                    { label: '정상 퇴근', value: attendanceList.filter(a => a.check_out_time).length, unit: '명', color: '#10b981', icon: Clock },
-                    { label: '현재 작업 중', value: attendanceList.filter(a => !a.check_out_time).length, unit: '명', color: '#f59e0b', icon: ActivityIcon },
-                    { label: '위험 지역 진입', value: 0, unit: '건', color: '#ef4444', icon: AlertIcon }
+                    { label: '�??�입 ?�원', value: attendanceList.length, unit: '�?, color: '#3b82f6', icon: Users },
+                    { label: '?�상 ?�근', value: attendanceList.filter(a => a.check_out_time).length, unit: '�?, color: '#10b981', icon: Clock },
+                    { label: '?�재 ?�업 �?, value: attendanceList.filter(a => !a.check_out_time).length, unit: '�?, color: '#f59e0b', icon: ActivityIcon },
+                    { label: '?�험 지??진입', value: 0, unit: '�?, color: '#ef4444', icon: AlertIcon }
                 ].map((stat, i) => (
                     <div key={i} style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -86,13 +86,13 @@ const ManagerAttendance = () => {
                 ))}
             </div>
 
-            {/* 리스트 컨트롤 */}
+            {/* 리스??컨트�?*/}
             <div style={{ background: 'white', borderRadius: '16px 16px 0 0', border: '1px solid #e2e8f0', borderBottom: 'none', padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ position: 'relative', width: '350px' }}>
                     <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} size={18} />
                     <input 
                         type="text" 
-                        placeholder="근로자 이름 또는 업체명 검색..."
+                        placeholder="근로???�름 ?�는 ?�체�?검??.."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '10px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.95rem' }}
@@ -100,35 +100,35 @@ const ManagerAttendance = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontWeight: '600', cursor: 'pointer' }}>
-                        <Filter size={18} /> 필터
+                        <Filter size={18} /> ?�터
                     </button>
                     <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '10px', background: '#1e293b', color: 'white', fontWeight: '600', border: 'none', cursor: 'pointer' }}>
-                        <Download size={18} /> 엑셀 다운로드
+                        <Download size={18} /> ?��? ?�운로드
                     </button>
                 </div>
             </div>
 
-            {/* 리스트 테이블 */}
+            {/* 리스???�이�?*/}
             <div style={{ background: 'white', borderRadius: '0 0 16px 16px', border: '1px solid #e2e8f0', flex: 1, overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', position: 'sticky', top: 0, zIndex: 10 }}>
                         <tr>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>근로자명</th>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>소속 업체</th>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>출근 시간</th>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>퇴근 시간</th>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>현장/구역</th>
-                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>상태</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>근로?�명</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>?�속 ?�체</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>출근 ?�간</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>?�근 ?�간</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>?�장/구역</th>
+                            <th style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>?�태</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>데이터를 불러오는 중...</td>
+                                <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>?�이?��? 불러?�는 �?..</td>
                             </tr>
                         ) : filteredList.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>출역 기록이 없습니다.</td>
+                                <td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>출역 기록???�습?�다.</td>
                             </tr>
                         ) : filteredList.map((item, idx) => (
                             <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }} className="table-row-hover">
@@ -161,7 +161,7 @@ const ManagerAttendance = () => {
                                         color: item.check_out_time ? '#64748b' : '#10b981',
                                         border: `1px solid ${item.check_out_time ? '#e2e8f0' : '#a7f3d0'}`
                                     }}>
-                                        {item.check_out_time ? '퇴근' : '작업 중'}
+                                        {item.check_out_time ? '?�근' : '?�업 �?}
                                     </span>
                                 </td>
                             </tr>

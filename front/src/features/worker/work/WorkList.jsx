@@ -18,7 +18,7 @@ const WorkList = () => {
   const [newPlan, setNewPlan] = useState({
       template_id: "",
       zone_id: "",
-      site_id: 1, // Default Site ID (임시)
+      site_id: 1, // Default Site ID (?�시)
       date: new Date().toISOString().split('T')[0],
       description: "",
       equipment_flags: []
@@ -50,7 +50,7 @@ const WorkList = () => {
   const handleCreate = async (e) => {
       e.preventDefault();
       if (!newPlan.template_id || !newPlan.zone_id) {
-          alert("작업 종류와 구역을 선택해주세요.");
+          alert("?�업 종류?� 구역???�택?�주?�요.");
           return;
       }
       
@@ -59,24 +59,24 @@ const WorkList = () => {
               ...newPlan,
               template_id: Number(newPlan.template_id),
               zone_id: Number(newPlan.zone_id),
-              allocations: [] // 작업자 배정은 추후 구현
+              allocations: [] // ?�업??배정?� 추후 구현
           });
-          alert("작업이 등록되었습니다.");
+          alert("?�업???�록?�었?�니??");
           setShowForm(false);
           loadAllData(); // Refresh
       } catch (err) {
-          alert("등록 실패: " + (err.response?.data?.detail || err.message));
+          alert("?�록 ?�패: " + (err.response?.data?.detail || err.message));
       }
   };
 
   const handleDelete = async (id) => {
-      if(!window.confirm("정말 삭제하시겠습니까?")) return;
+      if(!window.confirm("?�말 ??��?�시겠습?�까?")) return;
       try {
           await workApi.deletePlan(id);
           // UI Optimistic Update or Refresh
           setPlans(plans.filter(p => p.id !== id));
       } catch(err) {
-          alert("삭제 실패");
+          alert("??�� ?�패");
       }
   }
 
@@ -94,14 +94,14 @@ const WorkList = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>금일 작업 현황</h2>
+           <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>금일 ?�업 ?�황</h2>
            <p className="text-muted">{new Date().toLocaleDateString()} Daily Work Plan</p>
         </div>
         
         {user?.role === 'manager' && (
           <button onClick={() => setShowForm(true)} className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <Plus size={18} />
-            작업 등록
+            ?�업 ?�록
           </button>
         )}
       </div>
@@ -110,56 +110,56 @@ const WorkList = () => {
       {showForm && (
           <div className="glass-panel animate-fade-in" style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid var(--primary-color)' }}>
               <div style={{display:'flex', justifyContent:'space-between', marginBottom:'1rem'}}>
-                  <h3>새 작업 등록</h3>
+                  <h3>???�업 ?�록</h3>
                   <button onClick={() => setShowForm(false)} className="btn-icon"><X size={20}/></button>
               </div>
               
               <form onSubmit={handleCreate} style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                   
-                  {/* 날짜 */}
+                  {/* ?�짜 */}
                   <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>날짜</label>
+                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�짜</label>
                       <input type="date" className="input-field" 
                         value={newPlan.date} 
                         onChange={e => setNewPlan({...newPlan, date: e.target.value})} 
                       />
                   </div>
 
-                  {/* 작업 템플릿 (DB 연동) */}
+                  {/* ?�업 ?�플�?(DB ?�동) */}
                   <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>작업 종류 <span style={{color:'red'}}>*</span></label>
+                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 종류 <span style={{color:'red'}}>*</span></label>
                       <select className="input-field" 
                         value={newPlan.template_id}
                         onChange={e => setNewPlan({...newPlan, template_id: e.target.value})}
                       >
-                          <option value="">선택하세요</option>
+                          <option value="">?�택?�세??/option>
                           {templates.map(t => (
                               <option key={t.id} value={t.id}>
-                                  {t.work_type} (위험도: {t.base_risk_score})
+                                  {t.work_type} (?�험?? {t.base_risk_score})
                               </option>
                           ))}
                       </select>
                   </div>
 
-                  {/* 구역 (DB 연동) */}
+                  {/* 구역 (DB ?�동) */}
                   <div>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>작업 구역 <span style={{color:'red'}}>*</span></label>
+                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 구역 <span style={{color:'red'}}>*</span></label>
                       <select className="input-field"
                         value={newPlan.zone_id}
                         onChange={e => setNewPlan({...newPlan, zone_id: e.target.value})}
                       >
-                          <option value="">선택하세요</option>
-                          {zones.length === 0 && <option disabled>등록된 구역이 없습니다</option>}
+                          <option value="">?�택?�세??/option>
+                          {zones.length === 0 && <option disabled>?�록??구역???�습?�다</option>}
                           {zones.map(z => (
                               <option key={z.id} value={z.id}>{z.name} ({z.type})</option>
                           ))}
                       </select>
                   </div>
 
-                  {/* 설명 */}
+                  {/* ?�명 */}
                   <div style={{gridColumn:'1/-1'}}>
-                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>작업 내용 상세</label>
-                      <input type="text" className="input-field" placeholder="예: 2층 A구역 거푸집 조립 작업"
+                      <label style={{display:'block', marginBottom:'0.5rem', fontSize:'0.9rem'}}>?�업 ?�용 ?�세</label>
+                      <input type="text" className="input-field" placeholder="?? 2�?A구역 거푸�?조립 ?�업"
                         value={newPlan.description}
                         onChange={e => setNewPlan({...newPlan, description: e.target.value})}
                       />
@@ -167,7 +167,7 @@ const WorkList = () => {
 
                   <div style={{gridColumn:'1/-1', textAlign:'right', marginTop:'1rem'}}>
                       <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary" style={{marginRight:'0.5rem'}}>취소</button>
-                      <button type="submit" className="btn btn-primary">등록하기</button>
+                      <button type="submit" className="btn btn-primary">?�록?�기</button>
                   </div>
               </form>
           </div>
@@ -177,7 +177,7 @@ const WorkList = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
         {plans.length === 0 && (
             <div style={{gridColumn:'1/-1', textAlign:'center', padding:'3rem', color:'var(--text-muted)'}}>
-                등록된 작업이 없습니다.
+                ?�록???�업???�습?�다.
             </div>
         )}
         
@@ -197,11 +197,11 @@ const WorkList = () => {
                     <MapPin size={16} /> {plan.zone_name}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                     <User size={16} /> {plan.allocations?.length || 0}명 투입
+                     <User size={16} /> {plan.allocations?.length || 0}�??�입
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                      <AlertTriangle size={16} color={getRiskColor(plan.calculated_risk_score)} /> 
-                     위험도: {plan.calculated_risk_score} 
+                     ?�험?? {plan.calculated_risk_score} 
                 </div>
             </div>
 
@@ -210,12 +210,12 @@ const WorkList = () => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                         {plan.allocations.map(a => (
                             <div key={a.id} style={{ fontSize: '0.8rem', padding: '2px 8px', background: 'rgba(0,0,0,0.3)', borderRadius: '4px', display:'flex', alignItems:'center', gap:'4px' }}>
-                                {a.role === '화기감시' || a.role === '팀장' ? '⭐' : ''} {a.worker_name}
+                                {a.role === '?�기감시' || a.role === '?�?? ? '�? : ''} {a.worker_name}
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>작업자 미배정</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>?�업??미배??/span>
                 )}
             </div>
           </div>

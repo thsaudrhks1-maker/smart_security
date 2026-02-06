@@ -2,8 +2,8 @@ import React from 'react';
 import { Layers, AlertTriangle, HardHat } from 'lucide-react';
 
 /**
- * [컴포넌트] BuildingSectionView
- * 건물 단면도 형태로 층별 상태를 시각화하고 선택할 수 있는 사이드바
+ * [컴포?�트] BuildingSectionView
+ * 건물 ?�면???�태�?층별 ?�태�??�각?�하�??�택?????�는 ?�이?�바
  */
 const BuildingSectionView = ({ 
   project, 
@@ -12,27 +12,27 @@ const BuildingSectionView = ({
   allZones = [],
   allPlans = [],
   allRisks = [],
-  compact = false  // 근로자 앱용 컴팩트 모드
+  compact = false  // 근로???�용 컴팩??모드
 }) => {
-  // 층 리스트 생성 (B2, B1, 1F, 2F...)
+  // �?리스???�성 (B2, B1, 1F, 2F...)
   const levels = React.useMemo(() => {
     if (project && project.ground_floors !== undefined && project.basement_floors !== undefined) {
       const res = [];
-      // 지상층 (역순으로 쌓아야 위에서 아래로 보임)
+      // 지?�층 (??��?�로 ?�아???�에???�래�?보임)
       for (let i = project.ground_floors; i >= 1; i--) {
         res.push(`${i}F`);
       }
-      // 지하층
+      // 지?�층
       for (let i = 1; i <= project.basement_floors; i++) {
         res.push(`B${i}`);
       }
       return res;
     }
     
-    // project 정보가 없으면 zones에서 고유한 level 추출
+    // project ?�보가 ?�으�?zones?�서 고유??level 추출
     if (allZones && allZones.length > 0) {
       const uniqueLevels = [...new Set(allZones.map(z => z.level).filter(Boolean))];
-      // 정렬: 숫자F (내림차순), B숫자 (오름차순)
+      // ?�렬: ?�자F (?�림차순), B?�자 (?�름차순)
       return uniqueLevels.sort((a, b) => {
         const aIsGround = a.includes('F');
         const bIsGround = b.includes('F');
@@ -42,14 +42,14 @@ const BuildingSectionView = ({
         if (!aIsGround && !bIsGround) {
           return parseInt(a.replace('B', '')) - parseInt(b.replace('B', '')); // B1, B2
         }
-        return aIsGround ? -1 : 1; // 지상층이 위에
+        return aIsGround ? -1 : 1; // 지?�층???�에
       });
     }
     
     return ['1F'];
   }, [project, allZones]);
 
-  // 층별 통계 계산
+  // 층별 ?�계 계산
   const levelStats = React.useMemo(() => {
     const stats = {};
     levels.forEach(lvl => {
@@ -61,7 +61,7 @@ const BuildingSectionView = ({
     return stats;
   }, [levels, allZones, allPlans, allRisks]);
 
-  // 컴팩트 모드 스타일 (근로자 앱용)
+  // 컴팩??모드 ?��???(근로???�용)
   const containerStyle = compact ? {
     width: '70px',
     padding: '6px',
@@ -122,7 +122,7 @@ const BuildingSectionView = ({
         justifyContent: 'center',
         flexShrink: 0
       }}>
-        <Layers size={iconSize} /> {compact ? '층' : '단면도'}
+        <Layers size={iconSize} /> {compact ? '�? : '?�면??}
       </div>
 
       {levels.map((lvl) => {
@@ -158,17 +158,17 @@ const BuildingSectionView = ({
               {lvl}
             </div>
 
-            {/* 상태 인디케이터 배지 */}
+            {/* ?�태 ?�디케?�터 배�? */}
             <div style={{ display: 'flex', gap: compact ? '2px' : '3px', marginTop: compact ? '1px' : '2px' }}>
               {plansCount > 0 && (
-                <div title={`작업 ${plansCount}건`} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#3b82f6' }} />
+                <div title={`?�업 ${plansCount}�?} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#3b82f6' }} />
               )}
               {risksCount > 0 && (
-                <div title={`위험 ${risksCount}건`} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#ef4444' }} />
+                <div title={`?�험 ${risksCount}�?} style={{ width: badgeSize, height: badgeSize, borderRadius: '50%', background: '#ef4444' }} />
               )}
             </div>
 
-            {/* 사이드 라벨 (작업/위험 수) - 관리자 모드에만 표시 */}
+            {/* ?�이???�벨 (?�업/?�험 ?? - 관리자 모드?�만 ?�시 */}
             {!compact && isActive && (plansCount > 0 || risksCount > 0) && (
               <div style={{
                 position: 'absolute',
@@ -204,7 +204,7 @@ const BuildingSectionView = ({
           marginTop: compact ? '0' : '8px'
         }} />
         <div style={{ fontSize: compact ? '0.45rem' : '0.5rem', color: '#94a3b8', marginTop: compact ? '3px' : '4px', fontWeight: 'bold' }}>
-          {compact ? '지면' : 'GROUND'}
+          {compact ? '지�? : 'GROUND'}
         </div>
       </div>
     </div>

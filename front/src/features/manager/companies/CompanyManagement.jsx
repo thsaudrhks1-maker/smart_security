@@ -23,12 +23,12 @@ const CompanyManagement = () => {
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>🏢 협력사 관리</h1>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>?�� ?�력??관�?/h1>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
         {loading ? (
-             <div style={{ colSpan: '3', textAlign: 'center', padding: '2rem' }}>로딩 중...</div>
+             <div style={{ colSpan: '3', textAlign: 'center', padding: '2rem' }}>로딩 �?..</div>
         ) : companies.length > 0 ? (
           companies.map(company => (
             <div key={company.id} style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
@@ -39,7 +39,7 @@ const CompanyManagement = () => {
                   </div>
                   <div>
                     <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>{company.name}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{company.type || '전문건설'}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{company.type || '?�문건설'}</div>
                   </div>
                 </div>
                 <span style={{ 
@@ -56,14 +56,14 @@ const CompanyManagement = () => {
               
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem', marginTop: '1rem' }}>
                 <button style={{ width: '100%', padding: '10px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', color: '#475569' }}>
-                   업체 상세 정보
+                   ?�체 ?�세 ?�보
                 </button>
               </div>
             </div>
           ))
         ) : (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-            참여 중인 협력사가 없습니다.
+            참여 중인 ?�력?��? ?�습?�다.
           </div>
         )}
       </div>

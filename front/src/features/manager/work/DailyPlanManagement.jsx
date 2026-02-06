@@ -15,10 +15,10 @@ import { Calendar, Plus, MapPin, HardHat, Users, AlertTriangle, ChevronLeft, Che
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
 
 const RISK_TYPES = [
-  { value: 'HEAVY_EQUIPMENT', label: '중장비' },
-  { value: 'FIRE', label: '화재' },
-  { value: 'FALL', label: '낙하물' },
-  { value: 'ETC', label: '기타' },
+  { value: 'HEAVY_EQUIPMENT', label: '중장�? },
+  { value: 'FIRE', label: '?�재' },
+  { value: 'FALL', label: '?�하�? },
+  { value: 'ETC', label: '기�?' },
 ];
 
 const globalStyles = `
@@ -114,14 +114,14 @@ const DailyPlanManagement = () => {
   useEffect(() => { loadZones(); }, [siteId]);
   useEffect(() => { loadDangerZones(); }, [selectedDate]);
 
-  // 1. 현장별 필터링 (건물 단면도 통계용)
+  // 1. ?�장�??�터�?(건물 ?�면???�계??
   const plansInSite = useMemo(() => (siteId != null ? plans.filter((p) => p.site_id === siteId) : plans), [plans, siteId]);
   const risksInSite = useMemo(() => {
     const siteZoneIds = new Set(zones.map(z => z.id));
     return dangerZones.filter(d => siteZoneIds.has(d.zone_id));
   }, [dangerZones, zones]);
 
-  // 2. 층별 필터링 (맵 및 우측 리스트용)
+  // 2. 층별 ?�터�?(�?�??�측 리스?�용)
   const plansInLevel = useMemo(() => {
     const levelZoneIds = new Set(filteredZones.map(z => z.id));
     return plansInSite.filter(p => levelZoneIds.has(p.zone_id));
@@ -145,9 +145,9 @@ const DailyPlanManagement = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: '800', color: '#000000', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Calendar color="#3b82f6" size={28} /> 일일 작업 계획
+            <Calendar color="#3b82f6" size={28} /> ?�일 ?�업 계획
           </h1>
-          <p style={{ color: '#1e293b', marginTop: '5px', fontWeight: '600' }}>작업 위치(구역)를 선택해 근무자에게 배정합니다.</p>
+          <p style={{ color: '#1e293b', marginTop: '5px', fontWeight: '600' }}>?�업 ?�치(구역)�??�택??근무?�에�?배정?�니??</p>
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -157,9 +157,9 @@ const DailyPlanManagement = () => {
               onChange={(e) => setSiteId(e.target.value ? Number(e.target.value) : null)}
               style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', minWidth: '160px' }}
             >
-              <option value="">현장 전체</option>
+              <option value="">?�장 ?�체</option>
               {sites.map((s) => (
-                <option key={s.id} value={s.id}>{s.name || `현장 ${s.id}`}</option>
+                <option key={s.id} value={s.id}>{s.name || `?�장 ${s.id}`}</option>
               ))}
             </select>
           )}
@@ -172,15 +172,15 @@ const DailyPlanManagement = () => {
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem', padding: '0.85rem 1.25rem', background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.9rem' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><HardHat size={18} color="#3b82f6" /> <strong>현장 작업</strong> <span style={{ color: '#3b82f6', fontWeight: '800' }}>{plansInSite.length}건</span></span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} color="#ea580c" /> <strong>위험 구역</strong> <span style={{ color: '#ea580c', fontWeight: '800' }}>{risksInSite.length}건</span></span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18} color="#64748b" /> <strong>배정 인원</strong> <span style={{ color: '#475569', fontWeight: '800' }}>{plansInSite.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}명</span></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><HardHat size={18} color="#3b82f6" /> <strong>?�장 ?�업</strong> <span style={{ color: '#3b82f6', fontWeight: '800' }}>{plansInSite.length}�?/span></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ShieldAlert size={18} color="#ea580c" /> <strong>?�험 구역</strong> <span style={{ color: '#ea580c', fontWeight: '800' }}>{risksInSite.length}�?/span></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Users size={18} color="#64748b" /> <strong>배정 ?�원</strong> <span style={{ color: '#475569', fontWeight: '800' }}>{plansInSite.reduce((acc, p) => acc + (p.allocations?.length ?? 0), 0)}�?/span></span>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <div style={{ display: 'flex', gap: '1.5rem', paddingBottom: '1rem', height: '100%', minHeight: '520px' }}>
           
-          {/* [NEW] 건물 단면도 선택기 */}
+          {/* [NEW] 건물 ?�면???�택�?*/}
           {project && (
             <BuildingSectionView 
               project={project}
@@ -203,25 +203,25 @@ const DailyPlanManagement = () => {
                   height="100%"
                   zoom={19}
                   onZoneClick={(zone) => { 
-                    // Zone에 PENDING 위험이 있는지 확인
+                    // Zone??PENDING ?�험???�는지 ?�인
                     const pendingDangers = risksInLevel.filter(r => r.zone_id === zone.id && r.status === 'PENDING');
-                    console.log('🔍 [매니저] Zone 클릭:', zone.id, '| PENDING 신고:', pendingDangers);
+                    console.log('?�� [매니?�] Zone ?�릭:', zone.id, '| PENDING ?�고:', pendingDangers);
                     
                     if (pendingDangers.length > 0) {
-                      // 해당 Zone의 모든 PENDING 신고를 전달 (사진 통합 표시용)
+                      // ?�당 Zone??모든 PENDING ?�고�??�달 (?�진 ?�합 ?�시??
                       const reportWithZone = {
-                        ...pendingDangers[0], // 첫 번째 신고의 기본 정보 사용
+                        ...pendingDangers[0], // �?번째 ?�고??기본 ?�보 ?�용
                         zoneName: zone.name,
                         zoneLevel: zone.level,
-                        allPendingReports: pendingDangers // 모든 PENDING 신고 포함
+                        allPendingReports: pendingDangers // 모든 PENDING ?�고 ?�함
                       };
-                      console.log('🔍 전달할 데이터:', reportWithZone);
+                      console.log('?�� ?�달???�이??', reportWithZone);
                       
-                      // PENDING 위험 → 승인 모달
+                      // PENDING ?�험 ???�인 모달
                       setSelectedPendingReport(reportWithZone);
                       setShowApprovalModal(true);
                     } else {
-                      // 일반 Zone → 작업/위험 선택 모달
+                      // ?�반 Zone ???�업/?�험 ?�택 모달
                       setSelectedZoneForAction(zone); 
                       setShowZoneActionModal(true); 
                     }
@@ -244,7 +244,7 @@ const DailyPlanManagement = () => {
           <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: '#f1f5f9' }}>
-                <HardHat size={20} color="#3b82f6" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>일일 작업 ({selectedLevel})</span>
+                <HardHat size={20} color="#3b82f6" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>?�일 ?�업 ({selectedLevel})</span>
                 <button onClick={() => setShowModal(true)} style={{ marginLeft: 'auto', padding: '6px 12px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><Plus size={16} /></button>
               </div>
               <div style={{ padding: '1rem', maxHeight: '420px', overflowY: 'auto' }}>
@@ -254,7 +254,7 @@ const DailyPlanManagement = () => {
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               <div style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', background: '#fff7ed' }}>
-                <ShieldAlert size={20} color="#ea580c" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>위험 구역 ({selectedLevel})</span>
+                <ShieldAlert size={20} color="#ea580c" /> <span style={{ marginLeft: '10px', fontWeight: '700' }}>?�험 구역 ({selectedLevel})</span>
                 <button onClick={() => { setInitialZoneId(''); setShowDangerModal(true); }} style={{ marginLeft: 'auto', padding: '6px 12px', background: '#ea580c', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><Plus size={16} /></button>
               </div>
               <div style={{ padding: '1rem' }}>
@@ -264,7 +264,7 @@ const DailyPlanManagement = () => {
                       <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#000000' }}>{zones.find(z => z.id === d.zone_id)?.name}</div>
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>{d.description}</div>
                     </div>
-                    <button onClick={async () => { if (window.confirm('삭제하시겠습니까?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer' }}><X size={16} /></button>
+                    <button onClick={async () => { if (window.confirm('??��?�시겠습?�까?')) { await safetyApi.deleteDailyDangerZone(d.id); loadDangerZones(); } }} style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer' }}><X size={16} /></button>
                   </div>
                 ))}
               </div>
@@ -293,7 +293,7 @@ const DailyPlanManagement = () => {
       {showDangerModal && <DangerZoneModal selectedDate={selectedDate} zones={zones} onClose={() => { setShowDangerModal(false); setInitialZoneId(''); }} onSuccess={() => { loadDangerZones(); setShowDangerModal(false); setInitialZoneId(''); }} initialZoneId={initialZoneId} />}
       {editPlanId != null && <EditPlanModal planId={editPlanId} zones={zones} onClose={() => setEditPlanId(null)} onSuccess={() => { setEditPlanId(null); loadPlans(); }} />}
       
-      {/* 근로자 신고 승인 모달 */}
+      {/* 근로???�고 ?�인 모달 */}
       {showApprovalModal && selectedPendingReport && (
         <DangerReportApprovalModal 
           open={showApprovalModal}
@@ -319,7 +319,7 @@ const DailyPlanMapLegend = ({ plans, dangerZones }) => {
           <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: WORK_TYPE_COLORS[i % WORK_TYPE_COLORS.length] }} /> {wt}
         </span>
       ))}
-      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: '600' }}><span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} /> 위험 구역</span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#1e293b', fontWeight: '600' }}><span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626' }} /> ?�험 구역</span>
     </div>
   );
 };
@@ -329,8 +329,8 @@ const PlanCard = ({ plan, dangerZones, onEdit, onDelete }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
       <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#1e293b' }}>{plan.zone_name}</span>
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={onEdit} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.8rem' }}>수정</button>
-        <button onClick={onDelete} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>삭제</button>
+        <button onClick={onEdit} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.8rem' }}>?�정</button>
+        <button onClick={onDelete} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>??��</button>
       </div>
     </div>
     <div style={{ fontWeight: '800', marginBottom: '0.5rem', color: '#1e293b' }}>{plan.work_type}</div>
@@ -345,7 +345,7 @@ const ZoneActionModal = ({ zone, onClose, onSelectWorkPlan, onSelectDangerZone }
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: '700' }}>구역 설정</h3>
+        <h3 style={{ color: '#1e293b', marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: '700' }}>구역 ?�정</h3>
         <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
           <MapPin size={16} style={{ display: 'inline', marginRight: '4px' }} />
           {zone.name} ({zone.level})
@@ -371,7 +371,7 @@ const ZoneActionModal = ({ zone, onClose, onSelectWorkPlan, onSelectDangerZone }
             onMouseOver={(e) => e.target.style.background = '#2563eb'}
             onMouseOut={(e) => e.target.style.background = '#3b82f6'}
           >
-            <HardHat size={20} /> 작업 배정
+            <HardHat size={20} /> ?�업 배정
           </button>
           <button 
             onClick={onSelectDangerZone}
@@ -393,7 +393,7 @@ const ZoneActionModal = ({ zone, onClose, onSelectWorkPlan, onSelectDangerZone }
             onMouseOver={(e) => e.target.style.background = '#c2410c'}
             onMouseOut={(e) => e.target.style.background = '#ea580c'}
           >
-            <ShieldAlert size={20} /> 위험 구역 등록
+            <ShieldAlert size={20} /> ?�험 구역 ?�록
           </button>
           <button 
             onClick={onClose}
@@ -428,20 +428,20 @@ const DangerZoneModal = ({ selectedDate, zones, onClose, onSuccess, initialZoneI
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>위험 구역 등록</h3>
+        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�험 구역 ?�록</h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <select value={form.zone_id} onChange={e => setForm({ ...form, zone_id: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required>
-            <option value="">구역 선택</option>
+            <option value="">구역 ?�택</option>
             {zones.map(z => <option key={z.id} value={z.id}>{z.name} ({z.level})</option>)}
           </select>
           <select value={form.risk_type} onChange={e => setForm({ ...form, risk_type: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required>
-            <option value="">위험 유형 선택</option>
+            <option value="">?�험 ?�형 ?�택</option>
             {RISK_TYPES.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
           </select>
-          <input type="text" placeholder="위험 설명 (예: 크레인 작업 중)" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required />
+          <input type="text" placeholder="?�험 ?�명 (?? ?�레???�업 �?" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b', borderRadius: '6px', border: '1px solid #e2e8f0' }} required />
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: '6px', background: '#f1f5f9', color: '#475569', border: 'none', cursor: 'pointer' }}>취소</button>
-            <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: '#ea580c', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }}>등록</button>
+            <button type="submit" style={{ flex: 1, padding: '10px', borderRadius: '6px', background: '#ea580c', color: 'white', border: 'none', cursor: 'pointer', fontWeight: '600' }}>?�록</button>
           </div>
         </form>
       </div>
@@ -463,14 +463,14 @@ const EditPlanModal = ({ planId, zones, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await workApi.updatePlan(planId, { description: form.description, allocations: form.worker_ids.map(id => ({ worker_id: id, role: '작업자' })) });
+      await workApi.updatePlan(planId, { description: form.description, allocations: form.worker_ids.map(id => ({ worker_id: id, role: '?�업?? })) });
       onSuccess();
     } catch (err) { alert(err.message); }
   };
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>작업 계획 수정</h3>
+        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�업 계획 ?�정</h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} />
           <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', color: '#1e293b' }}>
@@ -482,7 +482,7 @@ const EditPlanModal = ({ planId, zones, onClose, onSuccess }) => {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" onClick={onClose} style={{ flex: 1, padding: '10px' }}>취소</button>
-            <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none' }}>저장</button>
+            <button type="submit" style={{ flex: 1, padding: '10px', background: '#3b82f6', color: 'white', border: 'none' }}>?�??/button>
           </div>
         </form>
       </div>
@@ -513,29 +513,29 @@ const CreatePlanModal = ({ onClose, currDate, zones, initialZoneId, onSuccess, s
         description: form.description || '',
         equipment_flags: [],
         status: 'PLANNED',
-        allocations: form.worker_ids.map(id => ({ worker_id: id, role: '작업자' }))
+        allocations: form.worker_ids.map(id => ({ worker_id: id, role: '?�업?? }))
       };
       await workApi.createPlan(payload);
       onSuccess();
     } catch (err) { 
-      console.error('작업 배정 에러:', err);
-      alert(err.message || '작업 배정 실패'); 
+      console.error('?�업 배정 ?�러:', err);
+      alert(err.message || '?�업 배정 ?�패'); 
     }
   };
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
       <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '450px', color: '#1e293b' }}>
-        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>작업 배정</h3>
+        <h3 style={{ color: '#1e293b', marginBottom: '1rem' }}>?�업 배정</h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <select value={form.zone_id} onChange={e => setForm({ ...form, zone_id: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} required>
-            <option value="">구역 선택</option>
+            <option value="">구역 ?�택</option>
             {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
           <select value={form.template_id} onChange={e => setForm({ ...form, template_id: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} required>
-            <option value="">작업 선택</option>
+            <option value="">?�업 ?�택</option>
             {templates.map(t => <option key={t.id} value={t.id}>{t.work_type}</option>)}
           </select>
-          <input type="text" placeholder="상세 설명" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} />
+          <input type="text" placeholder="?�세 ?�명" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ padding: '10px', color: '#1e293b' }} />
           <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', color: '#1e293b' }}>
             {workers.map(w => (
               <label key={w.id} style={{ display: 'block', color: '#1e293b' }}>

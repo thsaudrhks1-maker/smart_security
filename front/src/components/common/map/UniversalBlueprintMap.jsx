@@ -3,8 +3,8 @@ import { MapContainer, TileLayer, Polygon, Popup, Tooltip, SVGOverlay } from 're
 import 'leaflet/dist/leaflet.css';
 
 /**
- * 전역 상수 및 스타일
- * 그리드 크기에 맞춰 정사각형 크기를 조정합니다. (기존 0.00012 -> 0.000025로 축소하여 약 5m 그리드에 대응)
+ * ?�역 ?�수 �??��???
+ * 그리???�기??맞춰 ?�사각형 ?�기�?조정?�니?? (기존 0.00012 -> 0.000025�?축소?�여 ??5m 그리?�에 ?�??
  */
 const ZONE_SQUARE_HALF = 0.000025;
 const WORK_TYPE_COLORS = ['#2563eb', '#15803d', '#d97706', '#6d28d9', '#be185d', '#0d9488', '#ea580c', '#4f46e5'];
@@ -25,7 +25,7 @@ const globalMapStyles = `
 `;
 
 /**
- * 좌표를 정사각형 폴리곤 포인트로 변환
+ * 좌표�??�사각형 ?�리�??�인?�로 변??
  */
 export function getZoneSquarePositions(lat, lng, halfDeg = ZONE_SQUARE_HALF) {
   const h = halfDeg;
@@ -38,8 +38,8 @@ export function getZoneSquarePositions(lat, lng, halfDeg = ZONE_SQUARE_HALF) {
 }
 
 /**
- * [공통 컴포넌트] UniversalBlueprintMap
- * 관리자, 매니저, 근로자가 공유하는 통합 평면도 지도 모듈
+ * [공통 컴포?�트] UniversalBlueprintMap
+ * 관리자, 매니?�, 근로?��? 공유?�는 ?�합 ?�면??지??모듈
  */
 const UniversalBlueprintMap = ({
   role = 'MANAGER', // MANAGER | WORKER | ADMIN
@@ -63,7 +63,7 @@ const UniversalBlueprintMap = ({
     return [37.5665, 126.9780]; 
   }, [center, zones, blueprintConfig]);
 
-  // 구역별 데이터 맵핑
+  // 구역�??�이??맵핑
   const zoneDataMap = useMemo(() => {
     const map = {};
     zones.forEach(z => {
@@ -74,7 +74,7 @@ const UniversalBlueprintMap = ({
     return map;
   }, [zones, plans, risks]);
 
-  // 도면 Bounds 계산
+  // ?�면 Bounds 계산
   const svgBounds = useMemo(() => {
     if (!blueprintConfig) return null;
     const { lat, lng, width, height } = blueprintConfig;
@@ -96,7 +96,7 @@ const UniversalBlueprintMap = ({
           maxNativeZoom={19}
         />
         
-        {/* 도면 오버레이 */}
+        {/* ?�면 ?�버?�이 */}
         {blueprintUrl && svgBounds && (
             <SVGOverlay attributes={{ viewBox: "0 0 100 100", preserveAspectRatio: "none" }} bounds={svgBounds}>
                 <image 
@@ -114,12 +114,12 @@ const UniversalBlueprintMap = ({
           const hasDanger = zoneRisks.length > 0;
           const isOverlap = hasWork && hasDanger;
           
-          // 위험 구역 상태 확인 (PENDING: 주황, APPROVED: 빨강)
+          // ?�험 구역 ?�태 ?�인 (PENDING: 주황, APPROVED: 빨강)
           const dangerStatus = zoneRisks.length > 0 ? zoneRisks[0].status : null;
           const isPending = dangerStatus === 'PENDING';
           const isApproved = dangerStatus === 'APPROVED' || (!dangerStatus && hasDanger);
 
-          // 역할별 스타일
+          // ??���??��???
           let pathOptions = { fillColor: '#ffffff', fillOpacity: 0.15, color: 'rgba(0,0,0,0.15)', weight: 1 };
 
           if (role === 'WORKER') {
@@ -128,10 +128,10 @@ const UniversalBlueprintMap = ({
             } else if (hasWork) {
                 pathOptions = { fillColor: '#3b82f6', fillOpacity: 0.7, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
             } else if (isPending) {
-                // PENDING: 주황색 테두리 (신고 대기 중)
+                // PENDING: 주황???�두�?(?�고 ?��?�?
                 pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#f97316', weight: 3.5 };
             } else if (isApproved) {
-                // APPROVED: 빨간색 테두리 (승인됨)
+                // APPROVED: 빨간???�두�?(?�인??
                 pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
             }
           } else {
@@ -141,15 +141,15 @@ const UniversalBlueprintMap = ({
             } else if (hasWork) {
                 pathOptions = { fillColor: workColor, fillOpacity: 0.65, color: 'rgba(0,0,0,0.3)', weight: 1.5 };
             } else if (isPending) {
-                // PENDING: 주황색 테두리
+                // PENDING: 주황???�두�?
                 pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#f97316', weight: 3.5 };
             } else if (isApproved) {
-                // APPROVED: 빨간색 테두리
+                // APPROVED: 빨간???�두�?
                 pathOptions = { fillColor: 'transparent', fillOpacity: 0, color: '#dc2626', weight: 3 };
             }
           }
 
-          // 역할별 레이블 (통일된 깔끔한 UI)
+          // ??���??�이�?(?�일??깔끔??UI)
           let labelContent = null;
           if (showLabels) {
             labelContent = (
@@ -165,24 +165,24 @@ const UniversalBlueprintMap = ({
                 }}>
                   {zone.id}
                 </div>
-                {/* 구역 이름 */}
+                {/* 구역 ?�름 */}
                 <div style={{ fontSize: '0.55rem', fontWeight: '800', color: '#1e293b', opacity: 0.9 }}>
                   {zone.name}
                 </div>
                 
-                {/* 배지 영역 */}
+                {/* 배�? ?�역 */}
                 <div style={{ display: 'flex', gap: '2px', marginTop: '1px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {/* 위험구역 배지 (Worker/Manager 공통) */}
+                  {/* ?�험구역 배�? (Worker/Manager 공통) */}
                   {hasDanger && (
-                    <span style={{ fontSize: '0.45rem', color: '#dc2626', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #dc2626' }}>⚠️위험</span>
+                    <span style={{ fontSize: '0.45rem', color: '#dc2626', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #dc2626' }}>?�️?�험</span>
                   )}
                   
-                  {/* 작업 배지 */}
+                  {/* ?�업 배�? */}
                   {role === 'WORKER' && hasWork && (
-                    <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #3b82f6' }}>내 작업</span>
+                    <span style={{ fontSize: '0.45rem', color: '#3b82f6', fontWeight: '900', background: 'rgba(255,255,255,0.85)', padding: '1px 4px', borderRadius: '3px', border: '1px solid #3b82f6' }}>???�업</span>
                   )}
                   
-                  {/* 회사명 배지 (Manager만) */}
+                  {/* ?�사�?배�? (Manager�? */}
                   {role === 'MANAGER' && hasWork && (
                     <>
                       {[...new Set(zonePlans.flatMap(p => p.allocations || []).map(a => a.company_name?.slice(0,3)))].map((comp, idx) => (
@@ -206,8 +206,8 @@ const UniversalBlueprintMap = ({
             >
               <Popup>
                 <strong>{zone.name}</strong><br/>
-                {hasWork && <div>작업: {zonePlans.map(p => p.work_type).join(', ')}</div>}
-                {hasDanger && <div style={{ color: 'red' }}>⚠️ 위험 구역</div>}
+                {hasWork && <div>?�업: {zonePlans.map(p => p.work_type).join(', ')}</div>}
+                {hasDanger && <div style={{ color: 'red' }}>?�️ ?�험 구역</div>}
               </Popup>
               {labelContent && (
                 <Tooltip permanent direction="center" className="blueprint-tooltip" opacity={1} offset={[0, 0]}>
