@@ -118,7 +118,7 @@ const DailyPlanManagement = () => {
                                 onZoneClick={handleZoneClick} 
                                 plans={plans} 
                                 risks={risks}
-                                gridConfig={{ rows: project.grid_rows, cols: project.grid_cols, spacing: project.grid_spacing }}
+                                gridConfig={{ rows: parseInt(project.grid_rows), cols: parseInt(project.grid_cols), spacing: parseFloat(project.grid_spacing) }}
                             />
                         )}
                     </div>

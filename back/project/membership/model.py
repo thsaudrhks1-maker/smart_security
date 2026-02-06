@@ -3,9 +3,9 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from back.database import Base
 from datetime import datetime
 
-class project_members(Base):
+class project_users(Base):
     """[PROJECT] 프로젝트 멤버 (사용자)"""
-    __tablename__ = "project_members"
+    __tablename__ = "project_users"
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
@@ -19,4 +19,4 @@ class project_companies(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     company_id = Column(Integer, ForeignKey("sys_companies.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String, nullable=True)
+    role = Column(String, nullable=True) # CLIENT, CONSTRUCTOR, PARTNER

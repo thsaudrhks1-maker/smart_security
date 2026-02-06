@@ -103,13 +103,30 @@ const CreateProject = () => {
     }));
   };
 
-  const handleMapClick = (latlng) => {
+  const handleMapClick = async (latlng) => {
+    // 1. 좌표 우선 업데이트
     setFormData(prev => ({
       ...prev,
       lat: latlng.lat,
       lng: latlng.lng,
-      location_address: `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`
+      location_address: '주소 검색 중...' // 피드백 제공
     }));
+
+    // 2. 역지오코딩 (Reverse Geocoding) - OpenStreetMap Nominatim 활용
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`);
+      const data = await response.json();
+      if (data && data.display_name) {
+        // 주소에서 불필요한 부분 제거 및 깔끔하게 포맷팅
+        const addr = data.display_name;
+        setFormData(prev => ({ ...prev, location_address: addr }));
+      } else {
+        setFormData(prev => ({ ...prev, location_address: `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}` }));
+      }
+    } catch (e) {
+      console.error('주소 변환 실패', e);
+      setFormData(prev => ({ ...prev, location_address: `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}` }));
+    }
   };
 
   const togglePartner = (id) => {
@@ -300,9 +317,9 @@ const CreateProject = () => {
                    zoom={16}
                    onMapClick={handleMapClick}
                    gridConfig={{ 
-                      grid_rows: formData.grid_rows, 
-                      grid_cols: formData.grid_cols, 
-                      grid_spacing: formData.grid_spacing 
+                      rows: parseInt(formData.grid_rows), 
+                      cols: parseInt(formData.grid_cols), 
+                      spacing: parseFloat(formData.grid_spacing) 
                    }}
                    markers={[{ lat: formData.lat, lng: formData.lng, title: '격자 중심점' }]}
                 />

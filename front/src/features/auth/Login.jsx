@@ -44,18 +44,18 @@ const Login = () => {
                     value={formData.username}
                     onChange={e => setFormData({ ...formData, username: e.target.value })}
                     required
-                    style={{ width: '100%', padding: '0.9rem 1rem 0.9rem 2.8rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', fontSize: '1rem', transition: 'all 0.2s', background: '#fcfcfc' }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.9rem 1rem 0.9rem 3rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', fontSize: '1rem', transition: 'all 0.2s', background: '#fcfcfc' }}
                 />
             </div>
             <div style={{ position: 'relative' }}>
-                <Lock size={18} style={{ position: 'absolute', left: '14px', top: '15px', color: '#94a3b8' }} />
+                <Lock size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#94a3b8' }} />
                 <input
                     type="password" 
                     placeholder="비밀번호 (Password)"
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                     required
-                    style={{ width: '100%', padding: '0.9rem 1rem 0.9rem 2.8rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', fontSize: '1rem', transition: 'all 0.2s', background: '#fcfcfc' }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.9rem 1rem 0.9rem 3rem', borderRadius: '12px', border: '1.5px solid #e2e8f0', outline: 'none', fontSize: '1rem', transition: 'all 0.2s', background: '#fcfcfc' }}
                 />
             </div>
             <button 

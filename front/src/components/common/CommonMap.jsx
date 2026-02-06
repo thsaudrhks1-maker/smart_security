@@ -39,9 +39,9 @@ const CommonMap = ({
   style = { height: '100%', width: '100%' }
 }) => {
 
-  const rows = gridConfig.rows || 10;
-  const cols = gridConfig.cols || 10;
-  const spacing = gridConfig.spacing || 10;
+  const rows = parseInt(gridConfig.rows) || 10;
+  const cols = parseInt(gridConfig.cols) || 10;
+  const spacing = parseFloat(gridConfig.spacing) || 10;
 
   const latStep = 1 / 111320 * spacing;
   const lngStep = 1 / (111320 * Math.cos(center[0] * Math.PI / 180)) * spacing;

@@ -7,7 +7,7 @@ class daily_safety_logs(Base):
     """[DAILY] 안전 점검 기록"""
     __tablename__ = "daily_safety_logs"
     id = Column(Integer, primary_key=True, index=True)
-    site_id = Column(Integer, ForeignKey("project_sites.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
     log_type = Column(String, nullable=False)
     note = Column(Text, nullable=True)

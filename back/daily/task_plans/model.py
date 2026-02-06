@@ -7,7 +7,7 @@ class daily_work_tasks(Base):
     """[DAILY] 오늘의 세부 작업 계획"""
     __tablename__ = "daily_work_tasks"
     id = Column(Integer, primary_key=True, index=True)
-    site_id = Column(Integer, ForeignKey("project_sites.id", ondelete="CASCADE"), nullable=False)
+    project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     zone_id = Column(Integer, ForeignKey("project_zones.id", ondelete="CASCADE"), nullable=False)
     template_id = Column(Integer, ForeignKey("content_work_templates.id", ondelete="SET NULL"), nullable=True)
     date = Column(Date, nullable=False, index=True)
@@ -16,9 +16,9 @@ class daily_work_tasks(Base):
     status = Column(String, default="PLANNED")
     created_at = Column(DateTime, default=datetime.now)
 
-class daily_worker_allocations(Base):
-    """[DAILY] 오늘의 인원 투입 현황"""
-    __tablename__ = "daily_worker_allocations"
+class daily_worker_users(Base):
+    """[DAILY] 오늘의 인원 투입 현황 (작업자 매핑)"""
+    __tablename__ = "daily_worker_users"
     id = Column(Integer, primary_key=True, index=True)
     plan_id = Column(Integer, ForeignKey("daily_work_tasks.id", ondelete="CASCADE"), nullable=False)
     worker_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
