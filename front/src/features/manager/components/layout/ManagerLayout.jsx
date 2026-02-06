@@ -17,7 +17,7 @@ import {
   Bell
 } from 'lucide-react';
 
-const ManagerLayout = () => {
+const ManagerLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
@@ -146,7 +146,7 @@ const ManagerLayout = () => {
 
       {/* Main content */}
       <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc', color: '#1e293b' }}>
-        <Outlet />
+        {children}
       </main>
     </div>
   );

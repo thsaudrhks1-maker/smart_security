@@ -19,7 +19,7 @@ export const safetyApi = {
     },
     // [SAFETY] 도면 기반 구역 데이터 동기화
     syncZonesByBlueprint: async (projectId) => {
-        const response = await client.post(`/safety/sites/${projectId}/generate-grid`);
+        const response = await client.get(`/project/locations/${projectId}/sites`);
         return response.data;
     }
 };

@@ -1,38 +1,39 @@
+
 import React from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, ClipboardList, Map, AlertTriangle } from 'lucide-react';
 
 /**
  * Worker layout (mobile-first). Max width 600px, bottom nav.
  */
-const WorkerLayout = () => {
+const WorkerLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-    { path: '/worker', icon: LayoutDashboard, label: '대시보드' },
-    { path: '/worker/work', icon: CheckSquare, label: '작업' },
-    { path: '/worker/attendance', icon: ClipboardList, label: '출근' },
-    { path: '/worker/safety', icon: Map, label: '안전지도' },
-    { path: '/worker/report', icon: AlertTriangle, label: '신고' },
+    { path: '/worker/dashboard', icon: LayoutDashboard, label: '홈' },
+    { path: '/worker/work', icon: CheckSquare, label: '내작업' },
+    { path: '/worker/attendance', icon: ClipboardList, label: '출결' },
+    { path: '/worker/safety', icon: Map, label: '현장맵' },
   ];
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f1f5f9', height: '100vh', maxHeight: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', paddingBottom: '80px', WebkitOverflowScrolling: 'touch' }}>
-        <Outlet />
+    <div style={{ maxWidth: '600px', margin: '0 auto', background: '#f8fafc', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '100px' }}>
+        {children}
       </div>
       
       {/* Mobile Bottom Navigation Bar */}
       <nav style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
         width: '100%', maxWidth: '600px',
-        background: 'white', borderTop: '1px solid #e2e8f0',
-        display: 'flex', justifyContent: 'space-around', padding: '10px 0',
-        zIndex: 1000, boxShadow: '0 -4px 6px -1px rgba(0,0,0,0.1)'
+        background: 'rgba(255,255,255,0.95)', borderTop: '1px solid #e2e8f0',
+        display: 'flex', justifyContent: 'space-around', padding: '12px 0 24px 0',
+        zIndex: 1000, backdropFilter: 'blur(10px)',
+        boxShadow: '0 -10px 15px -3px rgba(0,0,0,0.05)'
       }}>
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || (item.path !== '/worker' && location.pathname.startsWith(item.path));
+          const isActive = location.pathname.startsWith(item.path);
           const Icon = item.icon;
           return (
             <div 
@@ -41,7 +42,7 @@ const WorkerLayout = () => {
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', color: isActive ? '#3b82f6' : '#94a3b8', flex: 1 }}
             >
               <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-              <span style={{ fontSize: '0.75rem', fontWeight: isActive ? '700' : '500' }}>{item.label}</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: isActive ? '800' : '500' }}>{item.label}</span>
             </div>
           );
         })}

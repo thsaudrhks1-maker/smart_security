@@ -13,6 +13,7 @@ import Register from './features/auth/Register';
 // Dashboards
 import AdminDashboard from './features/admin/dashboard/AdminDashboard';
 import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
+import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
 
 // Projects
@@ -70,7 +71,7 @@ function App() {
             <ProtectedRoute allowedRoles={['manager']} layout={ManagerLayout}>
               <Routes>
                 <Route path="dashboard" element={<ManagerDashboard />} />
-                <Route path="work" element={<ManagerDashboard />} />
+                <Route path="work" element={<DailyPlanManagement />} />
                 <Route path="contents" element={<ManagerDashboard />} />
                 <Route path="locations" element={<ManagerDashboard />} />
                 <Route path="companies" element={<ManagerDashboard />} />

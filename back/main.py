@@ -8,6 +8,7 @@ from back.project.locations.router import router as locations_router
 from back.content.work_manuals.router import router as manuals_router
 from back.daily.attendance.router import router as attendance_router
 from back.daily.notices.router import router as notices_router
+from back.daily.task_plans.router import router as task_plans_router
 
 app = FastAPI(title="Smart Security API")
 
@@ -39,6 +40,7 @@ app.include_router(manuals_router, prefix="/api/content/manuals", tags=["Content
 # [DAILY]
 app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])
 app.include_router(notices_router, prefix="/api/daily/notices", tags=["Daily_Notices"])
+app.include_router(task_plans_router, prefix="/api/daily/task_plans", tags=["Daily_TaskPlans"])
 
 @app.get("/")
 async def root():
