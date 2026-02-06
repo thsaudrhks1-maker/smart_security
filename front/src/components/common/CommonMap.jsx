@@ -46,10 +46,12 @@ const CommonMap = ({
   onZoneClick,
   onMapClick,
   highlightLevel = '1F',
+  myZoneName = null, // 강조할 특정 구역 이름
   plans = [],
   risks = [],
   zones = [], // 새로 추가: 구역별 상세 정보
   gridConfig = { rows: 10, cols: 10, spacing: 10 }, // 기본값
+
   style = { height: '100%', width: '100%' }
 }) => {
 
@@ -99,6 +101,7 @@ const CommonMap = ({
             for (let c = 0; c < cols; c++) {
               const zoneName = `${highlightLevel}-${chr(65+r)}${c+1}`;
               const zoneData = zoneMap[zoneName] || null;
+              const isMyZone = myZoneName === zoneName;
               
               const zoneTasks = zoneData?.tasks || [];
               const zoneDangers = zoneData?.dangers || [];
@@ -114,30 +117,38 @@ const CommonMap = ({
 
               // 스타일 결정 (개선된 시인성)
               let fillColor = 'transparent';
-              let fillOpacity = 0.08;
-              let strokeColor = '#94a3b8';
-              let strokeWeight = 2.5;
-              let dashArray = null;
+              let fillOpacity = isMyZone ? 0.5 : 0.08;
+              let strokeColor = isMyZone ? '#8b5cf6' : '#94a3b8'; // 내 구역은 보라색 강조
+              let strokeWeight = isMyZone ? 6 : 2.5;
 
               if (hasRisk && hasPlan) {
                 // 위험 + 작업 동시 존재 (노란색 배경 + 굵은 빨간 테두리)
                 fillColor = '#fef08a';
-                fillOpacity = 0.45;
-                strokeColor = '#dc2626';
-                strokeWeight = 5;
+                fillOpacity = isMyZone ? 0.6 : 0.45;
+                strokeColor = isMyZone ? '#dc2626' : '#dc2626';
+                strokeWeight = isMyZone ? 8 : 5;
               } else if (hasRisk) {
                 // 위험 영역만 (빨간 테두리 강조)
                 fillColor = '#fecaca';
-                fillOpacity = 0.35;
+                fillOpacity = isMyZone ? 0.6 : 0.35;
                 strokeColor = '#dc2626';
-                strokeWeight = 5;
+                strokeWeight = isMyZone ? 8 : 5;
               } else if (hasPlan) {
                 // 작업 영역만 (파란 테두리 강조)
-                fillColor = '#bfdbfe';
-                fillOpacity = 0.3;
-                strokeColor = '#2563eb';
-                strokeWeight = 5;
+                fillColor = isMyZone ? '#ddd6fe' : '#bfdbfe';
+                fillOpacity = isMyZone ? 0.6 : 0.3;
+                strokeColor = isMyZone ? '#8b5cf6' : '#2563eb';
+                strokeWeight = isMyZone ? 8 : 5;
               }
+
+              // 내 구역인데 아무 계획도 없는 경우
+              if (isMyZone && !hasPlan && !hasRisk) {
+                fillColor = '#ddd6fe';
+                strokeColor = '#8b5cf6';
+                strokeWeight = 6;
+                fillOpacity = 0.5;
+              }
+
 
               const b = [
                 [startLat - r * latStep, startLng + c * lngStep],

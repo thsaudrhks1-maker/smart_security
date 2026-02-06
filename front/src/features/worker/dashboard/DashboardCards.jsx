@@ -2,17 +2,33 @@
 import React from 'react';
 import { MapPin, Shield, AlertTriangle, Info } from 'lucide-react';
 
-const DashboardCards = ({ zonesCount = 0, risksCount = 0, myWorkZone = '미배정' }) => {
+const DashboardCards = ({ zonesCount = 0, risksCount = 0, myWorkZone = '미배정', onMyZoneClick }) => {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             {/* 내 작업 위치 카드 */}
-            <div style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '24px', border: '1px solid #dbeafe' }}>
+            <div 
+                onClick={onMyZoneClick}
+                style={{ 
+                    background: '#eff6ff', 
+                    padding: '1.25rem', 
+                    borderRadius: '24px', 
+                    border: '1px solid #dbeafe',
+                    cursor: onMyZoneClick ? 'pointer' : 'default',
+                    transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => onMyZoneClick && (e.currentTarget.style.transform = 'translateY(-4px)')}
+                onMouseLeave={(e) => onMyZoneClick && (e.currentTarget.style.transform = 'translateY(0)')}
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <MapPin size={18} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
                     <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e40af' }}>내 작업 위치</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e3a8a' }}>{myWorkZone}</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e3a8a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {myWorkZone}
+                    {onMyZoneClick && <span style={{ fontSize: '0.7rem', color: '#3b82f6' }}>위치 보기 &gt;</span>}
+                </div>
             </div>
+
 
             {/* 오늘의 안전 수칙 카드 */}
             <div style={{ background: '#f0fdf4', padding: '1.25rem', borderRadius: '24px', border: '1px solid #dcfce7' }}>

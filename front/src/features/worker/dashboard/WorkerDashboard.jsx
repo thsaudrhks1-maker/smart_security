@@ -33,21 +33,33 @@ const WorkerDashboard = () => {
             const [projectRes, zonesRes, plansRes] = await Promise.all([
                 projectApi.getProject(projectId),
                 projectApi.getZonesWithDetails(projectId, today),
-                workApi.getPlans({ date: today })
+                workApi.getPlans({ project_id: projectId, d: today })
             ]);
             
-            if (projectRes?.data) {
+            if (projectRes?.data?.success) {
+                const p = projectRes.data.data;
                 setProject({
-                    id: projectRes.data.id,
-                    lat: projectRes.data.lat || 37.5013068,
-                    lng: projectRes.data.lng || 127.0398106,
-                    grid_rows: projectRes.data.grid_rows || 4,
-                    grid_cols: projectRes.data.grid_cols || 3
+                    ...p,
+                    lat: p.lat || 37.5665,
+                    lng: p.lng || 126.9780,
+                    grid_rows: p.grid_rows || 10,
+                    grid_cols: p.grid_cols || 10,
+                    grid_spacing: p.grid_spacing || 10
                 });
             }
             
-            setZones(zonesRes?.data?.data || []);
-            setPlans(plansRes?.data?.data || []);
+            const zonesData = zonesRes?.data?.data || [];
+            const plansData = plansRes?.data?.data || [];
+            
+            setZones(zonesData);
+            setPlans(plansData);
+
+            // 본인 작업이 있는 경우 해당 층으로 자동 전환
+            const myPlanData = Array.isArray(plansData) ? plansData.find(p => p.workers?.some(w => w.id === (user?.id || user?.user_id))) : null;
+            if (myPlanData && myPlanData.level) {
+                setCurrentLevel(myPlanData.level);
+            }
+
 
 
         } catch (e) {
@@ -59,12 +71,24 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user]);
 
-    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => w.id === user?.id)) : null;
+    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => w.id === (user?.id || user?.user_id))) : null;
     
     // 통계 계산
     const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
     const taskCount = Array.isArray(zones) ? zones.filter(z => z.tasks?.length > 0).length : 0;
-    const levels = ['B1', '1F', '2F', '3F'];
+    // 구역 데이터에 기반한 동적 층 리스트 생성
+    const levels = Array.from(new Set(zones.map(z => z.level))).sort((a, b) => {
+        const order = { 'B1': -1, '1F': 1, '2F': 2, '3F': 3 };
+        return (order[a] || 0) - (order[b] || 0);
+    });
+
+    // 지도 섹션으로 스크롤 이동
+    const scrollToMap = () => {
+        const mapSection = document.getElementById('work-map-section');
+        if (mapSection) {
+            mapSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
 
     return (
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem', color: '#1e293b', paddingBottom: '100px' }}>
@@ -91,11 +115,12 @@ const WorkerDashboard = () => {
             <DashboardCards 
               zonesCount={zones.length} 
               risksCount={dangerCount} 
-              myWorkZone={myPlan ? myPlan.zone_name : '미배정'} 
+              myWorkZone={myPlan ? myPlan.zone_name : '미배정'}
+              onMyZoneClick={myPlan ? scrollToMap : null}
             />
 
             {/* 실시간 현장 지도 영역 */}
-            <section style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
+            <section id="work-map-section" style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MapIcon size={20} color="#3b82f6" /> 실시간 현장 지도
@@ -108,7 +133,7 @@ const WorkerDashboard = () => {
               
               {/* 층 선택 버튼 */}
               <div style={{ display: 'flex', gap: '6px', marginBottom: '0.75rem', overflowX: 'auto' }}>
-                {levels.map(level => (
+                {(levels.length > 0 ? levels : ['B1', '1F', '2F']).map(level => (
                   <button
                     key={level}
                     onClick={() => setCurrentLevel(level)}
@@ -135,15 +160,21 @@ const WorkerDashboard = () => {
                   <CommonMap 
                     center={[project.lat, project.lng]}
                     zoom={19}
-                    gridRows={project.grid_rows}
-                    gridCols={project.grid_cols}
+                    gridConfig={{ 
+                      rows: parseInt(project.grid_rows), 
+                      cols: parseInt(project.grid_cols), 
+                      spacing: parseFloat(project.grid_spacing) 
+                    }}
                     highlightLevel={currentLevel}
+                    myZoneName={myPlan?.zone_name}
                     zones={zones}
+
                     onZoneClick={(zoneData) => {
                       setSelectedZone(zoneData);
                       setIsReportModalOpen(true);
                     }}
                   />
+
                 )}
               </div>
               <div style={{ marginTop: '1rem', padding: '12px', background: '#f8fafc', borderRadius: '15px', fontSize: '0.8rem', color: '#64748b', display: 'flex', gap: '8px' }}>

@@ -27,11 +27,8 @@ export const AuthProvider = ({ children }) => {
       
       // API 응답 구조: { access_token, user: { username, role, full_name, ... } } 또는 { access_token, role, ... }
       const token = data.access_token;
-      const userInfo = data.user || {
-          username: data.username || username,
-          role: data.role,
-          full_name: data.full_name
-      };
+      const userInfo = data.user || data; // 백엔드 응답이 평면 구조인 경우 전체 데이터 사용
+
 
       if (!token) throw new Error("토큰이 유효하지 않습니다.");
 
