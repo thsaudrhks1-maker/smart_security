@@ -24,6 +24,18 @@ const ChangeView = ({ center, zoom }) => {
   return null;
 };
 
+/** 지도 배경 클릭 시 좌표 콜백 (사이트/격자 중심점 이동용) */
+const MapClickHandler = ({ onMapClick }) => {
+  useMapEvents({
+    click: (e) => {
+      if (onMapClick && e.latlng) {
+        onMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+      }
+    }
+  });
+  return null;
+};
+
 /**
  * [COMMON] 통합 지도 컴포넌트 (Grid 시각화 및 프로젝트 연동 강화)
  */
@@ -32,6 +44,7 @@ const CommonMap = ({
   zoom = 19, 
   markers = [], 
   onZoneClick,
+  onMapClick,
   highlightLevel = '1F',
   plans = [],
   risks = [],
@@ -60,7 +73,8 @@ const CommonMap = ({
         style={{ height: '100%', width: '100%' }}
       >
         <ChangeView center={center} zoom={zoom} />
-        
+        {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+
         <TileLayer
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

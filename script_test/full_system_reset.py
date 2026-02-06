@@ -1,8 +1,14 @@
 
 import asyncio
+import os
+import sys
 import bcrypt
 from sqlalchemy import text
 from datetime import date, datetime
+
+# 프로젝트 루트를 path에 추가 (back 모듈 찾기 위함)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from back.database import engine, execute, Base
 
 async def full_reset():

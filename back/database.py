@@ -32,6 +32,13 @@ async def fetch_one(sql: str, params: dict = None):
         row = result.first()
         return dict(row._mapping) if row else None
 
+async def insert_and_return(sql: str, params: dict = None):
+    """INSERT ... RETURNING * 실행 후 반환된 한 행을 dict로 반환."""
+    async with engine.begin() as conn:
+        result = await conn.execute(text(sql), params or {})
+        row = result.first()
+        return dict(row._mapping) if row else None
+
 # === Models Import (전수 조사 및 누락 방지) ===
 # 1. [SYS] 시스템 기초
 from back.sys.users.model import sys_users
