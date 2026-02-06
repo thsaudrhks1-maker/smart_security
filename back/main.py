@@ -5,7 +5,7 @@ from back.sys.users.router import router as users_router
 from back.sys.companies.router import router as companies_router
 from back.project.master.router import router as project_router
 from back.project.locations.router import router as locations_router
-from back.content.work_manuals.router import router as manuals_router
+from back.content.work_info.router import router as work_info_router
 from back.daily.attendance.router import router as attendance_router
 from back.daily.notices.router import router as notices_router
 from back.daily.task_plans.router import router as task_plans_router
@@ -35,7 +35,7 @@ app.include_router(project_router, prefix="/api/project/master", tags=["Project_
 app.include_router(locations_router, prefix="/api/project/locations", tags=["Project_Locations"])
 
 # [CONTENT]
-app.include_router(manuals_router, prefix="/api/content/manuals", tags=["Content_Manuals"])
+app.include_router(work_info_router, prefix="/api/content/work_info", tags=["Content_WorkInfo"])
 
 # [DAILY]
 app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])

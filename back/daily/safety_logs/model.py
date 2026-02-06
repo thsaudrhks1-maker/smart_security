@@ -18,8 +18,9 @@ class daily_danger_zones(Base):
     __tablename__ = "daily_danger_zones"
     id = Column(Integer, primary_key=True, index=True)
     zone_id = Column(Integer, ForeignKey("project_zones.id", ondelete="CASCADE"), nullable=False)
+    danger_info_id = Column(Integer, ForeignKey("content_danger_info.id", ondelete="SET NULL"), nullable=True, comment="위험 요소 템플릿")
     date = Column(Date, nullable=False)
-    risk_type = Column(String, nullable=False)
+    risk_type = Column(String, nullable=True, comment="커스텀 위험 유형 (danger_info_id 없을 시)")
     description = Column(String, nullable=True)
 
 class daily_danger_images(Base):

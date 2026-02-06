@@ -6,6 +6,10 @@ export const projectApi = {
     getProjects: () => client.get('/project/master'),
     // [PROJECT] 특정 프로젝트 상세
     getProject: (id) => client.get(`/project/master/${id}`),
+    // [PROJECT] 프로젝트 상세 정보 (업체, 관리자, 협력업체, 작업자 포함)
+    getProjectDetail: (id) => client.get(`/project/master/${id}/detail`),
+    // [PROJECT] 작업자 승인
+    approveWorker: (projectId, userId) => client.post(`/project/master/${projectId}/approve-worker/${userId}`),
     // [PROJECT] 새 프로젝트 등록
     createProject: (data) => client.post('/project/master', data),
     // [PROJECT] 프로젝트 삭제

@@ -14,7 +14,7 @@ class content_safety_gear(Base):
 class content_work_gear_map(Base):
     """[CONTENT] 공종 ↔ 필수 장비 연결"""
     __tablename__ = "content_work_gear_map"
-    __table_args__ = (UniqueConstraint("template_id", "resource_id", name="uq_content_gear"),)
+    __table_args__ = (UniqueConstraint("work_info_id", "resource_id", name="uq_content_gear"),)
     id = Column(Integer, primary_key=True, index=True)
-    template_id = Column(Integer, ForeignKey("content_work_templates.id", ondelete="CASCADE"), nullable=False)
+    work_info_id = Column(Integer, ForeignKey("content_work_info.id", ondelete="CASCADE"), nullable=False)
     resource_id = Column(Integer, ForeignKey("content_safety_gear.id", ondelete="CASCADE"), nullable=False)

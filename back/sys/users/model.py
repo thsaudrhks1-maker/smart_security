@@ -11,6 +11,7 @@ class sys_users(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     role = Column(String, default="worker")
+    job_title = Column(String, nullable=True, comment="작업자 직종 (예: 토목공, 목수, 전기공)")
     company_id = Column(Integer, ForeignKey("sys_companies.id", ondelete="CASCADE"), nullable=True)
     phone = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.now)

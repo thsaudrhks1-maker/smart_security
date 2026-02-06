@@ -51,8 +51,10 @@ from back.project.locations.model import project_zones
 from back.project.membership.model import project_users, project_companies
 
 # 3. [CONTENT] 공통 콘텐츠
-from back.content.work_manuals.model import content_work_templates
+from back.content.work_info.model import content_work_info
 from back.content.safety_gear.model import content_safety_gear, content_work_gear_map
+from back.content.safety_info.model import content_safety_info
+from back.content.danger_info.model import content_danger_info
 
 # 4. [DAILY] 일일 관리 (누락 복구 완료)
 from back.daily.attendance.model import daily_attendance

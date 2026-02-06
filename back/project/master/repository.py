@@ -97,3 +97,123 @@ class project_repository:
     async def delete_project(pid: int):
         await execute("DELETE FROM project_master WHERE id = :id", {"id": pid})
         return True
+
+    @staticmethod
+    async def get_project_detail(pid: int):
+        """프로젝트 상세 정보 (업체, 관리자, 협력업체, 작업자 포함)"""
+        # 1. 프로젝트 기본 정보
+        project = await fetch_one("SELECT * FROM project_master WHERE id = :pid", {"pid": pid})
+        if not project:
+            return None
+        
+        # 2. 발주처, 시공사
+        client = await fetch_one("""
+            SELECT c.* FROM sys_companies c
+            JOIN project_companies pc ON c.id = pc.company_id
+            WHERE pc.project_id = :pid AND pc.role = 'CLIENT'
+        """, {"pid": pid})
+        
+        constructor = await fetch_one("""
+            SELECT c.* FROM sys_companies c
+            JOIN project_companies pc ON c.id = pc.company_id
+            WHERE pc.project_id = :pid AND pc.role = 'CONSTRUCTOR'
+        """, {"pid": pid})
+        
+        # 3. 소장, 안전관리자
+        manager = await fetch_one("""
+            SELECT u.* FROM sys_users u
+            JOIN project_users pu ON u.id = pu.user_id
+            WHERE pu.project_id = :pid AND pu.role_name = 'manager' AND pu.status = 'ACTIVE'
+        """, {"pid": pid})
+        
+        safety_manager = await fetch_one("""
+            SELECT u.* FROM sys_users u
+            JOIN project_users pu ON u.id = pu.user_id
+            WHERE pu.project_id = :pid AND pu.role_name = 'safety_manager' AND pu.status = 'ACTIVE'
+        """, {"pid": pid})
+        
+        # 4. 협력업체 목록
+        partners = await fetch_all("""
+            SELECT c.* FROM sys_companies c
+            JOIN project_companies pc ON c.id = pc.company_id
+            WHERE pc.project_id = :pid AND pc.role = 'PARTNER'
+            ORDER BY c.name
+        """, {"pid": pid})
+        
+        # 5. 승인된 작업자 (project_users에 있는 worker)
+        approved_workers = await fetch_all("""
+            SELECT u.id, u.username, u.full_name, u.role, u.job_title, u.company_id, c.name as company_name, pu.status
+            FROM sys_users u
+            JOIN project_users pu ON u.id = pu.user_id
+            JOIN sys_companies c ON u.company_id = c.id
+            WHERE pu.project_id = :pid AND u.role = 'worker' AND pu.status = 'ACTIVE'
+            ORDER BY c.name, u.full_name
+        """, {"pid": pid})
+        
+        # 6. 승인 대기 작업자 (협력업체 소속이지만 project_users에 없음)
+        pending_workers = await fetch_all("""
+            SELECT u.id, u.username, u.full_name, u.role, u.job_title, u.company_id, c.name as company_name
+            FROM sys_users u
+            JOIN sys_companies c ON u.company_id = c.id
+            WHERE u.role = 'worker' 
+            AND c.id IN (
+                SELECT company_id FROM project_companies 
+                WHERE project_id = :pid AND role = 'PARTNER'
+            )
+            AND u.id NOT IN (
+                SELECT user_id FROM project_users WHERE project_id = :pid
+            )
+            ORDER BY c.name, u.full_name
+        """, {"pid": pid})
+        
+        # 7. 오늘 출퇴근 현황 (승인된 작업자 대상)
+        today = date.today()
+        attendance = await fetch_all("""
+            SELECT 
+                da.id, da.user_id, da.check_in_time, da.check_out_time, da.status,
+                u.full_name, u.username, c.name as company_name
+            FROM daily_attendance da
+            JOIN sys_users u ON da.user_id = u.id
+            JOIN sys_companies c ON u.company_id = c.id
+            WHERE da.project_id = :pid AND da.date = :today
+            ORDER BY da.check_in_time DESC
+        """, {"pid": pid, "today": today})
+        
+        # 8. 오늘 작업 계획 (층별, 구역별)
+        work_tasks = await fetch_all("""
+            SELECT 
+                dwt.id, dwt.zone_id, dwt.work_info_id, dwt.description, 
+                dwt.calculated_risk_score, dwt.status,
+                pz.name as zone_name, pz.level,
+                cwi.work_type
+            FROM daily_work_tasks dwt
+            JOIN project_zones pz ON dwt.zone_id = pz.id
+            LEFT JOIN content_work_info cwi ON dwt.work_info_id = cwi.id
+            WHERE dwt.project_id = :pid AND dwt.date = :today
+            ORDER BY pz.level, pz.name
+        """, {"pid": pid, "today": today})
+        
+        # 9. 오늘 위험 구역
+        danger_zones = await fetch_all("""
+            SELECT 
+                ddz.id, ddz.zone_id, ddz.risk_type, ddz.description,
+                pz.name as zone_name, pz.level
+            FROM daily_danger_zones ddz
+            JOIN project_zones pz ON ddz.zone_id = pz.id
+            WHERE pz.project_id = :pid AND ddz.date = :today
+            ORDER BY pz.level, pz.name
+        """, {"pid": pid, "today": today})
+        
+        return {
+            "project": project,
+            "client": client,
+            "constructor": constructor,
+            "manager": manager,
+            "safety_manager": safety_manager,
+            "partners": partners,
+            "approved_workers": approved_workers,
+            "pending_workers": pending_workers,
+            "attendance": attendance,
+            "work_tasks": work_tasks,
+            "danger_zones": danger_zones
+        }

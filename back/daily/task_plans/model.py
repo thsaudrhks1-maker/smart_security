@@ -9,7 +9,7 @@ class daily_work_tasks(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     zone_id = Column(Integer, ForeignKey("project_zones.id", ondelete="CASCADE"), nullable=False)
-    template_id = Column(Integer, ForeignKey("content_work_templates.id", ondelete="SET NULL"), nullable=True)
+    work_info_id = Column(Integer, ForeignKey("content_work_info.id", ondelete="SET NULL"), nullable=True)
     date = Column(Date, nullable=False, index=True)
     description = Column(String, nullable=True)
     calculated_risk_score = Column(Integer, default=0)
@@ -22,4 +22,3 @@ class daily_worker_users(Base):
     id = Column(Integer, primary_key=True, index=True)
     plan_id = Column(Integer, ForeignKey("daily_work_tasks.id", ondelete="CASCADE"), nullable=False)
     worker_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String, nullable=True)
