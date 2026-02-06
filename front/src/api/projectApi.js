@@ -8,9 +8,11 @@ export const projectApi = {
     getProject: (id) => client.get(`/project/master/${id}`),
     // [PROJECT] 새 프로젝트 등록
     createProject: (data) => client.post('/project/master', data),
+    // [PROJECT] 프로젝트 삭제
+    deleteProject: (id) => client.delete(`/project/master/${id}`),
     // [PROJECT] 프로젝트 멤버(참여 인력) 조회
     getMembers: (id) => client.get(`/project/master/${id}/members`),
 };
 
-export const { getProjects, getProject, createProject, getMembers } = projectApi;
+export const { getProjects, getProject, createProject, deleteProject, getMembers } = projectApi;
 export default projectApi;

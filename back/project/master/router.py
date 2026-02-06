@@ -25,3 +25,8 @@ async def get_project(project_id: int):
     if not project:
         raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     return {"success": True, "data": project}
+
+@router.delete("/{project_id}")
+async def delete_project(project_id: int):
+    await project_repository.delete_project(project_id)
+    return {"success": True, "message": "프로젝트가 삭제되었습니다."}

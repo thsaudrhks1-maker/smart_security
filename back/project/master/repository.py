@@ -92,3 +92,9 @@ class project_repository:
     @staticmethod
     async def get_by_id(project_id: int):
         return await fetch_one("SELECT * FROM project_master WHERE id = :pid", {"pid": project_id})
+
+    @staticmethod
+    async def delete_project(pid: int):
+        from back.database import execute
+        await execute("DELETE FROM project_master WHERE id = :id", {"id": pid})
+        return True
