@@ -2,14 +2,17 @@
 import client from './client';
 
 export const workApi = {
-    // [CONTENT] 표준 공종 매뉴얼 목록
-    getManuals: () => client.get('/content/manuals'),
-    
-    // [DAILY] 오늘의 작업 계획 목록
-    getTodayTasks: (siteId) => client.get('/daily/tasks', { params: { site_id: siteId } }),
-    
-    // [DAILY] 작업자용 오늘의 할 일 (대시보드)
-    getWorkerDashboard: (userId) => client.get('/daily/tasks/dashboard', { params: { user_id: userId } }),
+    // [DAILY] 일일 작업 계획 목록 (날짜별)
+    getPlans: async (params = {}) => {
+        const response = await client.get('/api/work/plans', { params });
+        return response.data;
+    },
+    // [DAILY] 특정 구역에 작업 할당
+    assignWork: async (data) => {
+        const response = await client.post('/api/work/plans', data);
+        return response.data;
+    }
 };
 
+export const { getPlans, assignWork } = workApi;
 export default workApi;

@@ -1,47 +1,28 @@
-import apiClient from './client';
+
+import client from './client';
 
 export const safetyApi = {
-    /** 구역 목록 (site_id 있으면 해당 현장만) */
-    getZones: async (siteId = null, projectId = null) => {
-        const params = {};
-        if (siteId != null) params.site_id = siteId;
-        if (projectId != null) params.project_id = projectId;
-        const response = await apiClient.get('/safety/zones', { params });
+    // [SAFETY] 전체 현장 구역(Zone) 목록 조회
+    getZones: async () => {
+        const response = await client.get('/safety/zones');
         return response.data;
     },
-    /** 구역 생성 (도면 위에서 정의한 Zone DB 저장) */
-    createZone: async (data) => {
-        const response = await apiClient.post('/safety/zones', data);
+    // [SAFETY] 일일 위험 구역 목록 (사용자/매니저 대시보드용)
+    getDailyDangerZones: async (date) => {
+        const response = await client.get('/safety/daily-danger-zones', { params: { date } });
         return response.data;
     },
-    /** 구역 수정 (작업 위치 탭에서 좌표·층·구역명·타입·특징 등) */
-    updateZone: async (zoneId, data) => {
-        const response = await apiClient.put(`/safety/zones/${zoneId}`, data);
-        return response.data;
-    },
-    getLogs: async () => {
-        const response = await apiClient.get('/safety/logs');
-        return response.data;
-    },
-    /** 일일 변동 위험 구역 목록 (그날 해당 구역의 위험 - 작업자에게 데일리 전달) */
-    getDailyDangerZones: async (date, zoneId = null) => {
-        const params = { date };
-        if (zoneId != null) params.zone_id = zoneId;
-        const response = await apiClient.get('/safety/daily-danger-zones', { params });
-        return response.data;
-    },
-    /** 일일 변동 위험 구역 등록 */
+    // [SAFETY] 위험 요소 신고 및 생성
     createDailyDangerZone: async (data) => {
-        const response = await apiClient.post('/safety/daily-danger-zones', data);
+        const response = await client.post('/safety/daily-danger-zones', data);
         return response.data;
     },
-    /** 일일 변동 위험 구역 삭제 */
-    deleteDailyDangerZone: async (id) => {
-        await apiClient.delete(`/safety/daily-danger-zones/${id}`);
-    },
-    /** 사이트 그리드 대량 생성 */
-    generateSiteGrid: async (siteId) => {
-        const response = await apiClient.post(`/safety/sites/${siteId}/generate-grid`);
+    // [SAFETY] 도면 기반 구역 데이터 동기화
+    syncZonesByBlueprint: async (projectId) => {
+        const response = await client.post(`/safety/sites/${projectId}/generate-grid`);
         return response.data;
-    },
+    }
 };
+
+export const { getZones, getDailyDangerZones, createDailyDangerZone, syncZonesByBlueprint } = safetyApi;
+export default safetyApi;

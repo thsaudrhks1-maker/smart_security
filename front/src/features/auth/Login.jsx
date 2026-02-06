@@ -14,9 +14,9 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const success = await login(formData.username, formData.password);
-      if (success) navigate('/');
-      else alert('로그인 실패: 아이디 또는 비밀번호를 확인하세요.');
+      const result = await login(formData.username, formData.password);
+      if (result.success) navigate('/dashboard');
+      else alert(result.message || '로그인 실패: 아이디 또는 비밀번호를 확인하세요.');
     } catch (e) {
       alert('서버 연결 오류');
     } finally {
