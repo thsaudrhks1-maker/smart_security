@@ -20,7 +20,9 @@ app.add_middleware(
         "http://localhost:3500",
         "http://localhost:5173",  # Vite 기본 포트
         "http://127.0.0.1:3500",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "http://168.107.52.201:3500", # 외부 접속 허용
+        "http://168.107.52.201:5173"  
     ],
     allow_credentials=True,
     allow_methods=["*"],
