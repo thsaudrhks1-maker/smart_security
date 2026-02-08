@@ -186,7 +186,7 @@ class project_repository:
                 dwt.calculated_risk_score, dwt.status,
                 pz.name as zone_name, pz.level,
                 cwi.work_type
-            FROM daily_work_tasks dwt
+            FROM daily_work_plans dwt
             JOIN project_zones pz ON dwt.zone_id = pz.id
             LEFT JOIN content_work_info cwi ON dwt.work_info_id = cwi.id
             WHERE dwt.project_id = :pid AND dwt.date = :today
