@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { MapPin, Shield, AlertTriangle, Info } from 'lucide-react';
 
-const DashboardCards = ({ zonesCount = 0, risksCount = 0, myWorkZone = '미배정', onMyZoneClick }) => {
+const DashboardCards = ({ zonesCount = 0, risksCount = 0, myWorkZone = '미배정', myWorkType = null, onMyZoneClick }) => {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             {/* 내 작업 위치 카드 */}
@@ -14,18 +13,30 @@ const DashboardCards = ({ zonesCount = 0, risksCount = 0, myWorkZone = '미배�
                     borderRadius: '24px', 
                     border: '1px solid #dbeafe',
                     cursor: onMyZoneClick ? 'pointer' : 'default',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}
                 onMouseEnter={(e) => onMyZoneClick && (e.currentTarget.style.transform = 'translateY(-4px)')}
                 onMouseLeave={(e) => onMyZoneClick && (e.currentTarget.style.transform = 'translateY(0)')}
             >
+                {/* 배경 장식 */}
+                <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '60px', height: '60px', background: '#3b82f6', opacity: 0.1, borderRadius: '50%' }} />
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                     <MapPin size={18} color="#3b82f6" fill="#3b82f6" fillOpacity={0.2} />
                     <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e40af' }}>내 작업 위치</span>
                 </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e3a8a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {myWorkZone}
-                    {onMyZoneClick && <span style={{ fontSize: '0.7rem', color: '#3b82f6' }}>위치 보기 &gt;</span>}
+                <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e3a8a', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <span>{myWorkZone}</span>
+                        {onMyZoneClick && <span style={{ fontSize: '0.7rem', color: '#3b82f6' }}>위치 보기 &gt;</span>}
+                    </div>
+                    {myWorkType && (
+                        <span style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: '600', marginTop: '4px' }}>
+                            {myWorkType}
+                        </span>
+                    )}
                 </div>
             </div>
 

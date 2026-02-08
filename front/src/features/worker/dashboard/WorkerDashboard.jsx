@@ -27,14 +27,30 @@ const WorkerDashboard = () => {
 
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+    // zones 데이터에서 내 작업 찾기 함수
+    const findMyTaskFromZones = (zonesList) => {
+        if (!user || !zonesList) return null;
+        for (const zone of zonesList) {
+            if (zone.tasks && Array.isArray(zone.tasks)) {
+                for (const task of zone.tasks) {
+                     // workers가 json_agg로 인해 배열로 들어옴
+                     if (task.workers && Array.isArray(task.workers)) {
+                        const isMine = task.workers.some(w => Number(w.id) === Number(user.id || user.user_id));
+                        if (isMine) return { ...task, zone_name: zone.name, level: zone.level };
+                     }
+                }
+            }
+        }
+        return null;
+    };
+
     const loadData = async () => {
         try {
             const projectId = user?.project_id || 1;
             
-            const [projectRes, zonesRes, plansRes] = await Promise.all([
+            const [projectRes, zonesRes] = await Promise.all([
                 projectApi.getProject(projectId),
-                projectApi.getZonesWithDetails(projectId, selectedDate),
-                workApi.getPlans({ project_id: projectId, d: selectedDate })
+                projectApi.getZonesWithDetails(projectId, selectedDate)
             ]);
             
             if (projectRes?.data?.success) {
@@ -50,15 +66,16 @@ const WorkerDashboard = () => {
             }
             
             const zonesData = zonesRes?.data?.data || [];
-            const plansData = plansRes?.data?.data || [];
-            
             setZones(zonesData);
-            setPlans(plansData);
 
-            const myPlanData = Array.isArray(plansData) ? plansData.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
-            if (myPlanData && myPlanData.level) {
-                setCurrentLevel(myPlanData.level);
+            // zones 데이터 기반으로 내 작업 찾기
+            const myTask = findMyTaskFromZones(zonesData);
+            setPlans(myTask ? [myTask] : []); // 호환성을 위해 plans에 내 작업 하나만 넣거나, 혹은 별도 state 사용 가능. 여기선 myPlan 변수 로직 수정.
+            
+            if (myTask && myTask.level) {
+                setCurrentLevel(myTask.level);
             }
+
         } catch (e) {
             console.error('근로자 대시보드 로드 실패', e);
         } finally {
@@ -68,7 +85,10 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user, selectedDate]);
 
-    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
+    // 렌더링 시마다 zones에서 다시 찾을 필요 없이 loadData에서 처리하면 좋지만, user가 늦게 로드될 수 있으므로 여기서도 안전장치
+    const myPlan = findMyTaskFromZones(zones); 
+    
+    // ... 날짜 관련 로직 유지 ...
     const isToday = selectedDate === new Date().toISOString().split('T')[0];
     const displayDate = new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
@@ -136,6 +156,7 @@ const WorkerDashboard = () => {
               zonesCount={zones.length} 
               risksCount={dangerCount} 
               myWorkZone={myPlan ? myPlan.zone_name : '미배정'}
+              myWorkType={myPlan ? (myPlan.work_type || myPlan.description) : null}
               onMyZoneClick={myPlan ? scrollToMap : null}
             />
 
