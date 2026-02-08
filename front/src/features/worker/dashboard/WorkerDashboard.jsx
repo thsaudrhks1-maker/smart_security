@@ -7,9 +7,8 @@ import { workApi } from '@/api/workApi';
 import { Shield, Bell, Map as MapIcon, Info, LayoutDashboard } from 'lucide-react';
 import CommonMap from '@/components/common/CommonMap';
 import AttendanceCard from './AttendanceCard';
-import DashboardCards from './DashboardCards';
-import DangerReportModal from './DangerReportModal';
-import DangerZoneDetailModal from './DangerZoneDetailModal';
+import WorkerMainTiles from './WorkerMainTiles';
+import DailyChecklistModal from './DailyChecklistModal';
 import { SafetyGuideModal } from './DashboardModals';
 
 const WorkerDashboard = () => {
@@ -23,9 +22,16 @@ const WorkerDashboard = () => {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+    const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
+    
     const [selectedZone, setSelectedZone] = useState(null);
+    const [isMapVisible, setIsMapVisible] = useState(true); // 지도 기본 펼침
 
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+    // ... (findMyTaskFromZones, loadData, useEffect 등 기존 로직 유지) ...
+    // findMyTaskFromZones는 아래에서 복붙되지 않으므로 기존 코드 유지 필요. 
+    // 여기서는 return 문 내부 구조만 변경하겠음.
 
     // zones 데이터에서 내 작업 찾기 함수
     const findMyTaskFromZones = (zonesList) => {
@@ -33,7 +39,6 @@ const WorkerDashboard = () => {
         for (const zone of zonesList) {
             if (zone.tasks && Array.isArray(zone.tasks)) {
                 for (const task of zone.tasks) {
-                     // workers가 json_agg로 인해 배열로 들어옴
                      if (task.workers && Array.isArray(task.workers)) {
                         const isMine = task.workers.some(w => Number(w.id) === Number(user.id || user.user_id));
                         if (isMine) return { ...task, zone_name: zone.name, level: zone.level };
@@ -68,9 +73,8 @@ const WorkerDashboard = () => {
             const zonesData = zonesRes?.data?.data || [];
             setZones(zonesData);
 
-            // zones 데이터 기반으로 내 작업 찾기
             const myTask = findMyTaskFromZones(zonesData);
-            setPlans(myTask ? [myTask] : []); // 호환성을 위해 plans에 내 작업 하나만 넣거나, 혹은 별도 state 사용 가능. 여기선 myPlan 변수 로직 수정.
+            setPlans(myTask ? [myTask] : []);
             
             if (myTask && myTask.level) {
                 setCurrentLevel(myTask.level);
@@ -85,30 +89,18 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user, selectedDate]);
 
-    // 렌더링 시마다 zones에서 다시 찾을 필요 없이 loadData에서 처리하면 좋지만, user가 늦게 로드될 수 있으므로 여기서도 안전장치
     const myPlan = findMyTaskFromZones(zones); 
     
-    // ... 날짜 관련 로직 유지 ...
     const isToday = selectedDate === new Date().toISOString().split('T')[0];
     const displayDate = new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
-    // 통계 계산
     const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
     const taskCount = Array.isArray(zones) ? zones.filter(z => z.tasks?.length > 0).length : 0;
     
-    // 구역 데이터에 기반한 동적 층 리스트 생성
     const levels = Array.from(new Set(zones.map(z => z.level))).sort((a, b) => {
         const order = { 'B1': -1, '1F': 1, '2F': 2, '3F': 3 };
         return (order[a] || 0) - (order[b] || 0);
     });
-
-    // 지도 섹션으로 스크롤 이동
-    const scrollToMap = () => {
-        const mapSection = document.getElementById('work-map-section');
-        if (mapSection) {
-            mapSection.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
 
     return (
         <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem', color: '#1e293b', paddingBottom: '100px' }}>
@@ -146,83 +138,106 @@ const WorkerDashboard = () => {
                 </button>
             </div>
 
+            {/* 지도 토글 섹션 (최상단 이동) */}
+            <div style={{ marginBottom: '1.5rem' }}>
+                <button 
+                    onClick={() => setIsMapVisible(!isMapVisible)}
+                    style={{ 
+                        width: '100%', 
+                        padding: '1rem', 
+                        background: 'white', 
+                        border: '1px solid #e2e8f0', 
+                        borderRadius: '20px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        marginBottom: isMapVisible ? '1rem' : '0',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ background: '#eff6ff', padding: '8px', borderRadius: '12px' }}>
+                            <MapIcon size={24} color="#3b82f6" />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontWeight: '800', fontSize: '1rem', color: '#1e293b' }}>실시간 현장 지도</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>작업 위치 및 위험 구역 확인</div>
+                        </div>
+                    </div>
+                    <div style={{ color: '#94a3b8' }}>
+                         {isMapVisible ? '접기 ▲' : '펼치기 ▼'}
+                    </div>
+                </button>
+
+                {isMapVisible && (
+                    <section id="work-map-section" style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                        {/* 층 선택 버튼 */}
+                        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
+                            {(levels.length > 0 ? levels : ['B1', '1F', '2F']).map(level => (
+                            <button
+                                key={level}
+                                onClick={() => setCurrentLevel(level)}
+                                style={{
+                                padding: '8px 14px',
+                                borderRadius: '10px',
+                                border: 'none',
+                                background: currentLevel === level ? '#3b82f6' : '#f1f5f9',
+                                color: currentLevel === level ? 'white' : '#64748b',
+                                fontWeight: '800',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {level}
+                            </button>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem', fontWeight: '800' }}>
+                          <span style={{ color: '#2563eb' }}>작업 {taskCount}</span>
+                          <span style={{ color: '#dc2626' }}>위험 {dangerCount}</span>
+                        </div>
+                      </div>
+                      
+                      <div style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                        {project && (
+                          <CommonMap 
+                            center={[project.lat, project.lng]}
+                            zoom={19}
+                            gridConfig={{ 
+                              rows: parseInt(project.grid_rows), 
+                              cols: parseInt(project.grid_cols), 
+                              spacing: parseFloat(project.grid_spacing) 
+                            }}
+                            highlightLevel={currentLevel}
+                            myZoneName={myPlan?.zone_name}
+                            zones={zones}
+
+                            onZoneClick={(zoneData) => {
+                              setSelectedZone(zoneData);
+                              setIsReportModalOpen(true);
+                            }}
+                          />
+                        )}
+                      </div>
+                    </section>
+                )}
+            </div>
+
             {/* 메인 출석 카드 */}
             <AttendanceCard projectInfo={{ project_id: project?.id, project_name: '금일 현장' }} />
-
             <div style={{ height: '24px' }} />
 
-            {/* 핵심 요약 카드 */}
-            <DashboardCards 
-              zonesCount={zones.length} 
-              risksCount={dangerCount} 
-              myWorkZone={myPlan ? myPlan.zone_name : '미배정'}
-              myWorkType={myPlan ? (myPlan.work_type || myPlan.description) : null}
-              onMyZoneClick={myPlan ? scrollToMap : null}
+            {/* 타일 그리드 */}
+            <WorkerMainTiles 
+                project={project}
+                myPlan={myPlan}
+                dangerCount={dangerCount}
+                onChecklistClick={() => setIsChecklistModalOpen(true)}
             />
-
-            {/* 실시간 현장 지도 영역 */}
-            <section id="work-map-section" style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MapIcon size={20} color="#3b82f6" /> 실시간 현장 지도
-                </h3>
-                <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem', fontWeight: '800' }}>
-                  <span style={{ color: '#2563eb' }}>작업 {taskCount}</span>
-                  <span style={{ color: '#dc2626' }}>위험 {dangerCount}</span>
-                </div>
-              </div>
-              
-              {/* 층 선택 버튼 */}
-              <div style={{ display: 'flex', gap: '6px', marginBottom: '0.75rem', overflowX: 'auto' }}>
-                {(levels.length > 0 ? levels : ['B1', '1F', '2F']).map(level => (
-                  <button
-                    key={level}
-                    onClick={() => setCurrentLevel(level)}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      background: currentLevel === level ? '#3b82f6' : '#f1f5f9',
-                      color: currentLevel === level ? 'white' : '#64748b',
-                      fontWeight: '800',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-              
-              <div style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-                {project && (
-                  <CommonMap 
-                    center={[project.lat, project.lng]}
-                    zoom={19}
-                    gridConfig={{ 
-                      rows: parseInt(project.grid_rows), 
-                      cols: parseInt(project.grid_cols), 
-                      spacing: parseFloat(project.grid_spacing) 
-                    }}
-                    highlightLevel={currentLevel}
-                    myZoneName={myPlan?.zone_name}
-                    zones={zones}
-
-                    onZoneClick={(zoneData) => {
-                      setSelectedZone(zoneData);
-                      setIsReportModalOpen(true);
-                    }}
-                  />
-
-                )}
-              </div>
-              <div style={{ marginTop: '1rem', padding: '12px', background: '#f8fafc', borderRadius: '15px', fontSize: '0.8rem', color: '#64748b', display: 'flex', gap: '8px' }}>
-                <Info size={16} color="#3b82f6" />
-                <span>지도를 클릭하여 **위험 요소를 즉시 신고**할 수 있습니다.</span>
-              </div>
-            </section>
 
             {/* 모달 모음 */}
             <DangerReportModal 
@@ -234,6 +249,13 @@ const WorkerDashboard = () => {
             <SafetyGuideModal 
               isOpen={isGuideModalOpen} 
               onClose={() => setIsGuideModalOpen(false)} 
+            />
+            <DailyChecklistModal
+                isOpen={isChecklistModalOpen}
+                onClose={() => setIsChecklistModalOpen(false)}
+                myPlan={myPlan}
+                dangerCount={dangerCount}
+                onSubmit={() => alert("안전점검이 완료되었습니다.")}
             />
         </div>
     );
