@@ -25,15 +25,16 @@ const WorkerDashboard = () => {
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [selectedZone, setSelectedZone] = useState(null);
 
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
     const loadData = async () => {
         try {
             const projectId = user?.project_id || 1;
-            const today = new Date().toISOString().split('T')[0];
             
             const [projectRes, zonesRes, plansRes] = await Promise.all([
                 projectApi.getProject(projectId),
-                projectApi.getZonesWithDetails(projectId, today),
-                workApi.getPlans({ project_id: projectId, d: today })
+                projectApi.getZonesWithDetails(projectId, selectedDate),
+                workApi.getPlans({ project_id: projectId, d: selectedDate })
             ]);
             
             if (projectRes?.data?.success) {
@@ -54,15 +55,10 @@ const WorkerDashboard = () => {
             setZones(zonesData);
             setPlans(plansData);
 
-            // 본인 작업이 있는 경우 해당 층으로 자동 전환
-            // ID 비교 시 타입 차이(Number vs String)를 고려하여 == 사용 또는 Number() 변환
             const myPlanData = Array.isArray(plansData) ? plansData.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
             if (myPlanData && myPlanData.level) {
                 setCurrentLevel(myPlanData.level);
             }
-
-
-
         } catch (e) {
             console.error('근로자 대시보드 로드 실패', e);
         } finally {
@@ -70,14 +66,16 @@ const WorkerDashboard = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, [user]);
+    useEffect(() => { loadData(); }, [user, selectedDate]);
 
     const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
-    const todayStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-    
+    const isToday = selectedDate === new Date().toISOString().split('T')[0];
+    const displayDate = new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
     // 통계 계산
     const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
     const taskCount = Array.isArray(zones) ? zones.filter(z => z.tasks?.length > 0).length : 0;
+    
     // 구역 데이터에 기반한 동적 층 리스트 생성
     const levels = Array.from(new Set(zones.map(z => z.level))).sort((a, b) => {
         const order = { 'B1': -1, '1F': 1, '2F': 2, '3F': 3 };
@@ -97,10 +95,27 @@ const WorkerDashboard = () => {
             {/* 상단 알림 및 인사 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
-                   <h2 style={{ fontSize: '1.25rem', fontWeight: '900', margin: 0 }}>안전한 하루 되세요! 🛡️</h2>
+                   <h2 style={{ fontSize: '1.25rem', fontWeight: '900', margin: 0 }}>
+                       {isToday ? '안전한 하루 되세요! 🛡️' : '지난 작업 기록'}
+                   </h2>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                      <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}><strong>{user?.full_name}</strong> 님</p>
-                     <span style={{ fontSize: '0.75rem', color: '#94a3b8', padding: '2px 8px', background: '#f1f5f9', borderRadius: '12px' }}>{todayStr}</span>
+                     <input 
+                       type="date"
+                       value={selectedDate}
+                       onChange={(e) => setSelectedDate(e.target.value)}
+                       style={{ 
+                         border: 'none', 
+                         background: '#f1f5f9', 
+                         borderRadius: '8px',
+                         padding: '2px 8px',
+                         fontSize: '0.8rem', 
+                         color: '#64748b', 
+                         cursor: 'pointer',
+                         outline: 'none',
+                         fontWeight: '700'
+                       }}
+                     />
                    </div>
                 </div>
                 <button 
