@@ -9,7 +9,7 @@ class task_plans_repository:
     async def get_by_project(pid: int, d: date):
         sql = """
             SELECT t.*, z.name as zone_name, z.level, wi.work_type
-            FROM daily_work_tasks t
+            FROM daily_work_plans t
             JOIN project_zones z ON t.zone_id = z.id
             LEFT JOIN content_work_info wi ON t.work_info_id = wi.id
             WHERE t.project_id = :pid AND t.date = :d
@@ -33,7 +33,7 @@ class task_plans_repository:
         """특정 구역의 오늘 작업 계획 조회"""
         sql = """
             SELECT t.*, z.name as zone_name, z.level, wi.work_type
-            FROM daily_work_tasks t
+            FROM daily_work_plans t
             JOIN project_zones z ON t.zone_id = z.id
             LEFT JOIN content_work_info wi ON t.work_info_id = wi.id
             WHERE t.zone_id = :zid AND t.date = :d
@@ -62,7 +62,7 @@ class task_plans_repository:
                 pass
 
         sql = """
-            INSERT INTO daily_work_tasks (project_id, zone_id, work_info_id, date, description, calculated_risk_score, status)
+            INSERT INTO daily_work_plans (project_id, zone_id, work_info_id, date, description, calculated_risk_score, status)
             VALUES (:project_id, :zone_id, :work_info_id, :date, :description, :risk_score, :status)
             RETURNING *
         """
@@ -73,7 +73,7 @@ class task_plans_repository:
     async def update_task(task_id: int, data: dict):
         """작업 계획 수정"""
         sql = """
-            UPDATE daily_work_tasks 
+            UPDATE daily_work_plans 
             SET work_info_id = :work_info_id, description = :description, 
                 calculated_risk_score = :risk_score, status = :status
             WHERE id = :task_id
@@ -84,7 +84,7 @@ class task_plans_repository:
     @staticmethod
     async def delete_task(task_id: int):
         """작업 계획 삭제"""
-        await execute("DELETE FROM daily_work_tasks WHERE id = :id", {"id": task_id})
+        await execute("DELETE FROM daily_work_plans WHERE id = :id", {"id": task_id})
         return True
     
     @staticmethod

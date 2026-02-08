@@ -3,9 +3,9 @@ from sqlalchemy import Column, Integer, String, ForeignKey, Date, DateTime
 from back.database import Base
 from datetime import datetime
 
-class daily_work_tasks(Base):
+class daily_work_plans(Base):
     """[DAILY] 오늘의 세부 작업 계획"""
-    __tablename__ = "daily_work_tasks"
+    __tablename__ = "daily_work_plans"
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     zone_id = Column(Integer, ForeignKey("project_zones.id", ondelete="CASCADE"), nullable=False)
@@ -20,5 +20,5 @@ class daily_worker_users(Base):
     """[DAILY] 오늘의 인원 투입 현황 (작업자 매핑)"""
     __tablename__ = "daily_worker_users"
     id = Column(Integer, primary_key=True, index=True)
-    plan_id = Column(Integer, ForeignKey("daily_work_tasks.id", ondelete="CASCADE"), nullable=False)
+    plan_id = Column(Integer, ForeignKey("daily_work_plans.id", ondelete="CASCADE"), nullable=False)
     worker_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)

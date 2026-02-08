@@ -22,11 +22,11 @@ async def fix_constraints():
         except:
             pass
 
-        # 1. plan_id -> daily_work_tasks(id) 연결
+        # 1. plan_id -> daily_work_plans(id) 연결
         await execute("""
-            ALTER TABLE daily_worker_users 
-            ADD CONSTRAINT daily_worker_users_plan_id_fkey 
-            FOREIGN KEY (plan_id) REFERENCES daily_work_tasks(id) ON DELETE CASCADE;
+            ALTER TABLE daily_worker_users
+            ADD CONSTRAINT daily_worker_users_plan_id_fkey
+            FOREIGN KEY (plan_id) REFERENCES daily_work_plans(id) ON DELETE CASCADE;
         """)
         print("[성공] daily_worker_users (plan_id) -> daily_work_tasks (id)")
         
@@ -45,7 +45,7 @@ async def fix_constraints():
         print(f"\n[오류 발생] 제약조건 적용 실패: {e}")
         print("-" * 50)
         print("원인 가능성:")
-        print("1. daily_worker_users 테이블에 작업 계획(daily_work_tasks)에 없는 plan_id가 이미 들어있음")
+        print("1. daily_worker_users 테이블에 작업 계획(daily_work_plans)에 없는 plan_id가 이미 들어있음")
         print("2. daily_worker_users 테이블에 사용자(sys_users)에 없는 worker_id가 이미 들어있음")
         print("3. 데이터 정리가 필요합니다.")
 

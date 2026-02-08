@@ -58,7 +58,7 @@ from back.content.danger_info.model import content_danger_info
 
 # 4. [DAILY] 일일 관리 (누락 복구 완료)
 from back.daily.attendance.model import daily_attendance
-from back.daily.task_plans.model import daily_work_tasks, daily_worker_users
+from back.daily.task_plans.model import daily_work_plans, daily_worker_users
 from back.daily.safety_logs.model import daily_safety_logs, daily_danger_zones, daily_danger_images
 from back.daily.notices.model import daily_notices
 from back.daily.violations.model import daily_violations
