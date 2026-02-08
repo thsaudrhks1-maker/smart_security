@@ -47,7 +47,7 @@ class locations_repository:
                     ) FILTER (WHERE u.id IS NOT NULL),
                     '[]'::json
                 ) as workers
-            FROM daily_work_tasks dwt
+            FROM daily_work_plans dwt
             LEFT JOIN content_work_info wi ON dwt.work_info_id = wi.id
             LEFT JOIN daily_worker_users dwu ON dwt.id = dwu.plan_id
             LEFT JOIN sys_users u ON dwu.worker_id = u.id
