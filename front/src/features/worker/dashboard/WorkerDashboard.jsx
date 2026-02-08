@@ -55,7 +55,8 @@ const WorkerDashboard = () => {
             setPlans(plansData);
 
             // 본인 작업이 있는 경우 해당 층으로 자동 전환
-            const myPlanData = Array.isArray(plansData) ? plansData.find(p => p.workers?.some(w => w.id === (user?.id || user?.user_id))) : null;
+            // ID 비교 시 타입 차이(Number vs String)를 고려하여 == 사용 또는 Number() 변환
+            const myPlanData = Array.isArray(plansData) ? plansData.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
             if (myPlanData && myPlanData.level) {
                 setCurrentLevel(myPlanData.level);
             }
@@ -71,7 +72,8 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user]);
 
-    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => w.id === (user?.id || user?.user_id))) : null;
+    const myPlan = Array.isArray(plans) ? plans.find(p => p.workers?.some(w => Number(w.id) === Number(user?.id || user?.user_id))) : null;
+    const todayStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
     
     // 통계 계산
     const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
@@ -96,7 +98,10 @@ const WorkerDashboard = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                    <h2 style={{ fontSize: '1.25rem', fontWeight: '900', margin: 0 }}>안전한 하루 되세요! 🛡️</h2>
-                   <p style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '4px' }}><strong>{user?.full_name}</strong> 님, 오늘도 안전 작업 하세요.</p>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                     <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}><strong>{user?.full_name}</strong> 님</p>
+                     <span style={{ fontSize: '0.75rem', color: '#94a3b8', padding: '2px 8px', background: '#f1f5f9', borderRadius: '12px' }}>{todayStr}</span>
+                   </div>
                 </div>
                 <button 
                   onClick={() => setIsGuideModalOpen(true)}
