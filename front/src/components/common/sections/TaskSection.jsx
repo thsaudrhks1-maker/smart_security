@@ -17,7 +17,8 @@ const TaskSection = ({
     approvedWorkers,
     onAssignWorker,
     onRemoveWorker,
-    onAssignmentComplete
+    onAssignmentComplete,
+    viewerType = 'MANAGER'
 }) => {
     return (
         <section style={{ marginBottom: '2rem' }}>
@@ -37,7 +38,7 @@ const TaskSection = ({
                 }}>
                     <ClipboardList size={20} /> 작업 계획
                 </h3>
-                {mode === 'view' && (
+                {mode === 'view' && viewerType === 'MANAGER' && (
                     <button 
                         onClick={() => setMode('add_task')}
                         style={{ 
@@ -93,9 +94,10 @@ const TaskSection = ({
                                 key={task.id} 
                                 task={task}
                                 approvedWorkers={approvedWorkers}
-                                onDelete={() => onDeleteTask(task.id)}
-                                onAssignWorker={(workerId) => onAssignWorker(task.id, workerId)}
-                                onRemoveWorker={(workerId) => onRemoveWorker(task.id, workerId)}
+                                onDelete={viewerType === 'MANAGER' ? () => onDeleteTask(task.id) : undefined}
+                                onAssignWorker={viewerType === 'MANAGER' ? (workerId) => onAssignWorker(task.id, workerId) : undefined}
+                                onRemoveWorker={viewerType === 'MANAGER' ? (workerId) => onRemoveWorker(task.id, workerId) : undefined}
+                                isWorkerMode={viewerType === 'WORKER'}
                             />
                         ))
                     )}

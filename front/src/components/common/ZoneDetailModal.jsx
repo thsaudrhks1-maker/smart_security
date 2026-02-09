@@ -11,7 +11,7 @@ import DangerSection from './sections/DangerSection';
  * 구역 상세 모달 (작업 계획 + 위험 구역 관리)
  * 데스크톱, 모바일 모두 사용 가능
  */
-const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) => {
+const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, initialViewerType }) => {
     const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [dangers, setDangers] = useState([]);
@@ -19,6 +19,9 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
     const [mode, setMode] = useState('view');
     const [selectedTaskForWorkers, setSelectedTaskForWorkers] = useState(null);
     const [files, setFiles] = useState([]);
+
+    // 뷰어 타입 결정 (props로 받거나 유저 정보로 판단. 기본값은 MANAGER)
+    const viewerType = initialViewerType || (user?.role === 'WORKER' ? 'WORKER' : 'MANAGER');
 
     const [taskForm, setTaskForm] = useState({
         work_info_id: '',
@@ -169,7 +172,8 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
             }
             
             formData.append('description', dangerForm.description);
-            formData.append('status', 'APPROVED');
+            // WORKER면 PENDING, MANAGER면 APPROVED
+            formData.append('status', viewerType === 'WORKER' ? 'PENDING' : 'APPROVED');
 
             files.forEach(file => {
                 formData.append('files', file);
@@ -177,7 +181,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
             
             await safetyApi.reportDanger(formData);
             
-            alert('위험 구역이 등록되었습니다.');
+            alert(viewerType === 'WORKER' ? '위험 요소 신고가 접수되었습니다.' : '위험 구역이 등록되었습니다.');
             handleCancelDanger();
             loadZoneDetail();
         } catch (e) {
@@ -266,6 +270,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                             onAssignWorker={handleAssignWorker}
                             onRemoveWorker={handleRemoveWorker}
                             onAssignmentComplete={handleWorkerAssignmentComplete}
+                            viewerType={viewerType}
                         />
 
                         <DangerSection 
@@ -280,6 +285,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                             onCreateDanger={handleCreateDanger}
                             onDeleteDanger={handleDeleteDanger}
                             onCancelDanger={handleCancelDanger}
+                            viewerType={viewerType}
                         />
                     </>
                 )}

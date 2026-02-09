@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Plus } from 'lucide-react';
+import { AlertTriangle, Plus, Megaphone } from 'lucide-react';
 import DangerForm from '../forms/DangerForm';
 import DangerCard from '../cards/DangerCard';
 
@@ -14,7 +14,8 @@ const DangerSection = ({
     setFiles,
     onCreateDanger,
     onDeleteDanger,
-    onCancelDanger
+    onCancelDanger,
+    viewerType = 'MANAGER'
 }) => {
     return (
         <section>
@@ -39,7 +40,7 @@ const DangerSection = ({
                         onClick={() => setMode('add_danger')}
                         style={{ 
                             padding: '8px 16px', 
-                            background: '#ef4444', 
+                            background: viewerType === 'WORKER' ? '#f59e0b' : '#ef4444', 
                             color: 'white', 
                             border: 'none', 
                             borderRadius: '10px', 
@@ -51,7 +52,7 @@ const DangerSection = ({
                             gap: '6px'
                         }}
                     >
-                        <Plus size={16} /> 위험 구역 추가
+                        {viewerType === 'WORKER' ? <><Megaphone size={16} /> 위험 신고</> : <><Plus size={16} /> 위험 구역 추가</>}
                     </button>
                 )}
             </div>
@@ -64,7 +65,7 @@ const DangerSection = ({
                     files={files}
                     setFiles={setFiles}
                     onSubmit={onCreateDanger}
-                    mode="MANAGER"
+                    mode={viewerType}
                     onCancel={onCancelDanger}
                 />
             ) : (
@@ -84,7 +85,7 @@ const DangerSection = ({
                             <DangerCard 
                                 key={danger.id} 
                                 danger={danger}
-                                onDelete={() => onDeleteDanger(danger.id)}
+                                onDelete={viewerType === 'MANAGER' ? () => onDeleteDanger(danger.id) : undefined}
                             />
                         ))
                     )}

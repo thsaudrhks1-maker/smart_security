@@ -9,10 +9,11 @@ import CommonMap from '@/components/common/CommonMap';
 import AttendanceCard from './AttendanceCard';
 import WorkerMainTiles from './WorkerMainTiles';
 import DailyChecklistModal from './DailyChecklistModal';
-import DangerZoneModal from '@/components/common/DangerZoneModal';
+// import DangerZoneModal from '@/components/common/DangerZoneModal';
 import { SafetyGuideModal } from './DashboardModals';
 import { noticeApi } from '@/api/noticeApi';
 import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
+import ZoneDetailModal from '@/components/common/ZoneDetailModal';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
@@ -341,7 +342,7 @@ const WorkerDashboard = () => {
 
                             onZoneClick={(zoneData) => {
                               setSelectedZone(zoneData);
-                              setIsReportModalOpen(true);
+                              setIsDetailModalOpen(true);
                             }}
                           />
                         )}
@@ -367,14 +368,17 @@ const WorkerDashboard = () => {
                 onNoticeClick={() => setIsHistoryModalOpen(true)} // 추가
             />
 
-            {/* 모달 모음 */}
-            <DangerZoneModal 
-                open={isReportModalOpen}
-                onClose={() => setIsReportModalOpen(false)}
-                zone={selectedZone}
-                mode="WORKER"
-                onSuccess={() => loadData()}
-            />
+            {/* 구역 상세 모달 (작업 계획 보기 + 위험 신고) */}
+            {isDetailModalOpen && selectedZone && (
+                <ZoneDetailModal 
+                    zone={selectedZone}
+                    date={selectedDate}
+                    projectId={user?.project_id}
+                    approvedWorkers={[]} // 근로자는 배정 정보 수정 불가하므로 빈 배열
+                    onClose={() => setIsDetailModalOpen(false)}
+                    initialViewerType="WORKER"
+                />
+            )}
             <SafetyGuideModal 
               isOpen={isGuideModalOpen} 
               onClose={() => setIsGuideModalOpen(false)} 
