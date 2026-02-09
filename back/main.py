@@ -10,6 +10,7 @@ from back.content.danger_info.router import router as danger_info_router
 from back.daily.attendance.router import router as attendance_router
 from back.daily.notices.router import router as notices_router
 from back.daily.task_plans.router import router as task_plans_router
+from back.manager.router import router as manager_router
 
 app = FastAPI(title="Smart Security API")
 
@@ -45,6 +46,7 @@ app.include_router(danger_info_router, prefix="/api/content/danger_info", tags=[
 app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])
 app.include_router(notices_router, prefix="/api/daily/notices", tags=["Daily_Notices"])
 app.include_router(task_plans_router, prefix="/api/daily/task_plans", tags=["Daily_TaskPlans"])
+app.include_router(manager_router, prefix="/api/manager", tags=["Manager"])
 
 @app.get("/")
 async def root():

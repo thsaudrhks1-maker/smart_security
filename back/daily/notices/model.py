@@ -10,7 +10,8 @@ class daily_notices(Base):
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    is_important = Column(Boolean, default=False)
+    notice_type = Column(String(50), default="NORMAL") # NORMAL, IMPORTANT, EMERGENCY
+    notice_role = Column(String(50), nullable=True)     # ADMIN, MANAGER, PARTNER
     created_at = Column(DateTime, default=datetime.now)
 
 class daily_safety_info(Base):

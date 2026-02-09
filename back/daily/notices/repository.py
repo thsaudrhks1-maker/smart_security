@@ -1,31 +1,54 @@
-
 from back.database import fetch_all, fetch_one, insert_and_return
 from typing import Dict, Any
 
 class notices_repository:
-    """[DAILY_NOTICES] 공지사항 및 안전정보 데이터 접근"""
+    """[DAILY_NOTICES] 공지사항 및 긴급 알람 데이터 접근"""
 
     @staticmethod
-    async def get_all_notices():
-        """공지사항 목록 (작성자 이름 포함)"""
-        sql = """
+    async def get_all_notices(project_id: int = None):
+        """공지사항 목록 (긴급 알람 우선 정렬)"""
+        params = {}
+        where_clause = ""
+        if project_id:
+            where_clause = "WHERE n.project_id = :pid"
+            params["pid"] = project_id
+
+        sql = f"""
             SELECT n.*, u.full_name as author_name
             FROM daily_notices n
             LEFT JOIN sys_users u ON n.created_by = u.id
-            ORDER BY n.is_important DESC, n.created_at DESC
+            {where_clause}
+            ORDER BY 
+                CASE 
+                    WHEN n.notice_type = 'EMERGENCY' THEN 1 
+                    WHEN n.notice_type = 'IMPORTANT' THEN 2
+                    ELSE 3 
+                END,
+                n.created_at DESC
         """
-        return await fetch_all(sql)
+        return await fetch_all(sql, params)
 
     @staticmethod
     async def create_notice(data: Dict[str, Any]):
+        """공지사항 또는 긴급 알람 생성"""
         sql = """
-            INSERT INTO daily_notices (project_id, title, content, is_important, created_by)
-            VALUES (:project_id, :title, :content, :is_important, :created_by)
-            RETURNING *
+            INSERT INTO daily_notices (
+                project_id, title, content, notice_type, notice_role, created_by
+            ) VALUES (
+                :project_id, :title, :content, :notice_type, :notice_role, :created_by
+            ) RETURNING *
         """
+        # 기본값 설정
+        data.setdefault('notice_type', 'NORMAL')
+        
         return await insert_and_return(sql, data)
 
     @staticmethod
-    async def get_safety_info_by_date(target_date: str):
-        """특정 날짜의 안전 정보 조회"""
-        return await fetch_one("SELECT * FROM daily_safety_info WHERE date = :d", {"d": target_date})
+    async def get_latest_emergency(project_id: int):
+        """가장 최근 긴급 알람 1건 조회 (근로자 팝업용)"""
+        sql = """
+            SELECT * FROM daily_notices 
+            WHERE project_id = :pid AND notice_type = 'EMERGENCY' 
+            ORDER BY created_at DESC LIMIT 1
+        """
+        return await fetch_one(sql, {"pid": project_id})

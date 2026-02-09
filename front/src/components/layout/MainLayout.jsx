@@ -22,6 +22,7 @@ const MainLayout = ({ children }) => {
       { id: 'projects', label: '현장 관리', icon: <Building2 size={18} />, path: '/admin/projects', isImplemented: true },
       { id: 'workers', label: '근로자 관리', icon: <Users size={18} />, path: '/admin/workers', isImplemented: false },
       { id: 'companies', label: '협력사(고객사) 관리', icon: <Building2 size={18} />, path: '/admin/companies', isImplemented: true },
+      { id: 'attendance', label: '출역 현황', icon: <ClipboardCheck size={18} />, path: '/admin/attendance', isImplemented: true },
       { id: 'tasks', label: '작업 관리', icon: <ClipboardCheck size={18} />, path: '/admin/tasks', isImplemented: false }
     ]},
     { title: 'SAFETY & CONTENT', items: [

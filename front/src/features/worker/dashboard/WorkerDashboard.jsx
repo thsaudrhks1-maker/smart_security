@@ -11,6 +11,8 @@ import WorkerMainTiles from './WorkerMainTiles';
 import DailyChecklistModal from './DailyChecklistModal';
 import DangerReportModal from './DangerReportModal';
 import { SafetyGuideModal } from './DashboardModals';
+import { noticeApi } from '@/api/noticeApi';
+import { X, Volume2, AlertTriangle } from 'lucide-react';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
@@ -18,13 +20,18 @@ const WorkerDashboard = () => {
     const [zones, setZones] = useState([]);
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [mySafetyLogs, setMySafetyLogs] = useState([]); // 추가: 나의 점검 기록 상태
+    const [mySafetyLogs, setMySafetyLogs] = useState([]); 
     const [currentLevel, setCurrentLevel] = useState('1F');
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
+    
+    // 긴급 알람 상태
+    const [latestEmergency, setLatestEmergency] = useState(null);
+    const [showEmergency, setShowEmergency] = useState(false);
+    const [lastAlertId, setLastAlertId] = useState(localStorage.getItem('last_emergency_id'));
     
     const [selectedZone, setSelectedZone] = useState(null);
     const [isMapVisible, setIsMapVisible] = useState(true); // 지도 기본 펼침
@@ -99,7 +106,38 @@ const WorkerDashboard = () => {
         }
     };
 
-    useEffect(() => { loadData(); }, [user, selectedDate]);
+    const checkEmergency = async () => {
+        const projectId = user?.project_id || 1;
+        try {
+            const res = await noticeApi.getLatestEmergency(projectId);
+            if (res.data?.data) {
+                const alert = res.data.data;
+                // 새로운 알람이거나, 이전에 닫았던 알람이 아닐 경우
+                if (String(alert.id) !== String(lastAlertId)) {
+                    setLatestEmergency(alert);
+                    setShowEmergency(true);
+                }
+            }
+        } catch (e) {
+            console.error('긴급 알람 체크 실패:', e);
+        }
+    };
+
+    useEffect(() => { 
+        loadData(); 
+        // 10초마다 긴급 알람 체크
+        const emergencyTimer = setInterval(checkEmergency, 10000);
+        checkEmergency(); // 초기 로드 시 1회 실행
+        return () => clearInterval(emergencyTimer);
+    }, [user, selectedDate, lastAlertId]);
+
+    const handleCloseEmergency = () => {
+        if (latestEmergency) {
+            localStorage.setItem('last_emergency_id', String(latestEmergency.id));
+            setLastAlertId(String(latestEmergency.id));
+        }
+        setShowEmergency(false);
+    };
 
     const myPlans = findAllMyTasks(zones);
     const myPlan = myPlans.length > 0 ? myPlans[0] : null; // 호환성 유지
@@ -303,6 +341,54 @@ const WorkerDashboard = () => {
                 }}
                 isSubmitted={myPlan && mySafetyLogs.some(log => log.plan_id === myPlan.id || log.plan_id === myPlan.task_id)}
             />
+
+            {/* 긴급 알람 오버레이 */}
+            {showEmergency && latestEmergency && (
+                <div style={{ 
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' 
+                }}>
+                    <div style={{ 
+                        width: '100%', maxWidth: '400px', background: 'white', borderRadius: '30px', 
+                        overflow: 'hidden', border: '5px solid #dc2626', animation: 'pulse 2s infinite'
+                    }}>
+                        <div style={{ background: '#dc2626', padding: '20px', textAlign: 'center', color: 'white' }}>
+                            <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'center' }}>
+                                <AlertTriangle size={48} />
+                            </div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>🚨 긴급 안전 알람</h3>
+                            <p style={{ margin: '5px 0 0 0', opacity: 0.9, fontSize: '0.9rem' }}>발송: {latestEmergency.author_name || '현장 관리자'}</p>
+                        </div>
+                        <div style={{ padding: '25px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0f172a', marginBottom: '15px', lineHeight: '1.4' }}>
+                                {latestEmergency.title}
+                            </div>
+                            <div style={{ fontSize: '1rem', color: '#475569', lineHeight: '1.6', background: '#f8fafc', padding: '15px', borderRadius: '15px', textAlign: 'left' }}>
+                                {latestEmergency.content}
+                            </div>
+                            <button 
+                                onClick={handleCloseEmergency}
+                                style={{ 
+                                    marginTop: '25px', width: '100%', padding: '15px', 
+                                    background: '#0f172a', color: 'white', border: 'none', 
+                                    borderRadius: '15px', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer' 
+                                }}
+                            >
+                                확인하였습니다
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+                    70% { transform: scale(1.02); box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+                }
+            `}} />
         </div>
     );
 };

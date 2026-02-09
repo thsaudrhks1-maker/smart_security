@@ -56,7 +56,7 @@ async def get_project_worker_status(project_id: int, d: Optional[str] = None):
             c.name as company_name
         FROM daily_worker_users dwu
         JOIN daily_work_plans dwp ON dwu.plan_id = dwp.id
-        JOIN sys_users u ON dwu.user_id = u.id
+        JOIN sys_users u ON dwu.worker_id = u.id
         LEFT JOIN sys_companies c ON u.company_id = c.id
         WHERE dwp.project_id = :pid AND dwp.date = :d
         ORDER BY u.full_name

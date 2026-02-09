@@ -1,0 +1,23 @@
+
+2026-02-09 업무 보고
+===
+
+1. 진행 업무
+- 매니저 대시보드 및 출역 관리 기능 통합 구현
+- 관리자(Admin), 매니저(Manager), 근로자(Worker) 공용 출역 현황 페이지(AttendanceStatusPage) 구현
+- 실시간 투입 인원 현황 위젯(WorkerStatusWidget) 대시보드 통합
+
+2. 이슈 수정 사항
+- [Backend] /api/daily/attendance/project-status 엔드포인트 500 에러 수정 (dwu.user_id -> dwu.worker_id 오타 수정)
+- [Frontend] AttendanceStatusPage에서 프로젝트 ID 미전달로 인한 404 에러 수정
+- [Frontend] Admin 계정으로 접속 시 프로젝트를 선택하여 출역 현황을 볼 수 있도록 기능 확장
+- [Backend] /api/manager/* 관련 404 에러 방지를 위한 플레이스홀더 라우터 추가
+
+3. 익일 진행 계획
+- 출역 리스트 엑셀 다운로드 기능 실제 구현
+- 근로자용 출역 페이지 모바일 최적화 UI 고도화
+- 안전 점검 상세 결과 팝업 연동
+
+4. 특이사항
+- 공용 컴포넌트(AttendanceStatusPage, WorkerStatusWidget)를 도입하여 코드 중복을 제거하고 유지보수성 향상
+- 모든 역할군에서 동일한 출역 데이터를 실시간으로 확인할 수 있는 기반 마련

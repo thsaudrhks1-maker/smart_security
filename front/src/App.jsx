@@ -16,14 +16,15 @@ import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
 
-// Manager
+// Common
+import AttendanceStatusPage from './components/common/AttendanceStatusPage';
+
+// Manager Features
 import WorkerManagement from './features/manager/workers/WorkerManagement';
 import CompanyManagement from './features/manager/companies/CompanyManagement';
-import ManagerAttendance from './features/manager/attendance/ManagerAttendance';
 import ManagerContents from './features/manager/contents/ManagerContents';
 
-
-// Projects
+// Admin Features
 import ProjectList from './features/admin/projects/ProjectList';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CreateProject from './features/admin/projects/CreateProject';
@@ -68,6 +69,7 @@ function App() {
                 <Route path="projects" element={<ProjectList />} />
                 <Route path="projects/create" element={<CreateProject />} />
                 <Route path="projects/:id" element={<ProjectDetail />} />
+                <Route path="attendance" element={<AttendanceStatusPage />} />
                 {/* 나머지 페이지들도 여기에 추가 예정 */}
               </Routes>
             </ProtectedRoute>
@@ -83,8 +85,7 @@ function App() {
                 <Route path="locations" element={<ManagerDashboard />} />
                 <Route path="companies" element={<CompanyManagement />} />
                 <Route path="workers" element={<WorkerManagement />} />
-                <Route path="attendance" element={<ManagerAttendance />} />
-
+                <Route path="attendance" element={<AttendanceStatusPage />} />
 
                 <Route path="safety-info" element={<ManagerDashboard />} />
                 <Route path="violations" element={<ManagerDashboard />} />
@@ -102,6 +103,7 @@ function App() {
             <ProtectedRoute allowedRoles={['worker']} layout={WorkerLayout}>
               <Routes>
                 <Route path="dashboard" element={<WorkerDashboard />} />
+                <Route path="attendance" element={<AttendanceStatusPage />} />
                 <Route path="" element={<Navigate to="/worker/dashboard" replace />} />
               </Routes>
             </ProtectedRoute>

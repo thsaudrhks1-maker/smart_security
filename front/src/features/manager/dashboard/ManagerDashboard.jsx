@@ -5,12 +5,13 @@ import { attendanceApi } from '@/api/attendanceApi';
 import { 
   Building2, Users, Calendar, ShieldCheck, 
   QrCode, ClipboardList, Info, Bell, Map as MapIcon,
-  TrendingUp, CheckCircle2, UserCheck, Clock, LogIn, LogOut, UserX, ChevronDown, ChevronUp
+  TrendingUp, CheckCircle2, UserCheck, Clock, LogIn, LogOut, UserX, ChevronDown, ChevronUp, CheckCircle
 } from 'lucide-react';
-import WorkerStatusWidget from './WorkerStatusWidget';
+import WorkerStatusWidget from '@/components/common/WorkerStatusWidget';
+import NoticeManagementWidget from '@/components/common/NoticeManagementWidget';
 
 /**
- * [MANAGER] 현장 관리자 통합 대시보드 (최적화 레이아웃)
+ * [MANAGER] 현장 관리자 통합 대시보드
  */
 const ManagerDashboard = () => {
     const { user } = useAuth();
@@ -29,7 +30,8 @@ const ManagerDashboard = () => {
             let siteId = user?.project_id;
 
             if (!siteId) {
-                const listRes = await projectApi.getProjects().catch(() => ({ data: { data: [] } }));
+                // 프로젝트 ID가 없으면 목록에서 첫 번째 가져오기
+                const listRes = await projectApi.getProjects();
                 const list = listRes?.data?.data || [];
                 siteId = list.length > 0 ? list[0].id : 1;
             } else {
@@ -37,12 +39,12 @@ const ManagerDashboard = () => {
             }
 
             const [detailRes, attRes] = await Promise.all([
-                projectApi.getProjectDetail(siteId).catch(() => ({ data: { data: null } })),
-                attendanceApi.getAttendance(siteId, today).catch(() => ({ data: { data: [] } }))
+                projectApi.getProjectDetail(siteId),
+                attendanceApi.getAttendance(siteId, today)
             ]);
 
             if (detailRes?.data?.data) setProjectDetail(detailRes.data.data);
-            setAttendance(attRes?.data?.data || []);
+            if (attRes?.data?.data) setAttendance(attRes.data.data);
         } catch (e) {
             console.error('대시보드 데이터 로드 중 오류:', e);
         } finally {
@@ -93,7 +95,7 @@ const ManagerDashboard = () => {
             color: '#1e293b',
             background: '#f8fafc'
         }}>
-            {/* Header - 컴팩트 */}
+            {/* Header */}
             <header style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Building2 size={20} color="#3b82f6" />
@@ -106,7 +108,7 @@ const ManagerDashboard = () => {
                 </div>
             </header>
 
-            {/* Main Content - 2단 레이아웃 */}
+            {/* Main Content */}
             <div style={{ 
                 flex: 1, 
                 display: 'grid', 
@@ -114,15 +116,22 @@ const ManagerDashboard = () => {
                 gap: '1rem',
                 minHeight: 0
             }}>
-                {/* 좌측: 현장 정보 + 협력업체 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0 }}>
-                    {/* 현장 정보 (크게) */}
-                    <section style={{ background: 'white', padding: '1.8rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.2rem', color: '#3b82f6' }}>
-                            <Building2 size={22} />
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: '900', margin: 0 }}>현장 현황</h2>
+                {/* 좌측: 현장 정보 + 협력업체 (스크롤 가능하도록 처리) */}
+                <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1rem', 
+                    minHeight: 0, 
+                    overflowY: 'auto',
+                    paddingRight: '4px'
+                }}>
+                    {/* 현장 정보 */}
+                    <section style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem', color: '#3b82f6' }}>
+                            <Building2 size={20} />
+                            <h2 style={{ fontSize: '1.1rem', fontWeight: '900', margin: 0 }}>현장 현황</h2>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             <InfoRow label="현장명" value={project?.name || '-'} />
                             <InfoRow label="발주처" value={projectDetail?.client?.name || '-'} />
                             <InfoRow label="시공사" value={projectDetail?.constructor?.name || '-'} />
@@ -130,150 +139,96 @@ const ManagerDashboard = () => {
                             <InfoRow label="안전관리자" value={projectDetail?.safety_manager?.full_name || '-'} />
                             <InfoRow label="공사기간" value={`${project?.start_date || '-'} ~ ${project?.end_date || '-'}`} />
                         </div>
-                        {/* 출역 통계 */}
-                        <div style={{ marginTop: '1.2rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', padding: '1.2rem', borderRadius: '14px', color: 'white' }}>
+                        {/* 출역 통계 요약 */}
+                        <div style={{ marginTop: '1.2rem', background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', padding: '1rem', borderRadius: '14px', color: 'white' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
                                 <div>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: '700' }}>승인인원</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900', marginTop: '4px' }}>{approvedWorkers.length}</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: '700' }}>승인인원</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{approvedWorkers.length}</div>
                                 </div>
                                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.3)', borderRight: '1px solid rgba(255,255,255,0.3)' }}>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: '700' }}>출근</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900', marginTop: '4px' }}>{inCount}</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: '700' }}>출근</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{inCount}</div>
                                 </div>
                                 <div>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: '700' }}>퇴근</div>
-                                    <div style={{ fontSize: '2rem', fontWeight: '900', marginTop: '4px' }}>{outCount}</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: '700' }}>퇴근</div>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{outCount}</div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    {/* 협력업체 & 승인 관리 (세로 배치) */}
-                    <section style={{ 
-                        background: 'white', 
-                        padding: '1rem', 
-                        borderRadius: '16px', 
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        flex: 1,
-                        minHeight: 0
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.8rem', color: '#10b981' }}>
-                            <Users size={16} />
-                            <h2 style={{ fontSize: '0.9rem', fontWeight: '800', margin: 0 }}>협력업체 & 승인 관리</h2>
+                    {/* 협력업체 & 승인 관리 */}
+                    <section style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1rem', color: '#10b981' }}>
+                            <Users size={18} />
+                            <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>협력업체 & 승인 관리</h2>
                         </div>
-                        <div style={{ 
-                            flex: 1,
-                            overflowY: 'auto', 
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '10px'
-                        }}>
-                            {projectDetail?.partners?.length === 0 ? (
-                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>협력업체 없음</div>
-                            ) : projectDetail?.partners?.map(partner => {
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {(!projectDetail?.partners || projectDetail.partners.length === 0) ? (
+                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px' }}>등록된 협력업체가 없습니다.</div>
+                            ) : projectDetail.partners.map(partner => {
                                 const partnerApproved = approvedWorkers.filter(w => w.company_id === partner.id);
                                 const partnerPending = pendingWorkers.filter(w => w.company_id === partner.id);
                                 const totalWorkers = partnerApproved.length + partnerPending.length;
                                 const isExpanded = expandedPartner === partner.id;
                                 
                                 return (
-                                    <div key={partner.id} style={{ 
-                                        border: '1.5px solid #e2e8f0', 
-                                        borderRadius: '12px', 
-                                        overflow: 'hidden',
-                                        transition: 'all 0.2s'
-                                    }}>
+                                    <div key={partner.id} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden' }}>
                                         <div 
-                                            onClick={() => partnerPending.length > 0 && setExpandedPartner(isExpanded ? null : partner.id)}
+                                            onClick={() => totalWorkers > 0 && setExpandedPartner(isExpanded ? null : partner.id)}
                                             style={{ 
-                                                padding: '12px', 
-                                                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
-                                                cursor: partnerPending.length > 0 ? 'pointer' : 'default',
+                                                padding: '12px 16px', 
+                                                background: isExpanded ? '#f8fafc' : 'white',
+                                                cursor: totalWorkers > 0 ? 'pointer' : 'default',
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
-                                                alignItems: 'center'
+                                                alignItems: 'center',
+                                                transition: 'all 0.2s'
                                             }}
                                         >
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontWeight: '900', fontSize: '0.9rem', color: '#0f172a' }}>{partner.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '3px' }}>{partner.trade_type}</div>
+                                                <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#0f172a' }}>{partner.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{partner.trade_type || '전문건설'}</div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                <div style={{ textAlign: 'center', padding: '6px 10px', background: '#ecfdf5', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-                                                    <div style={{ fontSize: '0.65rem', color: '#065f46', fontWeight: '700' }}>총인원</div>
-                                                    <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#10b981' }}>{totalWorkers}</div>
+                                                <div style={{ textAlign: 'center', minWidth: '45px' }}>
+                                                    <div style={{ fontSize: '0.6rem', color: '#64748b', fontWeight: '700' }}>인원</div>
+                                                    <div style={{ fontSize: '1rem', fontWeight: '900', color: '#3b82f6' }}>{totalWorkers}</div>
                                                 </div>
                                                 {partnerPending.length > 0 && (
-                                                    <>
-                                                        <div style={{ textAlign: 'center', padding: '6px 10px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
-                                                            <div style={{ fontSize: '0.65rem', color: '#92400e', fontWeight: '700' }}>대기</div>
-                                                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#f59e0b' }}>{partnerPending.length}</div>
-                                                        </div>
-                                                        <div>{isExpanded ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}</div>
-                                                    </>
+                                                    <div style={{ textAlign: 'center', minWidth: '45px', padding: '2px 8px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
+                                                        <div style={{ fontSize: '0.6rem', color: '#92400e', fontWeight: '700' }}>대기</div>
+                                                        <div style={{ fontSize: '0.9rem', fontWeight: '900', color: '#f59e0b' }}>{partnerPending.length}</div>
+                                                    </div>
+                                                )}
+                                                {totalWorkers > 0 && (
+                                                    <div style={{ color: '#94a3b8' }}>{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                                                 )}
                                             </div>
                                         </div>
                                         
-                                        {partnerPending.length > 0 && isExpanded && (
-                                            <div style={{ 
-                                                padding: '10px', 
-                                                background: '#fffbeb', 
-                                                display: 'flex', 
-                                                flexDirection: 'column', 
-                                                gap: '6px'
-                                            }}>
+                                        {isExpanded && (
+                                            <div style={{ padding: '8px', background: '#f8fafc', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                {/* 대기자 먼저 표시 */}
                                                 {partnerPending.map(w => (
-                                                    <div key={w.id} style={{ 
-                                                        padding: '10px', 
-                                                        background: 'white', 
-                                                        borderRadius: '8px', 
-                                                        border: '1px solid #fef3c7',
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
-                                                                {w.full_name}
-                                                                {w.job_title && (
-                                                                    <span style={{ 
-                                                                        marginLeft: '8px',
-                                                                        padding: '2px 8px',
-                                                                        background: '#dbeafe',
-                                                                        borderRadius: '6px',
-                                                                        fontSize: '0.7rem',
-                                                                        fontWeight: '800',
-                                                                        color: '#1e40af'
-                                                                    }}>
-                                                                        {w.job_title}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                    <div key={w.id} style={{ padding: '10px 14px', background: '#fffbeb', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #fef3c7' }}>
+                                                        <div style={{ fontWeight: '700', fontSize: '0.85rem' }}>{w.full_name} <span style={{fontSize:'0.75rem', color:'#92400e', marginLeft:'4px'}}>[승인대기]</span></div>
                                                         <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleApprove(w.id);
-                                                            }}
-                                                            style={{ 
-                                                                padding: '6px 12px', 
-                                                                background: '#f59e0b', 
-                                                                color: 'white', 
-                                                                border: 'none', 
-                                                                borderRadius: '6px', 
-                                                                fontSize: '0.7rem', 
-                                                                fontWeight: '800', 
-                                                                cursor: 'pointer',
-                                                                whiteSpace: 'nowrap'
-                                                            }}
+                                                            onClick={(e) => { e.stopPropagation(); handleApprove(w.id); }}
+                                                            style={{ padding: '5px 12px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer' }}
                                                         >
-                                                            승인
+                                                            승인하기
                                                         </button>
+                                                    </div>
+                                                ))}
+                                                {/* 승인된 인원 표시 */}
+                                                {partnerApproved.map(w => (
+                                                    <div key={w.id} style={{ padding: '10px 14px', background: 'white', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #f1f5f9' }}>
+                                                        <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#475569' }}>{w.full_name}</div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#10b981', fontWeight: '800' }}>
+                                                            <CheckCircle size={14} /> 승인됨
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -285,48 +240,21 @@ const ManagerDashboard = () => {
                     </section>
 
                     {/* 오늘의 작업 계획 */}
-                    <section style={{ 
-                        background: 'white', 
-                        padding: '1rem', 
-                        borderRadius: '16px', 
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.8rem', color: '#8b5cf6' }}>
-                            <ClipboardList size={16} />
-                            <h2 style={{ fontSize: '0.9rem', fontWeight: '800', margin: 0 }}>오늘의 작업 계획</h2>
+                    <section style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1rem', color: '#8b5cf6' }}>
+                            <ClipboardList size={18} />
+                            <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>오늘의 작업 계획</h2>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {workTasks.length === 0 ? (
-                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1rem', fontSize: '0.8rem' }}>작업 계획 없음</div>
+                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1.5rem', background: '#f8fafc', borderRadius: '12px' }}>배정된 작업이 없습니다.</div>
                             ) : workTasks.map(task => (
-                                <div key={task.id} style={{ 
-                                    padding: '10px', 
-                                    background: '#faf5ff', 
-                                    border: '1px solid #e9d5ff', 
-                                    borderRadius: '10px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
+                                <div key={task.id} style={{ padding: '12px', background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#6b21a8', fontWeight: '800', marginBottom: '3px' }}>
-                                            {task.level} - {task.zone_name}
-                                        </div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#0f172a' }}>
-                                            {task.work_type || '기타 작업'}
-                                        </div>
-                                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
-                                            {task.description}
-                                        </div>
+                                        <div style={{ fontSize: '0.7rem', color: '#6b21a8', fontWeight: '900', marginBottom: '2px' }}>{task.level} - {task.zone_name}</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '800', color: '#0f172a' }}>{task.work_type || '일반 작업'}</div>
                                     </div>
-                                    <div style={{ 
-                                        padding: '6px 10px', 
-                                        background: task.calculated_risk_score >= 60 ? '#fee2e2' : '#dbeafe', 
-                                        borderRadius: '8px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '800',
-                                        color: task.calculated_risk_score >= 60 ? '#991b1b' : '#1e40af'
-                                    }}>
+                                    <div style={{ padding: '4px 10px', background: task.calculated_risk_score >= 60 ? '#fee2e2' : '#dbeafe', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '900', color: task.calculated_risk_score >= 60 ? '#991b1b' : '#1e40af' }}>
                                         위험도 {task.calculated_risk_score}
                                     </div>
                                 </div>
@@ -335,52 +263,36 @@ const ManagerDashboard = () => {
                     </section>
 
                     {/* 위험 구역 */}
-                    <section style={{ 
-                        background: 'white', 
-                        padding: '1rem', 
-                        borderRadius: '16px', 
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.8rem', color: '#ef4444' }}>
-                            <Bell size={16} />
-                            <h2 style={{ fontSize: '0.9rem', fontWeight: '800', margin: 0 }}>위험 구역</h2>
+                    <section style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1rem', color: '#ef4444' }}>
+                            <Bell size={18} />
+                            <h2 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>주의/위험 구역</h2>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {dangerZones.length === 0 ? (
-                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1rem', fontSize: '0.8rem' }}>위험 구역 없음</div>
+                                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '1rem' }}>설정된 위험 구역이 없습니다.</div>
                             ) : dangerZones.map(zone => (
-                                <div key={zone.id} style={{ 
-                                    padding: '10px', 
-                                    background: '#fef2f2', 
-                                    border: '1.5px solid #fca5a5', 
-                                    borderRadius: '10px'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#991b1b', fontWeight: '800' }}>
-                                            {zone.level} - {zone.zone_name}
-                                        </div>
-                                        <div style={{ 
-                                            padding: '4px 8px', 
-                                            background: '#dc2626', 
-                                            color: 'white', 
-                                            borderRadius: '6px',
-                                            fontSize: '0.65rem',
-                                            fontWeight: '800'
-                                        }}>
-                                            {zone.risk_type}
-                                        </div>
+                                <div key={zone.id} style={{ padding: '10px', background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#991b1b', fontWeight: '900' }}>{zone.level} - {zone.zone_name}</span>
+                                        <span style={{ padding: '2px 8px', background: '#dc2626', color: 'white', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '900' }}>{zone.risk_type}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                        {zone.description}
-                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#475569' }}>{zone.description}</div>
                                 </div>
                             ))}
                         </div>
                     </section>
                 </div>
 
-                {/* 우측: 투입 인원 현황 (출퇴근 + 안전점검) */}
-                <WorkerStatusWidget projectId={user?.project_id || projectDetail?.project?.id || 1} />
+                {/* 우측: 알림 발송 및 실시간 투입 현황 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: 0 }}>
+                    <div style={{ flex: '0 0 350px' }}>
+                        <NoticeManagementWidget projectId={user?.project_id || projectDetail?.project?.id || 1} />
+                    </div>
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                        <WorkerStatusWidget projectId={user?.project_id || projectDetail?.project?.id || 1} />
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -388,8 +300,8 @@ const ManagerDashboard = () => {
 
 const InfoRow = ({ label, value }) => (
     <div style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
-        <div style={{ width: '90px', fontWeight: '800', color: '#64748b', fontSize: '0.75rem' }}>{label}</div>
-        <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.8rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ width: '85px', fontWeight: '800', color: '#64748b', fontSize: '0.75rem' }}>{label}</div>
+        <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.85rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
     </div>
 );
 
