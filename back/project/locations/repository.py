@@ -71,22 +71,29 @@ class locations_repository:
         tasks = await fetch_all(tasks_sql, {"pid": pid, "date": target_date})
         
         # 3. 오늘의 위험 구역 조회
+        # 3. 오늘의 위험 구역 조회 (이미지 포함)
         dangers_sql = """
             SELECT 
                 ddz.id,
                 ddz.zone_id, 
-                ddz.description,
+                ddz.description, 
                 ddz.status,
                 ddz.risk_type,
+                ddz.danger_info_id,
                 COALESCE(di.danger_type, ddz.risk_type) as danger_type_label,
                 di.icon, 
                 di.color, 
-                di.risk_level,
-                COALESCE(di.safety_guidelines, '[]'::json) as safety_guidelines
+                di.risk_level, 
+                COALESCE(
+                    json_agg(ddi.image_url) FILTER (WHERE ddi.image_url IS NOT NULL), 
+                    '[]'::json
+                ) as images
             FROM daily_danger_zones ddz
             LEFT JOIN content_danger_info di ON ddz.danger_info_id = di.id
-            WHERE ddz.zone_id IN (SELECT id FROM project_zones WHERE project_id = :pid)
+            LEFT JOIN daily_danger_images ddi ON ddz.id = ddi.danger_zone_id
+            WHERE ddz.zone_id IN (SELECT id FROM project_zones WHERE project_id = :pid) 
             AND ddz.date = :date
+            GROUP BY ddz.id, di.id
         """
         dangers = await fetch_all(dangers_sql, {"pid": pid, "date": target_date})
         

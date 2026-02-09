@@ -97,6 +97,7 @@ const CommonMap = ({
         {/* 그리드 셀 (Zone) 렌더링 - 작업/위험요소 상세 표시 */}
         {(() => {
           const cells = [];
+          const hazardMarkers = [];
           for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
               const zoneName = `${highlightLevel}-${chr(65+r)}${c+1}`;
@@ -167,6 +168,49 @@ const CommonMap = ({
 
               const centerLat = (b[0][0] + b[1][0]) / 2;
               const centerLng = (b[0][1] + b[1][1]) / 2;
+
+              // 위험 핀 (Hazard Pin) 추가
+              if (hasRisk) {
+                  const hazardIcon = L.divIcon({
+                      html: `<div style="
+                          background-color: #ef4444; 
+                          width: 28px; height: 28px; 
+                          border-radius: 50%; 
+                          display: flex; align-items: center; justify-content: center; 
+                          border: 2px solid white; 
+                          box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                          animation: pulse 2s infinite;
+                      ">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                              <line x1="12" y1="9" x2="12" y2="13"></line>
+                              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                          </svg>
+                      </div>`,
+                      className: '',
+                      iconSize: [28, 28],
+                      iconAnchor: [14, 14]
+                  });
+
+                  hazardMarkers.push(
+                      <Marker 
+                          key={`hazard-${zoneName}`} 
+                          position={[centerLat, centerLng]} 
+                          icon={hazardIcon}
+                          eventHandlers={{
+                              click: () => {
+                                if (onZoneClick) onZoneClick({ 
+                                  name: zoneName, 
+                                  level: highlightLevel,
+                                  id: zoneData?.id,
+                                  tasks: zoneTasks,
+                                  dangers: zoneDangers
+                                });
+                              }
+                          }}
+                      />
+                  );
+              }
               
               cells.push(
                 <Rectangle 
