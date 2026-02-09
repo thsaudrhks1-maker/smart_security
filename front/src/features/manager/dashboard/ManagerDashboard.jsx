@@ -7,6 +7,7 @@ import {
   QrCode, ClipboardList, Info, Bell, Map as MapIcon,
   TrendingUp, CheckCircle2, UserCheck, Clock, LogIn, LogOut, UserX, ChevronDown, ChevronUp
 } from 'lucide-react';
+import WorkerStatusWidget from './WorkerStatusWidget';
 
 /**
  * [MANAGER] 현장 관리자 통합 대시보드 (최적화 레이아웃)
@@ -378,89 +379,8 @@ const ManagerDashboard = () => {
                     </section>
                 </div>
 
-                {/* 우측: 실시간 출역 현황 */}
-                <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                    <section style={{ 
-                        background: 'white', 
-                        padding: '1rem', 
-                        borderRadius: '16px', 
-                        border: '1px solid #e2e8f0',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                        minHeight: 0
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                            <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Clock size={16} color="#6366f1" /> 실시간 출역 현황
-                            </h3>
-                        </div>
-                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {approvedWorkers.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', background: '#f8fafc', borderRadius: '12px', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                    승인된 작업자가 없습니다.
-                                </div>
-                            ) : approvedWorkers.map(w => {
-                                const status = attendanceMap[w.id];
-                                const isIn = status === 'IN';
-                                const isOut = status === 'OUT';
-                                const notChecked = !status;
-                                
-                                return (
-                                    <div key={w.id} style={{ 
-                                        padding: '10px', 
-                                        background: isIn ? '#ecfdf5' : isOut ? '#fef2f2' : '#f8fafc', 
-                                        borderRadius: '10px', 
-                                        border: `1.5px solid ${isIn ? '#d1fae5' : isOut ? '#fee2e2' : '#f1f5f9'}`,
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
-                                                {w.full_name}
-                                                {w.job_title && (
-                                                    <span style={{ 
-                                                        marginLeft: '8px',
-                                                        padding: '2px 6px',
-                                                        background: '#dbeafe',
-                                                        borderRadius: '4px',
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: '800',
-                                                        color: '#1e40af'
-                                                    }}>
-                                                        {w.job_title}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>{w.company_name}</div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                            {isIn && (
-                                                <>
-                                                    <LogIn size={14} color="#10b981" />
-                                                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981' }}>출근</span>
-                                                </>
-                                            )}
-                                            {isOut && (
-                                                <>
-                                                    <LogOut size={14} color="#ef4444" />
-                                                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#ef4444' }}>퇴근</span>
-                                                </>
-                                            )}
-                                            {notChecked && (
-                                                <>
-                                                    <UserX size={14} color="#94a3b8" />
-                                                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>미출근</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </section>
-                </div>
+                {/* 우측: 투입 인원 현황 (출퇴근 + 안전점검) */}
+                <WorkerStatusWidget projectId={user?.project_id || projectDetail?.project?.id || 1} />
             </div>
         </div>
     );

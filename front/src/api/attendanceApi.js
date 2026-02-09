@@ -12,6 +12,13 @@ export const attendanceApi = {
     // [DAILY] 나의 출역 현황 조회
     getMyAttendance: (userId) => client.get('/daily/attendance/me', { params: { user_id: userId } }),
 
+    // [MANAGER] 프로젝트 투입 인원 출퇴근 및 안전점검 현황
+    getProjectStatus: async (projectId, date) => {
+        const response = await client.get('/daily/attendance/project-status', {
+            params: { project_id: projectId, d: date }
+        });
+        return response.data;
+    }
 };
 
 export const { getAttendance, checkIn, getMyAttendance } = attendanceApi;
