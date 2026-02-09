@@ -1,30 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { workApi } from '@/api/workApi';
 import { dangerApi } from '@/api/dangerApi';
-import { safetyApi } from '@/api/safetyApi'; // safetyApi 추가
-import { 
-  X, ClipboardList, AlertTriangle, Plus
-} from 'lucide-react';
-import TaskForm from './forms/TaskForm';
-import DangerForm from './forms/DangerForm';
-import WorkerAssignmentForm from './forms/WorkerAssignmentForm';
-import TaskCard from './cards/TaskCard';
-import DangerCard from './cards/DangerCard';
-import { useAuth } from '@/context/AuthContext'; // AuthContext 추가
+import { safetyApi } from '@/api/safetyApi';
+import { X } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import TaskSection from './sections/TaskSection';
+import DangerSection from './sections/DangerSection';
 
 /**
  * 구역 상세 모달 (작업 계획 + 위험 구역 관리)
  * 데스크톱, 모바일 모두 사용 가능
  */
 const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) => {
-    const { user } = useAuth(); // user info
+    const { user } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [dangers, setDangers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [mode, setMode] = useState('view'); // 'view', 'add_task', 'add_danger', 'assign_workers'
+    const [mode, setMode] = useState('view');
     const [selectedTaskForWorkers, setSelectedTaskForWorkers] = useState(null);
-    
-    // 파일 상태 추가
     const [files, setFiles] = useState([]);
 
     const [taskForm, setTaskForm] = useState({
@@ -44,6 +37,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
         risk_level: 3
     });
     
+    // 이 부분은 추후 API 연동 가능
     const [workTemplates] = useState([
         { id: 1, work_type: '거푸집 작업' },
         { id: 2, work_type: '고소 작업' },
@@ -88,7 +82,6 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
             alert('작업 종류를 선택해주세요.');
             return;
         }
-        
         try {
             await workApi.createTask({
                 project_id: projectId,
@@ -145,13 +138,18 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
         }
     };
 
+    const handleWorkerAssignmentComplete = () => {
+        setMode('view');
+        setSelectedTaskForWorkers(null);
+        loadZoneDetail();
+    }
+
     const handleCreateDanger = async () => {
         try {
-            // FormData 생성 (파일 업로드 지원)
             const formData = new FormData();
             formData.append('project_id', projectId);
             formData.append('zone_id', zone.id);
-            formData.append('user_id', user?.id || 1); // 현재 사용자 ID
+            formData.append('user_id', user?.id || 1);
             formData.append('date', date);
             
             if (dangerForm.mode === 'template') {
@@ -168,33 +166,19 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                     return;
                 }
                 formData.append('risk_type', dangerForm.custom_type);
-                // 커스텀 정보는 별도 필드로 전달하거나, 백엔드에서 처리
-                // 여기서는 간단히 description에 포함하거나, 백엔드 로직에 맞춤
             }
             
             formData.append('description', dangerForm.description);
-            formData.append('status', 'APPROVED'); // 매니저는 즉시 승인
+            formData.append('status', 'APPROVED');
 
-            // 파일 추가
             files.forEach(file => {
                 formData.append('files', file);
             });
             
-            // safetyApi.reportDanger 사용 (통합 엔드포인트)
             await safetyApi.reportDanger(formData);
             
             alert('위험 구역이 등록되었습니다.');
-            setMode('view');
-            setDangerForm({ 
-                mode: 'template',
-                danger_info_id: '',
-                custom_type: '',
-                custom_icon: 'alert-triangle',
-                custom_color: '#ef4444',
-                description: '',
-                risk_level: 3
-            });
-            setFiles([]); // 파일 초기화
+            handleCancelDanger();
             loadZoneDetail();
         } catch (e) {
             console.error('위험 구역 추가 오류:', e);
@@ -212,6 +196,20 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
             alert('위험 구역 삭제 중 오류가 발생했습니다.');
         }
     };
+
+    const handleCancelDanger = () => {
+        setMode('view');
+        setDangerForm({ 
+            mode: 'template',
+            danger_info_id: '',
+            custom_type: '',
+            custom_icon: 'alert-triangle',
+            custom_color: '#ef4444',
+            description: '',
+            risk_level: 3
+        });
+        setFiles([]);
+    }
 
     return (
         <div style={{ 
@@ -254,181 +252,35 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                     <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>로딩 중...</div>
                 ) : (
                     <>
-                        {/* 작업 계획 섹션 */}
-                        <section style={{ marginBottom: '2rem' }}>
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                marginBottom: '1rem' 
-                            }}>
-                                <h3 style={{ 
-                                    margin: 0, 
-                                    fontWeight: '800', 
-                                    color: '#3b82f6', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '8px' 
-                                }}>
-                                    <ClipboardList size={20} /> 작업 계획
-                                </h3>
-                                {mode === 'view' && (
-                                    <button 
-                                        onClick={() => setMode('add_task')}
-                                        style={{ 
-                                            padding: '8px 16px', 
-                                            background: '#3b82f6', 
-                                            color: 'white', 
-                                            border: 'none', 
-                                            borderRadius: '10px', 
-                                            fontSize: '0.85rem', 
-                                            fontWeight: '700', 
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        <Plus size={16} /> 작업 추가
-                                    </button>
-                                )}
-                            </div>
+                        <TaskSection 
+                            mode={mode}
+                            setMode={setMode}
+                            tasks={tasks}
+                            taskForm={taskForm}
+                            setTaskForm={setTaskForm}
+                            workTemplates={workTemplates}
+                            onCreateTask={handleCreateTask}
+                            onDeleteTask={handleDeleteTask}
+                            selectedTaskForWorkers={selectedTaskForWorkers}
+                            approvedWorkers={approvedWorkers}
+                            onAssignWorker={handleAssignWorker}
+                            onRemoveWorker={handleRemoveWorker}
+                            onAssignmentComplete={handleWorkerAssignmentComplete}
+                        />
 
-                            {mode === 'add_task' ? (
-                                <TaskForm 
-                                    taskForm={taskForm}
-                                    setTaskForm={setTaskForm}
-                                    workTemplates={workTemplates}
-                                    onSubmit={handleCreateTask}
-                                    onCancel={() => setMode('view')}
-                                />
-                            ) : mode === 'assign_workers' ? (
-                                <WorkerAssignmentForm 
-                                    task={selectedTaskForWorkers}
-                                    approvedWorkers={approvedWorkers}
-                                    onAssign={handleAssignWorker}
-                                    onRemove={handleRemoveWorker}
-                                    onComplete={() => {
-                                        setMode('view');
-                                        setSelectedTaskForWorkers(null);
-                                        loadZoneDetail();
-                                    }}
-                                />
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {tasks.length === 0 ? (
-                                        <div style={{ 
-                                            textAlign: 'center', 
-                                            padding: '2rem', 
-                                            background: '#f8fafc', 
-                                            borderRadius: '12px', 
-                                            color: '#94a3b8' 
-                                        }}>
-                                            작업 계획이 없습니다.
-                                        </div>
-                                    ) : (
-                                        tasks.map(task => (
-                                            <TaskCard 
-                                                key={task.id} 
-                                                task={task}
-                                                approvedWorkers={approvedWorkers}
-                                                onDelete={() => handleDeleteTask(task.id)}
-                                                onAssignWorker={(workerId) => handleAssignWorker(task.id, workerId)}
-                                                onRemoveWorker={(workerId) => handleRemoveWorker(task.id, workerId)}
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </section>
-
-                        {/* 위험 구역 섹션 */}
-                        <section>
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                marginBottom: '1rem' 
-                            }}>
-                                <h3 style={{ 
-                                    margin: 0, 
-                                    fontWeight: '800', 
-                                    color: '#ef4444', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '8px' 
-                                }}>
-                                    <AlertTriangle size={20} /> 위험 구역
-                                </h3>
-                                {mode === 'view' && (
-                                    <button 
-                                        onClick={() => setMode('add_danger')}
-                                        style={{ 
-                                            padding: '8px 16px', 
-                                            background: '#ef4444', 
-                                            color: 'white', 
-                                            border: 'none', 
-                                            borderRadius: '10px', 
-                                            fontSize: '0.85rem', 
-                                            fontWeight: '700', 
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px'
-                                        }}
-                                    >
-                                        <Plus size={16} /> 위험 구역 추가
-                                    </button>
-                                )}
-                            </div>
-
-                            {mode === 'add_danger' ? (
-                                <DangerForm 
-                                    dangerForm={dangerForm}
-                                    setDangerForm={setDangerForm}
-                                    dangerTemplates={dangerTemplates}
-                                    files={files}
-                                    setFiles={setFiles}
-                                    onSubmit={handleCreateDanger}
-                                    mode="MANAGER"
-                                    onCancel={() => {
-                                        setMode('view');
-                                        setDangerForm({ 
-                                            mode: 'template',
-                                            danger_info_id: '',
-                                            custom_type: '',
-                                            custom_icon: 'alert-triangle',
-                                            custom_color: '#ef4444',
-                                            description: '',
-                                            risk_level: 3
-                                        });
-                                        setFiles([]);
-                                    }}
-                                />
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {dangers.length === 0 ? (
-                                        <div style={{ 
-                                            textAlign: 'center', 
-                                            padding: '2rem', 
-                                            background: '#fef2f2', 
-                                            borderRadius: '12px', 
-                                            color: '#94a3b8' 
-                                        }}>
-                                            위험 구역이 없습니다.
-                                        </div>
-                                    ) : (
-                                        dangers.map(danger => (
-                                            <DangerCard 
-                                                key={danger.id} 
-                                                danger={danger}
-                                                onDelete={() => handleDeleteDanger(danger.id)}
-                                            />
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </section>
+                        <DangerSection 
+                            mode={mode}
+                            setMode={setMode}
+                            dangers={dangers}
+                            dangerForm={dangerForm}
+                            setDangerForm={setDangerForm}
+                            dangerTemplates={dangerTemplates}
+                            files={files}
+                            setFiles={setFiles}
+                            onCreateDanger={handleCreateDanger}
+                            onDeleteDanger={handleDeleteDanger}
+                            onCancelDanger={handleCancelDanger}
+                        />
                     </>
                 )}
             </div>
