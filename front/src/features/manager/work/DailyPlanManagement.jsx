@@ -4,6 +4,7 @@ import { projectApi } from '@/api/projectApi';
 import { Calendar, Map as MapIcon } from 'lucide-react';
 import CommonMap from '@/components/common/CommonMap';
 import ZoneDetailModal from '@/components/common/ZoneDetailModal';
+import DangerZoneGallery from '@/components/common/DangerZoneGallery'; // 공통 컴포넌트 import
 import BuildingSectionView from './BuildingSectionView';
 import PlanItem from './components/PlanItem';
 import DangerItem from './components/DangerItem';
@@ -161,94 +162,15 @@ const DailyPlanManagement = () => {
                         </div>
                     </div>
 
-                    {/* 위험 구역 사진첩 Sidebar */}
+                    {/* 위험 구역 사진첩 Sidebar - 공통 컴포넌트 교체 */}
                     <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                         <div style={{ 
-                            padding: '1rem 1.5rem', 
-                            borderBottom: '1px solid #f1f5f9', 
-                            fontWeight: '800',
-                            color: '#ef4444',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                        }}>
-                            <span>📸 위험 구역 사진첩</span>
-                            <span style={{ fontSize: '0.8rem', background: '#fee2e2', padding: '2px 8px', borderRadius: '8px', color: '#991b1b' }}>
-                                {zones.filter(z => z.level === selectedLevel).flatMap(z => z.dangers || []).length} 건
-                            </span>
-                        </div>
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                             {zones.filter(z => z.level === selectedLevel).reduce((acc, z) => {
-                                return acc.concat((z.dangers || []).map(d => ({ ...d, zone_name: z.name, zone_data: z })));
-                            }, []).length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
-                                    현재 평면도에 <br/>등록된 위험 구역이 없습니다.
-                                </div>
-                            ) : (
-                                zones.filter(z => z.level === selectedLevel).reduce((acc, z) => {
-                                    return acc.concat((z.dangers || []).map(d => ({ ...d, zone_name: z.name, zone_data: z })));
-                                }, []).map((danger, idx) => (
-                                    <div 
-                                        key={`${danger.id}-${idx}`}
-                                        onClick={() => handleZoneClick(danger.zone_data)}
-                                        style={{ 
-                                            background: 'white', 
-                                            borderRadius: '16px', 
-                                            border: '1px solid #e2e8f0', 
-                                            overflow: 'hidden', 
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                                    >
-                                        <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#1e293b' }}>{danger.zone_name}</div>
-                                            <div style={{ 
-                                                fontSize: '0.7rem', 
-                                                padding: '2px 6px', 
-                                                background: danger.status === 'PENDING' ? '#fff7ed' : '#fef2f2', 
-                                                color: danger.status === 'PENDING' ? '#c2410c' : '#dc2626', 
-                                                borderRadius: '4px',
-                                                border: `1px solid ${danger.status === 'PENDING' ? '#fdba74' : '#fca5a5'}`,
-                                                fontWeight: '700'
-                                            }}>
-                                                {danger.risk_type || '위험'}
-                                            </div>
-                                        </div>
-                                        {/* 이미지 썸네일 */}
-                                        {danger.images && danger.images.length > 0 ? (
-                                            <div style={{ height: '140px', overflow: 'hidden', position: 'relative' }}>
-                                                 <img 
-                                                    src={`http://localhost:8500/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
-                                                    alt="위험 현장"
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.parentElement.innerHTML = '<div style="height:100%; display:flex; align-items:center; justifyContent:center; background:#f1f5f9; color:#94a3b8; font-size:0.8rem;">이미지 로드 실패</div>';
-                                                    }}
-                                                />
-                                                {danger.images.length > 1 && (
-                                                    <div style={{ position: 'absolute', bottom: '6px', right: '6px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem' }}>
-                                                        +{danger.images.length - 1}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div style={{ height: '80px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
-                                                📷 사진 없음
-                                            </div>
-                                        )}
-                                        {danger.description && (
-                                            <div style={{ padding: '10px', fontSize: '0.8rem', color: '#64748b', borderTop: '1px solid #f1f5f9' }}>
-                                                {danger.description}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                             )}
-                        </div>
+                        <DangerZoneGallery 
+                            zones={zones}
+                            currentLevel={selectedLevel}
+                            onZoneClick={handleZoneClick}
+                            isCollapsible={true} // 매니저 대시보드와 동일하게 토글 가능하도록 설정
+                            defaultExpanded={true}
+                        />
                     </div>
                 </div>
 

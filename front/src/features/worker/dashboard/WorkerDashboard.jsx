@@ -14,6 +14,7 @@ import { SafetyGuideModal } from './DashboardModals';
 import { noticeApi } from '@/api/noticeApi';
 import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
 import ZoneDetailModal from '@/components/common/ZoneDetailModal';
+import DangerZoneGallery from '@/components/common/DangerZoneGallery';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
@@ -346,6 +347,20 @@ const WorkerDashboard = () => {
                             }}
                           />
                         )}
+                      </div>
+
+                      {/* 위험 구역 사진첩 (모바일용 토글) */}
+                      <div style={{ marginTop: '1rem' }}>
+                          <DangerZoneGallery 
+                              zones={zones}
+                              currentLevel={currentLevel}
+                              onZoneClick={(zone) => {
+                                  setSelectedZone(zone);
+                                  setIsDetailModalOpen(true);
+                              }}
+                              isCollapsible={true}
+                              defaultExpanded={false}
+                          />
                       </div>
                     </section>
                 )}

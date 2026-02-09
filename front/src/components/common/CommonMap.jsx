@@ -92,9 +92,17 @@ const CommonMap = ({
     const colCount = parseInt(gridConfig.cols) || 10;
     
     // 줌 레벨에 따른 폰트/아이콘 크기 계산 비율 (Zoom 19 기준 1배)
-    const scaleRatio = Math.max(0.5, Math.pow(1.5, currentZoom - 19));
-    const fontSize = Math.max(10, 12 * scaleRatio);
-    const iconSize = Math.max(24, 48 * scaleRatio);
+    // 최소값 제한을 없애서 지도가 축소되면 라벨도 계속 작아지도록 함 (사용자 요청 반영)
+    const scaleRatio = Math.pow(1.5, currentZoom - 19);
+    
+    // 폰트 사이즈 및 박스 스타일도 같이 스케일링
+    const fontSize = 12 * scaleRatio;
+    const paddingVertical = 2 * scaleRatio;
+    const paddingHorizontal = 6 * scaleRatio;
+    const borderRadius = 6 * scaleRatio;
+    
+    // 너무 작아서 안 보일 정도면(Zoom 15 이하) 숨김 처리하여 겹침 방지
+    const isVisible = currentZoom > 15;
 
     for (let r = 0; r < rowCount; r++) {
       for (let c = 0; c < colCount; c++) {
@@ -106,14 +114,9 @@ const CommonMap = ({
         const zoneDangers = zoneData?.dangers || [];
         const hasPlan = zoneTasks.length > 0;
         const hasRisk = zoneDangers.length > 0;
-        
-        // 총 작업자 수 계산
-        let totalWorkers = 0;
-        zoneTasks.forEach(task => {
-          const workers = task.workers || [];
-          totalWorkers += Array.isArray(workers) ? workers.length : 0;
-        });
 
+        const borderWidth = (hasRisk ? 2 : 1) * scaleRatio;
+        
         // 스타일링 로직
         let fillColor = 'transparent';
         let fillOpacity = 0.08;
@@ -137,13 +140,15 @@ const CommonMap = ({
         const centerLat = (b[0][0] + b[1][0]) / 2;
         const centerLng = (b[0][1] + b[1][1]) / 2;
 
-        // 위험 아이콘
+        // 위험 아이콘 (아이콘 사이즈는 유지하되 너무 겹치면 숨김 고려 가능하나, 일단 라벨 위주로 처리)
         if (hasRisk) {
             const hostname = window.location.hostname;
+            const iconSizeScaled = Math.max(10, 48 * scaleRatio); // 아이콘도 같이 작아지게
+            
             const hazardIcon = L.divIcon({
                 html: `<div style="
                     position: relative; 
-                    width: ${iconSize}px; height: ${iconSize}px; 
+                    width: ${iconSizeScaled}px; height: ${iconSizeScaled}px; 
                     display: flex; align-items: center; justify-content: center;
                     animation: bounce 2s infinite;
                 ">
@@ -153,8 +158,8 @@ const CommonMap = ({
                     />
                 </div>`,
                 className: '',
-                iconSize: [iconSize, iconSize],
-                iconAnchor: [iconSize/2, iconSize*0.9]
+                iconSize: [iconSizeScaled, iconSizeScaled],
+                iconAnchor: [iconSizeScaled/2, iconSizeScaled*0.9]
             });
             hazardMarkers.push(
                 <Marker key={`hazard-${zoneName}`} position={[centerLat, centerLng]} icon={hazardIcon} zIndexOffset={1000} 
@@ -175,22 +180,26 @@ const CommonMap = ({
             }}
             pathOptions={{ color: strokeColor, weight: strokeWeight, fillColor, fillOpacity, dashArray }}
           >
-            <Tooltip permanent direction="center" opacity={hasRisk ? 1 : 0.9} className="zone-label-tooltip">
-              <div style={{ 
-                  fontSize: `${fontSize}px`,
-                  fontWeight: hasRisk ? '900' : (hasPlan || isMyZone) ? '800' : '400',
-                  color: hasRisk ? '#991b1b' : (hasPlan || isMyZone) ? '#1e40af' : '#cbd5e1',
-                  textShadow: hasRisk ? '0px 0px 2px rgba(255,255,255,0.8)' : 'none',
-                  background: hasRisk ? 'rgba(255, 255, 255, 0.85)' : (hasPlan ? 'rgba(255, 255, 255, 0.8)' : 'transparent'),
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  border: hasRisk ? '2px solid #ef4444' : (hasPlan ? '1px solid #3b82f6' : 'none'),
-                  boxShadow: hasRisk ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                  transition: 'all 0.2s'
-               }}>
-                  {zoneName}
-              </div>
-            </Tooltip>
+            {isVisible && (
+                <Tooltip permanent direction="center" opacity={hasRisk ? 1 : 0.9} className="zone-label-tooltip">
+                  <div style={{ 
+                      fontSize: `${fontSize}px`,
+                      fontWeight: hasRisk ? '900' : (hasPlan || isMyZone) ? '800' : '400',
+                      color: hasRisk ? '#991b1b' : (hasPlan || isMyZone) ? '#1e40af' : '#cbd5e1',
+                      textShadow: hasRisk ? '0px 0px 2px rgba(255,255,255,0.8)' : 'none',
+                      background: hasRisk ? 'rgba(255, 255, 255, 0.85)' : (hasPlan ? 'rgba(255, 255, 255, 0.8)' : 'transparent'),
+                      padding: `${paddingVertical}px ${paddingHorizontal}px`,
+                      borderRadius: `${borderRadius}px`,
+                      border: hasRisk ? `${borderWidth}px solid #ef4444` : (hasPlan ? `${Math.max(1, borderWidth)}px solid #3b82f6` : 'none'),
+                      boxShadow: hasRisk ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                      transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
+                      lineHeight: '1.2'
+                   }}>
+                      {zoneName}
+                  </div>
+                </Tooltip>
+            )}
             {/* Popup은 필요시 추가 */}
           </Rectangle>
         );
