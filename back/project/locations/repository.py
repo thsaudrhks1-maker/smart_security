@@ -38,19 +38,19 @@ class locations_repository:
                 dwt.work_info_id,
                 wi.work_type,
                 COALESCE(
-                    (
-                        SELECT json_agg(DISTINCT elem)
-                        FROM (
-                            SELECT json_array_elements_text(wi.checklist_items) as elem
-                            UNION
-                            SELECT json_array_elements_text(csi.checklist) as elem
-                            FROM content_work_safety_map wsm
-                            JOIN content_safety_info csi ON wsm.safety_info_id = csi.id
-                            WHERE wsm.work_info_id = wi.id
-                        ) sub
-                    ),
-                    '[]'::json
-                ) as checklist_items,
+                (
+                    SELECT json_agg(DISTINCT elem)
+                    FROM (
+                        SELECT json_array_elements_text(COALESCE(wi.checklist_items, '[]'::json)) as elem
+                        UNION
+                        SELECT json_array_elements_text(COALESCE(csi.checklist, '[]'::json)) as elem
+                        FROM content_work_safety_map wsm
+                        JOIN content_safety_info csi ON wsm.safety_info_id = csi.id
+                        WHERE wsm.work_info_id = wi.id
+                    ) sub
+                ),
+                '[]'::json
+            ) as checklist_items,
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -81,7 +81,8 @@ class locations_repository:
                 COALESCE(di.danger_type, ddz.risk_type) as danger_type,
                 di.icon, 
                 di.color, 
-                di.risk_level
+                di.risk_level,
+                COALESCE(di.safety_guidelines, '[]'::json) as safety_guidelines
             FROM daily_danger_zones ddz
             LEFT JOIN content_danger_info di ON ddz.danger_info_id = di.id
             WHERE ddz.zone_id IN (SELECT id FROM project_zones WHERE project_id = :pid)

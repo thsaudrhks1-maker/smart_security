@@ -34,20 +34,21 @@ const WorkerDashboard = () => {
     // findMyTaskFromZones는 아래에서 복붙되지 않으므로 기존 코드 유지 필요. 
     // 여기서는 return 문 내부 구조만 변경하겠음.
 
-    // zones 데이터에서 내 작업 찾기 함수
-    const findMyTaskFromZones = (zonesList) => {
-        if (!user || !zonesList) return null;
+    // zones 데이터에서 내 작업 모두 찾기 함수
+    const findAllMyTasks = (zonesList) => {
+        if (!user || !zonesList) return [];
+        const myTasks = [];
         for (const zone of zonesList) {
             if (zone.tasks && Array.isArray(zone.tasks)) {
                 for (const task of zone.tasks) {
                      if (task.workers && Array.isArray(task.workers)) {
                         const isMine = task.workers.some(w => Number(w.id) === Number(user.id || user.user_id));
-                        if (isMine) return { ...task, zone_name: zone.name, level: zone.level };
+                        if (isMine) myTasks.push({ ...task, zone_name: zone.name, level: zone.level });
                      }
                 }
             }
         }
-        return null;
+        return myTasks;
     };
 
     const loadData = async () => {
@@ -74,11 +75,11 @@ const WorkerDashboard = () => {
             const zonesData = zonesRes?.data?.data || [];
             setZones(zonesData);
 
-            const myTask = findMyTaskFromZones(zonesData);
-            setPlans(myTask ? [myTask] : []);
+            const myTasks = findAllMyTasks(zonesData);
+            setPlans(myTasks);
             
-            if (myTask && myTask.level) {
-                setCurrentLevel(myTask.level);
+            if (myTasks.length > 0) {
+                setCurrentLevel(myTasks[0].level);
             }
 
         } catch (e) {
@@ -90,13 +91,18 @@ const WorkerDashboard = () => {
 
     useEffect(() => { loadData(); }, [user, selectedDate]);
 
-    const myPlan = findMyTaskFromZones(zones); 
+    const myPlans = findAllMyTasks(zones);
+    const myPlan = myPlans.length > 0 ? myPlans[0] : null; // 호환성 유지
     
     const isToday = selectedDate === new Date().toISOString().split('T')[0];
     const displayDate = new Date(selectedDate).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
     const dangerCount = Array.isArray(zones) ? zones.filter(z => z.dangers?.length > 0).length : 0;
     const taskCount = Array.isArray(zones) ? zones.filter(z => z.tasks?.length > 0).length : 0;
+    
+    // ... (중략) ...
+
+
     
     const levels = Array.from(new Set(zones.map(z => z.level))).sort((a, b) => {
         const order = { 'B1': -1, '1F': 1, '2F': 2, '3F': 3 };
@@ -254,9 +260,20 @@ const WorkerDashboard = () => {
             <DailyChecklistModal
                 isOpen={isChecklistModalOpen}
                 onClose={() => setIsChecklistModalOpen(false)}
-                myPlan={myPlan}
+                myPlans={myPlans}
                 dangerCount={dangerCount}
-                onSubmit={() => alert("안전점검이 완료되었습니다.")}
+                nearbyDangers={zones
+                    .filter(z => z.level === currentLevel)
+                    .flatMap(z => (z.dangers || []).map(d => ({ 
+                        ...d, 
+                        zone_name: z.name,
+                        isMyZone: myPlans.some(p => p.zone_name === z.name && p.level === z.level)
+                    })))
+                }
+                onSubmit={() => {
+                    alert("안전점검이 완료되었습니다."); // 추후 상태 업데이트 로직 추가 가능
+                    setIsChecklistModalOpen(false);
+                }}
             />
         </div>
     );
