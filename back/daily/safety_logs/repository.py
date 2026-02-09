@@ -69,3 +69,28 @@ class safety_logs_repository:
         from back.database import execute
         await execute("DELETE FROM daily_danger_zones WHERE id = :id", {"id": danger_id})
         return True
+
+    @staticmethod
+    async def create_log(data: dict):
+        """안전 점검 로그 생성"""
+        from back.database import insert_and_return
+        import json
+        from datetime import datetime
+        
+        sql = """
+            INSERT INTO daily_safety_logs (project_id, user_id, log_type, note, plan_id, checklist_data, created_at)
+            VALUES (:project_id, :user_id, :log_type, :note, :plan_id, :checklist_data, :created_at)
+            RETURNING *
+        """
+        # 기본값 처리
+        params = {
+            "project_id": data.get("project_id"),
+            "user_id": data.get("user_id"),
+            "log_type": data.get("log_type", "CHECK"),
+            "note": data.get("note"),
+            "plan_id": data.get("plan_id"),
+            "checklist_data": json.dumps(data.get("checklist_data"), ensure_ascii=False) if data.get("checklist_data") is not None else None,
+            "created_at": datetime.now()
+        }
+        return await insert_and_return(sql, params)
+

@@ -41,8 +41,6 @@ class locations_repository:
                 (
                     SELECT json_agg(DISTINCT elem)
                     FROM (
-                        SELECT json_array_elements_text(COALESCE(wi.checklist_items, '[]'::json)) as elem
-                        UNION
                         SELECT json_array_elements_text(COALESCE(csi.checklist, '[]'::json)) as elem
                         FROM content_work_safety_map wsm
                         JOIN content_safety_info csi ON wsm.safety_info_id = csi.id

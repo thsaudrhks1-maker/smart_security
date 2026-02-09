@@ -72,6 +72,8 @@ class task_plans_repository:
     @staticmethod
     async def update_task(task_id: int, data: dict):
         """작업 계획 수정"""
+        # 동적 쿼리 생성 대신 필수 필드만 업데이트하거나 전체 업데이트
+        # 여기서는 전체 업데이트 유지
         sql = """
             UPDATE daily_work_plans 
             SET work_info_id = :work_info_id, description = :description, 
@@ -79,6 +81,13 @@ class task_plans_repository:
             WHERE id = :task_id
         """
         await execute(sql, {**data, "task_id": task_id})
+        return True
+
+    @staticmethod
+    async def update_task_status(task_id: int, status: str):
+        """작업 계획 상태만 수정"""
+        sql = "UPDATE daily_work_plans SET status = :status WHERE id = :task_id"
+        await execute(sql, {"status": status, "task_id": task_id})
         return True
     
     @staticmethod

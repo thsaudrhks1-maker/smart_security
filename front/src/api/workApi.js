@@ -58,6 +58,20 @@ export const workApi = {
     deleteDanger: async (dangerId) => {
         const response = await client.delete(`/daily/task_plans/dangers/${dangerId}`);
         return response.data;
+    },
+
+    // [DAILY] 안전 점검 결과 제출
+    submitSafetyCheck: async (data) => {
+        const response = await client.post('/daily/task_plans/safety-check', data);
+        return response.data;
+    },
+
+    // [DAILY] 나의 안전 점검 로그 조회
+    getMySafetyLogs: async (projectId, workerId, date) => {
+        const response = await client.get('/daily/task_plans/my-log', {
+            params: { project_id: projectId, worker_id: workerId, d: date }
+        });
+        return response.data;
     }
 };
 

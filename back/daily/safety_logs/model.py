@@ -11,6 +11,8 @@ class daily_safety_logs(Base):
     user_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
     log_type = Column(String, nullable=False)
     note = Column(Text, nullable=True)
+    plan_id = Column(Integer, ForeignKey("daily_work_plans.id", ondelete="SET NULL"), nullable=True)
+    checklist_data = Column(JSON, nullable=True, comment="체크리스트 상세 내역")
     created_at = Column(DateTime, default=datetime.now)
 
 class daily_danger_zones(Base):

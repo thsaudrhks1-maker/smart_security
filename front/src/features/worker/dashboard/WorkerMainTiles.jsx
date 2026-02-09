@@ -89,14 +89,25 @@ const WorkerMainTiles = ({ project, myPlan, dangerCount, notice, weather, onChec
             />
 
             {/* 5. 일일 체크리스트 (Green) */}
-            <Tile 
-                title="일일 안전점검" 
-                content="시작하기"
-                subContent="작업 전 필수 점검"
-                icon={CheckSquare}
-                color="#10b981" // Emerald 500
-                onClick={onChecklistClick}
-            />
+            {myPlan && myPlan.isChecked ? (
+                <Tile 
+                    title="일일 안전점검" 
+                    content="점검 완료"
+                    subContent="안전 수칙 준수 중"
+                    icon={CheckSquare}
+                    color="#059669" // Darker Green
+                    onClick={() => onChecklistClick()} // 확인 차원에서 다시 열어볼 수 있게
+                />
+            ) : (
+                <Tile 
+                    title="일일 안전점검" 
+                    content="시작하기"
+                    subContent="작업 전 필수 점검"
+                    icon={CheckSquare}
+                    color="#10b981" // Emerald 500
+                    onClick={onChecklistClick}
+                />
+            )}
 
             {/* 6. 공지사항 (Indigo) */}
             <Tile 

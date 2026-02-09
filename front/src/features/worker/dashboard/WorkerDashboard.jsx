@@ -18,6 +18,7 @@ const WorkerDashboard = () => {
     const [zones, setZones] = useState([]);
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [mySafetyLogs, setMySafetyLogs] = useState([]); // 추가: 나의 점검 기록 상태
     const [currentLevel, setCurrentLevel] = useState('1F');
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -78,6 +79,15 @@ const WorkerDashboard = () => {
             const myTasks = findAllMyTasks(zonesData);
             setPlans(myTasks);
             
+            // 추가: 나의 안전 점검 로그 조회하여 '점검 완료' 상태 확인
+            const currentUserId = user?.id || user?.user_id;
+            if (projectId && currentUserId) {
+                 const logRes = await workApi.getMySafetyLogs(projectId, currentUserId, selectedDate);
+                 if (logRes?.success) {
+                     setMySafetyLogs(logRes.data);
+                 }
+            }
+
             if (myTasks.length > 0) {
                 setCurrentLevel(myTasks[0].level);
             }
@@ -241,7 +251,10 @@ const WorkerDashboard = () => {
             {/* 타일 그리드 */}
             <WorkerMainTiles 
                 project={project}
-                myPlan={myPlan}
+                myPlan={myPlan ? { 
+                    ...myPlan, 
+                    isChecked: mySafetyLogs.some(log => log.plan_id === (myPlan.task_id || myPlan.id)) 
+                } : null}
                 dangerCount={dangerCount}
                 onChecklistClick={() => setIsChecklistModalOpen(true)}
             />
@@ -270,10 +283,25 @@ const WorkerDashboard = () => {
                         isMyZone: myPlans.some(p => p.zone_name === z.name && p.level === z.level)
                     })))
                 }
-                onSubmit={() => {
-                    alert("안전점검이 완료되었습니다."); // 추후 상태 업데이트 로직 추가 가능
-                    setIsChecklistModalOpen(false);
+                onSubmit={async ({ planResults, dangerResults }) => {
+                    try {
+                        const payload = {
+                            project_id: user?.project_id,
+                            worker_id: user?.id || user?.user_id,
+                            plan_results: planResults,
+                            // danger_results: dangerResults // 현재 API 스펙에는 없으나 추후 확장 시 사용
+                        };
+                        
+                        await workApi.submitSafetyCheck(payload);
+                        alert("안전점검이 완료되었습니다. 오늘도 안전하게 작업하세요!");
+                        setIsChecklistModalOpen(false);
+                        loadData(); // 데이터 새로고침 (상태 업데이트 반영)
+                    } catch (error) {
+                        console.error("안전점검 제출 실패:", error);
+                        alert("점검 결과 제출 중 오류가 발생했습니다.");
+                    }
                 }}
+                isSubmitted={myPlan && mySafetyLogs.some(log => log.plan_id === myPlan.id || log.plan_id === myPlan.task_id)}
             />
         </div>
     );
