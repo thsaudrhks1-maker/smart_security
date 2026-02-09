@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -169,27 +169,23 @@ const CommonMap = ({
               const centerLat = (b[0][0] + b[1][0]) / 2;
               const centerLng = (b[0][1] + b[1][1]) / 2;
 
-              // 위험 핀 (Hazard Pin) 추가
+              // 위험 핀 (Hazard Pin) 이미지 아이콘으로 변경
               if (hasRisk) {
                   const hazardIcon = L.divIcon({
                       html: `<div style="
-                          background-color: #ef4444; 
-                          width: 28px; height: 28px; 
-                          border-radius: 50%; 
-                          display: flex; align-items: center; justify-content: center; 
-                          border: 2px solid white; 
-                          box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-                          animation: pulse 2s infinite;
+                          position: relative; 
+                          width: 48px; height: 48px; 
+                          display: flex; align-items: center; justify-content: center;
+                          animation: bounce 2s infinite;
                       ">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                              <line x1="12" y1="9" x2="12" y2="13"></line>
-                              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                          </svg>
+                          <img src="http://localhost:8500/uploads/icon/image-Photoroom.png" 
+                               style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));"
+                               onerror="this.style.display='none'"
+                          />
                       </div>`,
                       className: '',
-                      iconSize: [28, 28],
-                      iconAnchor: [14, 14]
+                      iconSize: [48, 48],
+                      iconAnchor: [24, 44]
                   });
 
                   hazardMarkers.push(
@@ -197,6 +193,7 @@ const CommonMap = ({
                           key={`hazard-${zoneName}`} 
                           position={[centerLat, centerLng]} 
                           icon={hazardIcon}
+                          zIndexOffset={1000}
                           eventHandlers={{
                               click: () => {
                                 if (onZoneClick) onZoneClick({ 
@@ -250,6 +247,27 @@ const CommonMap = ({
                     dashArray: dashArray
                   }}
                 >
+                  <Tooltip 
+                    permanent 
+                    direction="center" 
+                    opacity={hasRisk ? 1 : 0.9} 
+                    className="zone-label-tooltip"
+                  >
+                    <div style={{ 
+                        fontSize: hasRisk ? '14px' : '11px', 
+                        fontWeight: hasRisk ? '900' : (hasPlan || isMyZone) ? '800' : '500', 
+                        color: hasRisk ? '#7f1d1d' : (hasPlan || isMyZone) ? '#1e3a8a' : '#94a3b8',
+                        background: hasRisk ? 'rgba(254, 202, 202, 0.9)' : 'rgba(255,255,255,0.6)',
+                        padding: hasRisk ? '4px 8px' : '2px 4px',
+                        borderRadius: '6px',
+                        border: hasRisk ? '2px solid #ef4444' : '1px solid rgba(0,0,0,0.05)',
+                        lineHeight: '1',
+                        boxShadow: hasRisk ? '0 4px 6px -1px rgba(220, 38, 38, 0.3)' : 'none',
+                        transition: 'all 0.3s'
+                     }}>
+                        {zoneName}
+                    </div>
+                  </Tooltip>
                   <Popup>
                     <div style={{ minWidth: '200px', maxWidth: '300px' }}>
                       <div style={{ 
