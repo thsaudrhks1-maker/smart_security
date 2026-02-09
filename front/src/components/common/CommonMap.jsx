@@ -115,48 +115,46 @@ const CommonMap = ({
                 totalWorkers += Array.isArray(workers) ? workers.length : 0;
               });
 
-              // 스타일 결정 (개선된 시인성)
+              // [REFINED STYLING LOGIC]
               let fillColor = 'transparent';
-              let fillOpacity = isMyZone ? 0.2 : 0.08;
-              let strokeColor = isMyZone ? '#7c3aed' : '#94a3b8'; // 내 구역은 선명한 보라색(Violet 600)
-              let strokeWeight = isMyZone ? 6 : 2.5;
+              let fillOpacity = 0.08;
+              let strokeColor = '#94a3b8';
+              let strokeWeight = 2.5;
               let dashArray = null;
 
-              if (hasRisk && hasPlan) {
-                // 위험 + 작업 동시 존재 (노란색 배경 + 굵은 빨간 테두리)
-                fillColor = '#fef08a';
-                fillOpacity = isMyZone ? 0.3 : 0.45;
-                strokeColor = '#dc2626';
-                strokeWeight = isMyZone ? 8 : 5;
-                if (isMyZone) dashArray = "10, 5"; // 내 구역이 위험할 경우 점선 효과 추가
-              } else if (hasRisk) {
-                // 위험 영역만 (빨간 테두리 강조)
-                fillColor = '#fecaca';
-                fillOpacity = isMyZone ? 0.3 : 0.35;
-                strokeColor = '#dc2626';
-                strokeWeight = isMyZone ? 8 : 5;
-              } else if (hasPlan) {
-                // 작업 영역만 (내 구역: 보라색, 타인 구역: 파란색)
-                if (isMyZone) {
-                  fillColor = '#a78bfa'; // Violet 400
-                  fillOpacity = 0.3;
+              if (isMyZone) {
+                // 1. 내 구역 (무조건 보라색 베이스)
+                fillColor = '#a78bfa'; // Violet 400
+                fillOpacity = 0.35;
+                
+                if (hasRisk) {
+                  // 내 구역인데 위험까지 겹친 경우 -> 보라색 배경 + 굵은 빨간 테두리
+                  strokeColor = '#dc2626'; // Red 600
+                  strokeWeight = 8;
+                  dashArray = "10, 5"; // 위험 경고 점선
+                } else {
+                  // 일반 내 작업 구역
                   strokeColor = '#7c3aed'; // Violet 600
                   strokeWeight = 6;
-                } else {
-                  fillColor = '#bfdbfe';
-                  fillOpacity = 0.3;
-                  strokeColor = '#2563eb';
-                  strokeWeight = 3;
                 }
-              }
-
-              // 내 구역인데 아무 계획도 없는 경우 (사전 확인용)
-              if (isMyZone && !hasPlan && !hasRisk) {
-                fillColor = '#ddd6fe';
-                strokeColor = '#7c3aed';
-                strokeWeight = 6;
+              } else if (hasRisk && hasPlan) {
+                // 2. 타인 구역 + 위험 + 작업 (노란색/빨간색)
+                fillColor = '#fef08a';
+                fillOpacity = 0.45;
+                strokeColor = '#dc2626';
+                strokeWeight = 5;
+              } else if (hasRisk) {
+                // 3. 위험 구역만 (빨간색)
+                fillColor = '#fecaca';
+                fillOpacity = 0.35;
+                strokeColor = '#dc2626';
+                strokeWeight = 5;
+              } else if (hasPlan) {
+                // 4. 일반 작업 구역 (파란색)
+                fillColor = '#bfdbfe';
                 fillOpacity = 0.3;
-                dashArray = "10, 5";
+                strokeColor = '#2563eb';
+                strokeWeight = 3;
               }
 
 
