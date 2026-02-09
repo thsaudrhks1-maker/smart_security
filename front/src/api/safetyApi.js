@@ -7,10 +7,18 @@ export const safetyApi = {
         client.get('/daily/safety_logs', { params: { project_id: projectId, date: date } }),
 
     // [DAILY] 위험 신고 및 사진 업로드 (Multipart/FormData)
-    reportDanger: (formData) => 
-        client.post('/daily/safety_logs/report', formData, {
+    reportDanger: async (formData) => {
+        const response = await client.post('/daily/safety_logs/report', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
-        }),
+        });
+        return response.data;
+    },
+
+    // 위험 구역 승인 (PENDING -> APPROVED)
+    approveDanger: async (dangerId) => {
+        const response = await client.put(`/daily/safety_logs/approve/${dangerId}`);
+        return response.data;
+    },
 
     // [DAILY] 타임라인별 안전 상태 요약 조회 (관리자용 등)
     getSafetyTimeline: (projectId, date) => 

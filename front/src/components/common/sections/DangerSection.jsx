@@ -15,7 +15,8 @@ const DangerSection = ({
     onCreateDanger,
     onDeleteDanger,
     onCancelDanger,
-    viewerType = 'MANAGER'
+    viewerType = 'MANAGER',
+    onApprove
 }) => {
     return (
         <section>
@@ -86,6 +87,8 @@ const DangerSection = ({
                                 key={danger.id} 
                                 danger={danger}
                                 onDelete={viewerType === 'MANAGER' ? () => onDeleteDanger(danger.id) : undefined}
+                                onApprove={onApprove}
+                                viewerType={viewerType}
                             />
                         ))
                     )}

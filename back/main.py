@@ -14,7 +14,11 @@ from back.daily.task_plans.router import router as task_plans_router
 from back.daily.safety_logs.router import router as safety_logs_router
 from back.manager.router import router as manager_router
 
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI(title="Smart Security API")
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS 해결: allow_origins를 와일드카드(*) 대신 실제 주소로 명시
 app.add_middleware(

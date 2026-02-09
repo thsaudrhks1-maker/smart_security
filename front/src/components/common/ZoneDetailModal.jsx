@@ -215,6 +215,33 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
         setFiles([]);
     }
 
+    const processedDangers = React.useMemo(() => {
+        const dangerMap = new Map();
+        dangers.forEach(d => {
+            if (!dangerMap.has(d.id)) {
+                dangerMap.set(d.id, { ...d, images: [] });
+            }
+            if (d.image_url) {
+                const entry = dangerMap.get(d.id);
+                if (!entry.images.includes(d.image_url)) {
+                    entry.images.push(d.image_url);
+                }
+            }
+        });
+        return Array.from(dangerMap.values());
+    }, [dangers]);
+
+    const handleApproveDanger = async (dangerId) => {
+        try {
+            await safetyApi.approveDanger(dangerId);
+            alert('위험 구역 신고가 승인되었습니다.');
+            loadZoneDetail();
+        } catch (e) {
+            console.error('승인 실패', e);
+            alert('승인 처리 중 오류가 발생했습니다.');
+        }
+    };
+
     return (
         <div style={{ 
             position: 'fixed', 
@@ -276,7 +303,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
                         <DangerSection 
                             mode={mode}
                             setMode={setMode}
-                            dangers={dangers}
+                            dangers={processedDangers}
                             dangerForm={dangerForm}
                             setDangerForm={setDangerForm}
                             dangerTemplates={dangerTemplates}
@@ -286,6 +313,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
                             onDeleteDanger={handleDeleteDanger}
                             onCancelDanger={handleCancelDanger}
                             viewerType={viewerType}
+                            onApprove={handleApproveDanger}
                         />
                     </>
                 )}
