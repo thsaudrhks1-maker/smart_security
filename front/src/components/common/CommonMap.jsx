@@ -139,6 +139,7 @@ const CommonMap = ({
 
         // 위험 아이콘
         if (hasRisk) {
+            const hostname = window.location.hostname;
             const hazardIcon = L.divIcon({
                 html: `<div style="
                     position: relative; 
@@ -146,7 +147,7 @@ const CommonMap = ({
                     display: flex; align-items: center; justify-content: center;
                     animation: bounce 2s infinite;
                 ">
-                    <img src="http://localhost:8500/uploads/icon/image-Photoroom.png" 
+                    <img src="http://${hostname}:8500/uploads/icon/image-Photoroom.png" 
                          style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));"
                          onerror="this.style.display='none'"
                     />

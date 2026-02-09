@@ -12,10 +12,12 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
     const canApprove = viewerType === 'MANAGER' && isPending;
     const canDelete = onDelete; 
 
-    // 이미지 경로 생성 (백엔드 포트 8500 기준)
+    // 이미지 경로 생성 (동적 호스트네임 사용)
     const getImageUrl = (filename) => {
         const infoFolder = danger.danger_info_id || 'custom';
-        return `http://localhost:8500/uploads/danger_zones/${danger.zone_id}/${infoFolder}/${filename}`;
+        const hostname = window.location.hostname;
+        // 포트 8500은 백엔드 고정 (필요시 환경변수 처리 가능)
+        return `http://${hostname}:8500/uploads/danger_zones/${danger.zone_id}/${infoFolder}/${filename}`;
     };
 
     return (
@@ -148,8 +150,8 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
                                         alt={`현장 사진 ${idx + 1}`} 
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                         onError={(e) => {
-                                            e.target.onerror = null; 
-                                            e.target.src = 'https://via.placeholder.com/100?text=Error';
+                                            e.target.style.display = 'none';
+                                            e.target.parentElement.innerHTML = '<div style="width:100%;height:100%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.75rem;font-weight:700;">이미지<br>없음</div>';
                                         }}
                                     />
                                 </div>

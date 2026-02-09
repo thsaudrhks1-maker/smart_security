@@ -294,7 +294,7 @@ const ManagerDashboard = () => {
                                                             +{danger.images.length}장
                                                         </div>
                                                         <img 
-                                                            src={`http://localhost:8500/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
+                                                            src={`http://${window.location.hostname}:8500/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
                                                             alt="위험 현장"
                                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                             onError={(e) => {
