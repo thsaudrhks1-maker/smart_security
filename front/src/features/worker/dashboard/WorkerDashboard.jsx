@@ -9,6 +9,7 @@ import CommonMap from '@/components/common/CommonMap';
 import AttendanceCard from './AttendanceCard';
 import WorkerMainTiles from './WorkerMainTiles';
 import DailyChecklistModal from './DailyChecklistModal';
+import DangerReportModal from './DangerReportModal';
 import { SafetyGuideModal } from './DashboardModals';
 
 const WorkerDashboard = () => {
