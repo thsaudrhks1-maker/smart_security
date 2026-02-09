@@ -46,7 +46,7 @@ const CommonMap = ({
   onZoneClick,
   onMapClick,
   highlightLevel = '1F',
-  myZoneName = null, // 강조할 특정 구역 이름
+  myZoneNames = [], // 강조할 구역 이름들 (배열)
   plans = [],
   risks = [],
   zones = [], // 새로 추가: 구역별 상세 정보
@@ -101,7 +101,10 @@ const CommonMap = ({
             for (let c = 0; c < cols; c++) {
               const zoneName = `${highlightLevel}-${chr(65+r)}${c+1}`;
               const zoneData = zoneMap[zoneName] || null;
-              const isMyZone = myZoneName === zoneName;
+              
+              const isMyZone = Array.isArray(myZoneNames) 
+                ? myZoneNames.includes(zoneName) 
+                : myZoneNames === zoneName;
               
               const zoneTasks = zoneData?.tasks || [];
               const zoneDangers = zoneData?.dangers || [];
@@ -114,7 +117,6 @@ const CommonMap = ({
                 const workers = task.workers || [];
                 totalWorkers += Array.isArray(workers) ? workers.length : 0;
               });
-
               // [REFINED STYLING LOGIC]
               let fillColor = 'transparent';
               let fillOpacity = 0.08;
@@ -123,19 +125,19 @@ const CommonMap = ({
               let dashArray = null;
 
               if (isMyZone) {
-                // 1. 내 구역 (무조건 보라색 베이스)
-                fillColor = '#a78bfa'; // Violet 400
-                fillOpacity = 0.35;
+                // 1. 내 구역 (매우 진한 보라색 베이스 - Violet 700/900)
+                fillColor = '#6d28d9'; // Violet 700
+                fillOpacity = 0.5;
                 
                 if (hasRisk) {
                   // 내 구역인데 위험까지 겹친 경우 -> 보라색 배경 + 굵은 빨간 테두리
                   strokeColor = '#dc2626'; // Red 600
-                  strokeWeight = 8;
+                  strokeWeight = 10;
                   dashArray = "10, 5"; // 위험 경고 점선
                 } else {
                   // 일반 내 작업 구역
-                  strokeColor = '#7c3aed'; // Violet 600
-                  strokeWeight = 6;
+                  strokeColor = '#4c1d95'; // Violet 900
+                  strokeWeight = 8;
                 }
               } else if (hasRisk && hasPlan) {
                 // 2. 타인 구역 + 위험 + 작업 (노란색/빨간색)

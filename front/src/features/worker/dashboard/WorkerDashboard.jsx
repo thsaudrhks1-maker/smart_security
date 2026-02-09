@@ -336,7 +336,7 @@ const WorkerDashboard = () => {
                               spacing: parseFloat(project.grid_spacing) 
                             }}
                             highlightLevel={currentLevel}
-                            myZoneName={myPlan?.zone_name}
+                            myZoneNames={myPlans.map(p => p.zone_name)} // 모든 작업존 배열로 전달
                             zones={zones}
 
                             onZoneClick={(zoneData) => {
