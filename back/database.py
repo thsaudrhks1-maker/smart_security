@@ -43,7 +43,6 @@ async def insert_and_return(sql: str, params: dict = None):
 # 1. [SYS] 시스템 기초
 from back.sys.users.model import sys_users
 from back.sys.companies.model import sys_companies
-from back.sys.alerts.model import sys_emergency_alerts
 
 # 2. [PROJECT] 프로젝트 관련
 from back.project.master.model import project_master

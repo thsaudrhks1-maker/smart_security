@@ -9,7 +9,7 @@ import CommonMap from '@/components/common/CommonMap';
 import AttendanceCard from './AttendanceCard';
 import WorkerMainTiles from './WorkerMainTiles';
 import DailyChecklistModal from './DailyChecklistModal';
-import DangerReportModal from './DangerReportModal';
+import DangerZoneModal from '@/components/common/DangerZoneModal';
 import { SafetyGuideModal } from './DashboardModals';
 import { noticeApi } from '@/api/noticeApi';
 import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
@@ -368,11 +368,12 @@ const WorkerDashboard = () => {
             />
 
             {/* 모달 모음 */}
-            <DangerReportModal 
-              open={isReportModalOpen} 
-              onClose={() => setIsReportModalOpen(false)} 
-              zone={selectedZone}
-              onSuccess={loadData}
+            <DangerZoneModal 
+                open={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                zone={selectedZone}
+                mode="WORKER"
+                onSuccess={() => loadData()}
             />
             <SafetyGuideModal 
               isOpen={isGuideModalOpen} 

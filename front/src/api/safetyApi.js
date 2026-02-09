@@ -2,27 +2,35 @@
 import client from './client';
 
 export const safetyApi = {
-    // [SAFETY] 전체 현장 구역(Zone) 목록 조회
-    getZones: async () => {
-        const response = await client.get('/safety/zones');
-        return response.data;
-    },
-    // [SAFETY] 일일 위험 구역 목록 (사용자/매니저 대시보드용)
-    getDailyDangerZones: async (date) => {
-        const response = await client.get('/safety/daily-danger-zones', { params: { date } });
-        return response.data;
-    },
-    // [SAFETY] 위험 요소 신고 및 생성
-    createDailyDangerZone: async (data) => {
-        const response = await client.post('/safety/daily-danger-zones', data);
-        return response.data;
-    },
-    // [SAFETY] 도면 기반 구역 데이터 동기화
-    syncZonesByBlueprint: async (projectId) => {
-        const response = await client.get(`/project/locations/${projectId}/sites`);
-        return response.data;
-    }
+    // [DAILY] 프로젝트별 위험 지역 조회
+    getHazards: (projectId, date) => 
+        client.get('/daily/safety_logs', { params: { project_id: projectId, date: date } }),
+
+    // [DAILY] 위험 신고 및 사진 업로드 (Multipart/FormData)
+    reportDanger: (formData) => 
+        client.post('/daily/safety_logs/report', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }),
+
+    // [DAILY] 타임라인별 안전 상태 요약 조회 (관리자용 등)
+    getSafetyTimeline: (projectId, date) => 
+        client.get('/daily/safety_logs/timeline', { params: { project_id: projectId, date: date } }),
+
+    // [DAILY] 안전 점검 로그 생성
+    createSafetyLog: (data) => 
+        client.post('/daily/safety_logs/logs', data),
+
+    // [CONTENT] 위험 요소 템플릿 목록 조회
+    getDangerTemplates: () => 
+        client.get('/content/danger_info'),
+
+    // [DAILY] 위험 신고 승인
+    approveHazard: (dangerId) => 
+        client.put(`/daily/safety_logs/approve/${dangerId}`),
+
+    // [DAILY] 위험 구역 삭제
+    deleteHazard: (dangerId) =>
+        client.delete(`/daily/safety_logs/danger/${dangerId}`),
 };
 
-export const { getZones, getDailyDangerZones, createDailyDangerZone, syncZonesByBlueprint } = safetyApi;
 export default safetyApi;

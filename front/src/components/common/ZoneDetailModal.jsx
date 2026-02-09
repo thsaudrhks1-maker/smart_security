@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { workApi } from '@/api/workApi';
 import { dangerApi } from '@/api/dangerApi';
+import { safetyApi } from '@/api/safetyApi'; // safetyApi 추가
 import { 
   X, ClipboardList, AlertTriangle, Plus
 } from 'lucide-react';
@@ -9,18 +10,23 @@ import DangerForm from './forms/DangerForm';
 import WorkerAssignmentForm from './forms/WorkerAssignmentForm';
 import TaskCard from './cards/TaskCard';
 import DangerCard from './cards/DangerCard';
+import { useAuth } from '@/context/AuthContext'; // AuthContext 추가
 
 /**
  * 구역 상세 모달 (작업 계획 + 위험 구역 관리)
  * 데스크톱, 모바일 모두 사용 가능
  */
 const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) => {
+    const { user } = useAuth(); // user info
     const [tasks, setTasks] = useState([]);
     const [dangers, setDangers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [mode, setMode] = useState('view'); // 'view', 'add_task', 'add_danger', 'assign_workers'
     const [selectedTaskForWorkers, setSelectedTaskForWorkers] = useState(null);
     
+    // 파일 상태 추가
+    const [files, setFiles] = useState([]);
+
     const [taskForm, setTaskForm] = useState({
         work_info_id: '',
         description: '',
@@ -141,37 +147,43 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
 
     const handleCreateDanger = async () => {
         try {
-            let dangerInfoId = null;
+            // FormData 생성 (파일 업로드 지원)
+            const formData = new FormData();
+            formData.append('project_id', projectId);
+            formData.append('zone_id', zone.id);
+            formData.append('user_id', user?.id || 1); // 현재 사용자 ID
+            formData.append('date', date);
             
             if (dangerForm.mode === 'template') {
                 if (!dangerForm.danger_info_id) {
                     alert('위험 요소를 선택해주세요.');
                     return;
                 }
-                dangerInfoId = parseInt(dangerForm.danger_info_id);
+                formData.append('danger_info_id', parseInt(dangerForm.danger_info_id));
+                const template = dangerTemplates.find(t => t.id === parseInt(dangerForm.danger_info_id));
+                formData.append('risk_type', template?.danger_type || 'ETC');
             } else {
                 if (!dangerForm.custom_type) {
                     alert('위험 유형을 입력해주세요.');
                     return;
                 }
-                const newDangerInfo = await dangerApi.createDangerInfo({
-                    danger_type: dangerForm.custom_type,
-                    icon: dangerForm.custom_icon,
-                    color: dangerForm.custom_color,
-                    description: dangerForm.description,
-                    risk_level: parseInt(dangerForm.risk_level)
-                });
-                dangerInfoId = newDangerInfo.data.id;
+                formData.append('risk_type', dangerForm.custom_type);
+                // 커스텀 정보는 별도 필드로 전달하거나, 백엔드에서 처리
+                // 여기서는 간단히 description에 포함하거나, 백엔드 로직에 맞춤
             }
             
-            await workApi.createDanger({
-                zone_id: zone.id,
-                date: date,
-                danger_info_id: dangerInfoId,
-                description: dangerForm.description
+            formData.append('description', dangerForm.description);
+            formData.append('status', 'APPROVED'); // 매니저는 즉시 승인
+
+            // 파일 추가
+            files.forEach(file => {
+                formData.append('files', file);
             });
             
-            alert('위험 구역이 추가되었습니다.');
+            // safetyApi.reportDanger 사용 (통합 엔드포인트)
+            await safetyApi.reportDanger(formData);
+            
+            alert('위험 구역이 등록되었습니다.');
             setMode('view');
             setDangerForm({ 
                 mode: 'template',
@@ -182,8 +194,8 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                 description: '',
                 risk_level: 3
             });
+            setFiles([]); // 파일 초기화
             loadZoneDetail();
-            loadDangerTemplates();
         } catch (e) {
             console.error('위험 구역 추가 오류:', e);
             alert('위험 구역 추가 중 오류가 발생했습니다.');
@@ -375,7 +387,10 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                                     dangerForm={dangerForm}
                                     setDangerForm={setDangerForm}
                                     dangerTemplates={dangerTemplates}
+                                    files={files}
+                                    setFiles={setFiles}
                                     onSubmit={handleCreateDanger}
+                                    mode="MANAGER"
                                     onCancel={() => {
                                         setMode('view');
                                         setDangerForm({ 
@@ -387,6 +402,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose }) =>
                                             description: '',
                                             risk_level: 3
                                         });
+                                        setFiles([]);
                                     }}
                                 />
                             ) : (

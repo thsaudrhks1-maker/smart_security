@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import WorkerStatusWidget from '@/components/common/WorkerStatusWidget';
 import NoticeManagementWidget from '@/components/common/NoticeManagementWidget';
+import CommonMap from '@/components/common/CommonMap';
+import ZoneDetailModal from '@/components/common/ZoneDetailModal';
 
 /**
  * [MANAGER] 현장 관리자 통합 대시보드
@@ -17,8 +19,12 @@ const ManagerDashboard = () => {
     const { user } = useAuth();
     const [projectDetail, setProjectDetail] = useState(null);
     const [attendance, setAttendance] = useState([]);
+    const [zones, setZones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedPartner, setExpandedPartner] = useState(null);
+    const [currentLevel, setCurrentLevel] = useState('1F');
+    const [selectedZone, setSelectedZone] = useState(null);
+    const [isZoneDetailOpen, setIsZoneDetailOpen] = useState(false);
 
     useEffect(() => {
         loadDashboardData();
@@ -38,13 +44,15 @@ const ManagerDashboard = () => {
                 siteId = Number(siteId);
             }
 
-            const [detailRes, attRes] = await Promise.all([
+            const [detailRes, attRes, zonesRes] = await Promise.all([
                 projectApi.getProjectDetail(siteId),
-                attendanceApi.getAttendance(siteId, today)
+                attendanceApi.getAttendance(siteId, today),
+                projectApi.getZonesWithDetails(siteId, today)
             ]);
 
             if (detailRes?.data?.data) setProjectDetail(detailRes.data.data);
             if (attRes?.data?.data) setAttendance(attRes.data.data);
+            if (zonesRes?.data?.data) setZones(zonesRes.data.data);
         } catch (e) {
             console.error('대시보드 데이터 로드 중 오류:', e);
         } finally {
@@ -155,6 +163,51 @@ const ManagerDashboard = () => {
                                     <div style={{ fontSize: '1.6rem', fontWeight: '900' }}>{outCount}</div>
                                 </div>
                             </div>
+                        </div>
+                    </section>
+                    
+                    {/* 실시간 현장 지도 (신규 추가) */}
+                    <section style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
+                                <MapIcon size={20} />
+                                <h2 style={{ fontSize: '1.1rem', fontWeight: '900', margin: 0 }}>실시간 지도</h2>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {['B1', '1F', '2F'].map(lvl => (
+                                    <button 
+                                        key={lvl}
+                                        onClick={() => setCurrentLevel(lvl)}
+                                        style={{
+                                            padding: '4px 10px', borderRadius: '8px', border: 'none',
+                                            background: currentLevel === lvl ? '#3b82f6' : '#f1f5f9',
+                                            color: currentLevel === lvl ? 'white' : '#64748b',
+                                            fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer'
+                                        }}
+                                    >
+                                        {lvl}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div style={{ height: '300px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                            {project && (
+                                <CommonMap 
+                                    center={[project.lat, project.lng]}
+                                    zoom={19}
+                                    gridConfig={{ 
+                                        rows: project.grid_rows, 
+                                        cols: project.grid_cols, 
+                                        spacing: project.grid_spacing 
+                                    }}
+                                    highlightLevel={currentLevel}
+                                    zones={zones}
+                                    onZoneClick={(z) => {
+                                        setSelectedZone(z);
+                                        setIsZoneDetailOpen(true);
+                                    }}
+                                />
+                            )}
                         </div>
                     </section>
 
@@ -294,6 +347,20 @@ const ManagerDashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 상세 관리 모달 (작업 + 위험) */}
+            {isZoneDetailOpen && selectedZone && (
+                <ZoneDetailModal 
+                    zone={selectedZone}
+                    date={new Date().toISOString().split('T')[0]}
+                    projectId={user?.project_id || 1}
+                    approvedWorkers={approvedWorkers}
+                    onClose={() => {
+                        setIsZoneDetailOpen(false);
+                        loadDashboardData();
+                    }}
+                />
+            )}
         </div>
     );
 };

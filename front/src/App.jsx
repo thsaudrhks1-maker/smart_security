@@ -15,6 +15,7 @@ import AdminDashboard from './features/admin/dashboard/AdminDashboard';
 import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
+import SafetyMap from './features/worker/safety/SafetyMap';
 
 // Common
 import AttendanceStatusPage from './components/common/AttendanceStatusPage';
@@ -103,6 +104,7 @@ function App() {
             <ProtectedRoute allowedRoles={['worker']} layout={WorkerLayout}>
               <Routes>
                 <Route path="dashboard" element={<WorkerDashboard />} />
+                <Route path="safety" element={<SafetyMap />} />
                 <Route path="attendance" element={<AttendanceStatusPage />} />
                 <Route path="" element={<Navigate to="/worker/dashboard" replace />} />
               </Routes>

@@ -4,8 +4,8 @@ import { safetyApi } from '@/api/safetyApi';
 import { projectApi } from '@/api/projectApi';
 import { Map as MapIcon, AlertTriangle, Info, Plus } from 'lucide-react';
 import CommonMap from '@/components/common/CommonMap';
-import DangerReportModal from '../dashboard/DangerReportModal';
-import { useAuth } from '@/contexts/AuthContext';
+import DangerZoneModal from '@/components/common/DangerZoneModal';
+import { useAuth } from '@/context/AuthContext';
 
 const SafetyMap = () => {
     const { user } = useAuth();
@@ -148,10 +148,11 @@ const SafetyMap = () => {
                 </div>
             </div>
 
-            <DangerReportModal 
+            <DangerZoneModal 
                 open={isReportOpen} 
                 onClose={() => setIsReportOpen(false)} 
                 zone={selectedZone}
+                mode="WORKER"
                 onSuccess={() => {}} 
             />
         </div>

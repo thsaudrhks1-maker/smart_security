@@ -1,9 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Camera, X, AlertTriangle } from 'lucide-react';
 
 /**
- * 위험 구역 추가 폼
+ * [COMMON] 위험 구역/요소 등록 폼
+ * - Worker: 신고(Request)
+ * - Manager: 등록(Direct)
  */
-const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCancel }) => {
+const DangerForm = ({ 
+    dangerForm, 
+    setDangerForm, 
+    dangerTemplates, 
+    files, 
+    setFiles, 
+    onSubmit, 
+    onCancel,
+    mode = 'MANAGER' // 'MANAGER' or 'WORKER'
+}) => {
+    
+    const handleFileChange = (e) => {
+        if (e.target.files) {
+            setFiles(Array.from(e.target.files));
+        }
+    };
+
+    const handleRemoveFile = (index) => {
+        setFiles(files.filter((_, i) => i !== index));
+    };
+
     return (
         <div style={{ 
             padding: '1.5rem', 
@@ -12,9 +35,10 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
             border: '1px solid #fecaca' 
         }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* 모드 선택 */}
+                {/* 모드 선택 (관리자만 노출하거나, 워커도 선택 가능하게 할지 결정) */}
+                {/* 편의상 워커는 '템플릿' 위주지만, '직접 입력'도 허용한다면 유지 */}
                 <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '0.85rem', color: '#7f1d1d' }}>
                         입력 방식
                     </label>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -32,7 +56,7 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
                                 color: dangerForm.mode === 'template' ? '#991b1b' : '#64748b'
                             }}
                         >
-                            템플릿 선택
+                            🚫 위험 요소 선택
                         </button>
                         <button
                             onClick={() => setDangerForm({...dangerForm, mode: 'custom'})}
@@ -48,7 +72,7 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
                                 color: dangerForm.mode === 'custom' ? '#991b1b' : '#64748b'
                             }}
                         >
-                            직접 입력
+                            ✏️ 직접 입력
                         </button>
                     </div>
                 </div>
@@ -86,7 +110,7 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
                             <textarea 
                                 value={dangerForm.description} 
                                 onChange={e => setDangerForm({...dangerForm, description: e.target.value})}
-                                placeholder="추가 설명이 필요한 경우 입력"
+                                placeholder={mode === 'MANAGER' ? "조치 권고 사항을 입력하세요." : "현장의 위험 상황을 설명해주세요."}
                                 rows={2}
                                 style={{ 
                                     width: '100%', 
@@ -196,6 +220,55 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
                     </>
                 )}
                 
+                {/* 사진 첨부 섹션 (공통) */}
+                <div>
+                   <label style={{ display: 'block', marginBottom: '6px', fontWeight: '700', fontSize: '0.85rem' }}>
+                       현장 사진 ({files?.length || 0}장)
+                   </label>
+                   <label style={{ 
+                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                       width: '100%', padding: '12px', borderRadius: '12px', 
+                       border: '2px dashed #f87171', background: 'white', 
+                       color: '#ef4444', fontWeight: '700', cursor: 'pointer' 
+                   }}>
+                       <Camera size={18} />
+                       {files?.length > 0 ? '추가 촬영/업로드' : '사진 촬영 또는 업로드'}
+                       <input 
+                           type="file" 
+                           multiple 
+                           accept="image/*" 
+                           onChange={handleFileChange} 
+                           style={{ display: 'none' }} 
+                       />
+                   </label>
+                   
+                   {/* 파일 프리뷰 */}
+                   {files?.length > 0 && (
+                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                           {files.map((file, idx) => (
+                               <div key={idx} style={{ position: 'relative', width: '60px', height: '60px' }}>
+                                   <img 
+                                       src={URL.createObjectURL(file)} 
+                                       alt="preview" 
+                                       style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }} 
+                                   />
+                                   <button 
+                                       onClick={() => handleRemoveFile(idx)}
+                                       style={{ 
+                                           position: 'absolute', top: -5, right: -5, 
+                                           background: '#ef4444', color: 'white', 
+                                           borderRadius: '50%', width: '18px', height: '18px', 
+                                           border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
+                                       }}
+                                   >
+                                       <X size={12} />
+                                   </button>
+                               </div>
+                           ))}
+                       </div>
+                   )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
                     <button 
                         onClick={onCancel}
@@ -218,13 +291,20 @@ const DangerForm = ({ dangerForm, setDangerForm, dangerTemplates, onSubmit, onCa
                             padding: '12px', 
                             borderRadius: '12px', 
                             border: 'none', 
-                            background: '#ef4444', 
+                            background: mode === 'MANAGER' ? '#0f172a' : '#ef4444', // 관리자는 남색, 워커는 적색
                             color: 'white', 
                             fontWeight: '900',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
                         }}
                     >
-                        {dangerForm.mode === 'custom' ? '생성 후 추가' : '추가'}
+                         {mode === 'MANAGER' 
+                             ? (dangerForm.mode === 'custom' ? '생성 후 등록' : '등록하기')
+                             : '위험 신고하기'
+                         }
                     </button>
                 </div>
             </div>

@@ -73,10 +73,12 @@ class locations_repository:
         # 3. 오늘의 위험 구역 조회
         dangers_sql = """
             SELECT 
-                ddz.id as danger_id,
+                ddz.id,
                 ddz.zone_id, 
                 ddz.description,
-                COALESCE(di.danger_type, ddz.risk_type) as danger_type,
+                ddz.status,
+                ddz.risk_type,
+                COALESCE(di.danger_type, ddz.risk_type) as danger_type_label,
                 di.icon, 
                 di.color, 
                 di.risk_level,
