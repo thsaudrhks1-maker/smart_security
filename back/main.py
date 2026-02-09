@@ -1,6 +1,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from back.utils.websocket_manager import notice_ws_manager
 from back.sys.users.router import router as users_router
 from back.sys.companies.router import router as companies_router
 from back.project.master.router import router as project_router
@@ -19,11 +20,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3500",
-        "http://localhost:5173",  # Vite 기본 포트
+        "http://localhost:5173",
         "http://127.0.0.1:3500",
         "http://127.0.0.1:5173",
-        "http://168.107.52.201:3500", # 외부 접속 허용
-        "http://168.107.52.201:5173"  
+        "http://168.107.52.201:3500",
+        "http://168.107.52.201:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],

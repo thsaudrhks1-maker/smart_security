@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { noticeApi } from '@/api/noticeApi';
 import { useAuth } from '@/context/AuthContext';
-import { Bell, Send, AlertTriangle, Info, Megaphone, Trash2, Clock, ShieldAlert } from 'lucide-react';
+import { Bell, Send, AlertTriangle, Info, Megaphone, Trash2, Clock, ShieldAlert, CheckSquare } from 'lucide-react';
 
 /**
  * NoticeManagementWidget: 공지사항 및 긴급 알람 작성/조회 위젯
@@ -25,8 +25,8 @@ const NoticeManagementWidget = ({ projectId }) => {
         try {
             setLoading(true);
             const res = await noticeApi.getNotices(projectId);
-            if (res.data) {
-                setNotices(res.data || []);
+            if (res.data?.success) {
+                setNotices(res.data.data || []);
             }
         } catch (e) {
             console.error('공지사항 로드 실패:', e);
@@ -200,6 +200,20 @@ const NoticeManagementWidget = ({ projectId }) => {
                                 <div style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <Clock size={12} />
                                     <span>작성: {notice.author_name || '관리자'} ({notice.notice_role || 'MANAGER'})</span>
+                                </div>
+                                <div style={{ 
+                                    fontSize: '0.7rem', 
+                                    fontWeight: '800', 
+                                    color: notice.read_count > 0 ? '#3b82f6' : '#94a3b8',
+                                    background: notice.read_count > 0 ? '#eff6ff' : '#f8fafc',
+                                    padding: '2px 8px',
+                                    borderRadius: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                }}>
+                                    <CheckSquare size={12} />
+                                    확인: {notice.read_count || 0}명
                                 </div>
                             </div>
                         </div>

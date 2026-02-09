@@ -17,11 +17,11 @@ async def fix_table():
         """)
         print("Step 1: Renamed if needed")
 
-        # 2. Add notice_role if missing
-        await execute("""
-            ALTER TABLE daily_notices ADD COLUMN IF NOT EXISTS notice_role VARCHAR(50);
-        """)
-        print("Step 2: Added notice_role")
+        # 2. Add notice_role, created_by, and created_at if missing
+        await execute("ALTER TABLE daily_notices ADD COLUMN IF NOT EXISTS notice_role VARCHAR(50)")
+        await execute("ALTER TABLE daily_notices ADD COLUMN IF NOT EXISTS created_by INTEGER")
+        await execute("ALTER TABLE daily_notices ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        print("Step 2: Ensured notice_role, created_by, created_at columns exist")
 
         # 3. Change notice_type from BOOLEAN to VARCHAR
         # Check current type first

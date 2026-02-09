@@ -14,7 +14,8 @@ class notices_repository:
             params["pid"] = project_id
 
         sql = f"""
-            SELECT n.*, u.full_name as author_name
+            SELECT n.*, u.full_name as author_name,
+                   (SELECT COUNT(*) FROM daily_notice_reads r WHERE r.notice_id = n.id) as read_count
             FROM daily_notices n
             LEFT JOIN sys_users u ON n.created_by = u.id
             {where_clause}
@@ -24,7 +25,7 @@ class notices_repository:
                     WHEN n.notice_type = 'IMPORTANT' THEN 2
                     ELSE 3 
                 END,
-                n.created_at DESC
+                n.created_at DESC NULLS LAST, n.id DESC
         """
         return await fetch_all(sql, params)
 
@@ -47,8 +48,34 @@ class notices_repository:
     async def get_latest_emergency(project_id: int):
         """가장 최근 긴급 알람 1건 조회 (근로자 팝업용)"""
         sql = """
-            SELECT * FROM daily_notices 
-            WHERE project_id = :pid AND notice_type = 'EMERGENCY' 
-            ORDER BY created_at DESC LIMIT 1
+            SELECT n.*, u.full_name as author_name
+            FROM daily_notices n
+            LEFT JOIN sys_users u ON n.created_by = u.id
+            WHERE n.project_id = :pid AND n.notice_type = 'EMERGENCY' 
+            ORDER BY n.created_at DESC NULLS LAST, n.id DESC LIMIT 1
         """
         return await fetch_one(sql, {"pid": project_id})
+
+    @staticmethod
+    async def mark_as_read(notice_id: int, user_id: int):
+        """공지사항 확인 기록 저장"""
+        sql = """
+            INSERT INTO daily_notice_reads (notice_id, user_id)
+            VALUES (:notice_id, :user_id)
+            ON CONFLICT (notice_id, user_id) DO NOTHING
+            RETURNING *
+        """
+        return await insert_and_return(sql, {"notice_id": notice_id, "user_id": user_id})
+
+    @staticmethod
+    async def get_read_status(notice_id: int):
+        """공지사항 확인 인원 목록 상세 조회"""
+        sql = """
+            SELECT r.read_at, u.full_name, c.name as company_name
+            FROM daily_notice_reads r
+            JOIN sys_users u ON r.user_id = u.id
+            LEFT JOIN sys_companies c ON u.company_id = c.id
+            WHERE r.notice_id = :nid
+            ORDER BY r.read_at DESC
+        """
+        return await fetch_all(sql, {"nid": notice_id})

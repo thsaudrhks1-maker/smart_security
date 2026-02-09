@@ -6,18 +6,17 @@ import {
     FileText, Clock, Megaphone, CheckSquare 
 } from 'lucide-react';
 
-const Tile = ({ title, content, subContent, icon: Icon, color, onClick, span = 1 }) => (
+const Tile = ({ title, content, subContent, icon: Icon, color, onClick, span = 1, children }) => (
     <div 
         onClick={onClick}
         style={{ 
             background: color, 
             color: 'white', 
-            padding: '1.25rem', 
+            padding: '1.1rem', 
             borderRadius: '16px', 
             cursor: onClick ? 'pointer' : 'default',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
             gridColumn: `span ${span}`,
             minHeight: '140px',
             position: 'relative',
@@ -26,20 +25,40 @@ const Tile = ({ title, content, subContent, icon: Icon, color, onClick, span = 1
         }}
     >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: '700', opacity: 0.9 }}>{title}</span>
-            {Icon && <Icon size={24} style={{ opacity: 0.8 }} />}
+            <span style={{ fontSize: '0.85rem', fontWeight: '700', opacity: 0.9 }}>{title}</span>
+            {Icon && <Icon size={20} style={{ opacity: 0.8 }} />}
         </div>
         
         <div style={{ marginTop: 'auto' }}>
-            <div style={{ fontSize: '1.35rem', fontWeight: '800', lineHeight: '1.2' }}>{content}</div>
-            {subContent && (
-                <div style={{ fontSize: '0.85rem', marginTop: '4px', opacity: 0.85 }}>{subContent}</div>
+            {children || (
+                <>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '800', lineHeight: '1.2' }}>{content}</div>
+                    {subContent && (
+                        <div style={{ fontSize: '0.8rem', marginTop: '4px', opacity: 0.85 }}>{subContent}</div>
+                    )}
+                </>
             )}
         </div>
     </div>
 );
 
-const WorkerMainTiles = ({ project, myPlan, dangerCount, notice, weather, onChecklistClick }) => {
+const NoticeItem = ({ title, time, type }) => (
+    <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        padding: '6px 0',
+        borderBottom: '1px solid rgba(255,255,255,0.1)'
+    }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+            {type === 'IMPORTANT' && <span style={{ color: '#fbbf24', fontSize: '10px' }}>[중요]</span>}
+            <span style={{ fontSize: '0.9rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+        </div>
+        <span style={{ fontSize: '0.75rem', opacity: 0.7, flexShrink: 0 }}>{time}</span>
+    </div>
+);
+
+const WorkerMainTiles = ({ project, myPlan, dangerCount, notices, weather, onChecklistClick, onNoticeClick }) => {
     const navigate = useNavigate();
 
     return (
@@ -109,15 +128,29 @@ const WorkerMainTiles = ({ project, myPlan, dangerCount, notice, weather, onChec
                 />
             )}
 
-            {/* 6. 공지사항 (Indigo) */}
+            {/* 6. 공지사항 (Indigo) - 리스트 형태 */}
             <Tile 
                 title="공지사항" 
-                content={notice ? "신규 공지" : "공지 없음"}
-                subContent={notice ? notice.title : "등록된 공지사항이 없습니다."}
                 icon={Megaphone}
                 color="#6366f1" // Indigo 500
                 span={2}
-            />
+                onClick={onNoticeClick}
+            >
+                {(!notices || notices.length === 0) ? (
+                    <div style={{ fontSize: '1rem', fontWeight: '800' }}>등록된 공지사항이 없습니다.</div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        {notices.slice(0, 3).map(n => (
+                            <NoticeItem 
+                                key={n.id} 
+                                title={n.title} 
+                                time={new Date(n.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                                type={n.notice_type}
+                            />
+                        ))}
+                    </div>
+                )}
+            </Tile>
         </div>
     );
 };

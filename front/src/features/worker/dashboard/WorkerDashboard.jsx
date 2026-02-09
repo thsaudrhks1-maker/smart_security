@@ -12,7 +12,7 @@ import DailyChecklistModal from './DailyChecklistModal';
 import DangerReportModal from './DangerReportModal';
 import { SafetyGuideModal } from './DashboardModals';
 import { noticeApi } from '@/api/noticeApi';
-import { X, Volume2, AlertTriangle } from 'lucide-react';
+import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
@@ -22,9 +22,13 @@ const WorkerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [mySafetyLogs, setMySafetyLogs] = useState([]); 
     const [currentLevel, setCurrentLevel] = useState('1F');
+    const [latestNotice, setLatestNotice] = useState(null);
+    const [notices, setNotices] = useState([]); // 전체 공지 리스트 추가
+    const latestNoticeRef = React.useRef(null);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // 이력 모달 상태
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
     
@@ -35,6 +39,10 @@ const WorkerDashboard = () => {
     
     const [selectedZone, setSelectedZone] = useState(null);
     const [isMapVisible, setIsMapVisible] = useState(true); // 지도 기본 펼침
+    
+    // 일반 공지 모달 상태
+    const [showNoticeModal, setShowNoticeModal] = useState(false);
+    const [activeNotice, setActiveNotice] = useState(null);
 
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -99,6 +107,21 @@ const WorkerDashboard = () => {
                 setCurrentLevel(myTasks[0].level);
             }
 
+            // 공지사항 목록 조회
+            try {
+                const noticeRes = await noticeApi.getNotices(projectId);
+                if (noticeRes.data?.success) {
+                    const noticeList = noticeRes.data.data || [];
+                    setNotices(noticeList);
+                    if (noticeList.length > 0) {
+                        setLatestNotice(noticeList[0]);
+                        latestNoticeRef.current = noticeList[0];
+                    }
+                }
+            } catch (e) {
+                console.error('공지사항 로드 실패:', e);
+            }
+
         } catch (e) {
             console.error('근로자 대시보드 로드 실패', e);
         } finally {
@@ -106,37 +129,82 @@ const WorkerDashboard = () => {
         }
     };
 
-    const checkEmergency = async () => {
-        const projectId = user?.project_id || 1;
-        try {
-            const res = await noticeApi.getLatestEmergency(projectId);
-            if (res.data?.data) {
-                const alert = res.data.data;
-                // 새로운 알람이거나, 이전에 닫았던 알람이 아닐 경우
-                if (String(alert.id) !== String(lastAlertId)) {
-                    setLatestEmergency(alert);
-                    setShowEmergency(true);
-                }
-            }
-        } catch (e) {
-            console.error('긴급 알람 체크 실패:', e);
-        }
-    };
-
     useEffect(() => { 
         loadData(); 
-        // 10초마다 긴급 알람 체크
-        const emergencyTimer = setInterval(checkEmergency, 10000);
-        checkEmergency(); // 초기 로드 시 1회 실행
-        return () => clearInterval(emergencyTimer);
+        
+        // [REAL-TIME] SSE 연결 관리 (단방향 푸시 알림)
+        let eventSource = null;
+
+        const connectSSE = () => {
+            const projectId = user?.project_id || 1;
+            const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:8500' : '';
+            const sseUrl = `${baseUrl}/api/daily/notices/sse/${projectId}`;
+            
+            console.log('📡 SSE 실시간 알림 채널 연결 시도:', sseUrl);
+            eventSource = new EventSource(sseUrl);
+            
+            eventSource.onopen = () => {
+                console.log('✅ SSE 실시간 알림 채널 연결 성공');
+            };
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.type === 'NEW_NOTICE') {
+                        const notice = message.data;
+                        
+                        // 리스트 최상단에 추가
+                        setNotices(prev => [notice, ...prev.slice(0, 19)]);
+                        
+                        if (notice.notice_type === 'EMERGENCY') {
+                            setLatestEmergency(notice);
+                            setShowEmergency(true);
+                        } else {
+                            setLatestNotice(notice);
+                            latestNoticeRef.current = notice;
+                            setActiveNotice(notice);
+                            setShowNoticeModal(true);
+                        }
+                    }
+                } catch (e) {
+                    console.error('SSE 데이터 파싱 실패:', e);
+                }
+            };
+
+            eventSource.onerror = (err) => {
+                console.error('❌ SSE 연결 오류 발생. 브라우저가 자동으로 재연결을 시도합니다.');
+                // EventSource는 기본적으로 자동 재연결을 시도하지만, 
+                // 심각한 오류 시 명시적으로 닫고 다시 열 수도 있습니다.
+            };
+        };
+
+        connectSSE();
+
+        return () => {
+            if (eventSource) eventSource.close();
+        };
     }, [user, selectedDate, lastAlertId]);
 
-    const handleCloseEmergency = () => {
+    const handleCloseEmergency = async () => {
         if (latestEmergency) {
             localStorage.setItem('last_emergency_id', String(latestEmergency.id));
             setLastAlertId(String(latestEmergency.id));
+            // 서버에 확인 기록
+            try {
+                await noticeApi.markAsRead(latestEmergency.id, user?.id || user?.user_id);
+            } catch (e) { console.error('확인 기록 실패', e); }
         }
         setShowEmergency(false);
+    };
+
+    const handleCloseNotice = async () => {
+        if (activeNotice) {
+            // 서버에 확인 기록
+            try {
+                await noticeApi.markAsRead(activeNotice.id, user?.id || user?.user_id);
+            } catch (e) { console.error('확인 기록 실패', e); }
+        }
+        setShowNoticeModal(false);
     };
 
     const myPlans = findAllMyTasks(zones);
@@ -294,7 +362,9 @@ const WorkerDashboard = () => {
                     isChecked: mySafetyLogs.some(log => log.plan_id === (myPlan.task_id || myPlan.id)) 
                 } : null}
                 dangerCount={dangerCount}
+                notices={notices} // 수정: 리스트 전달
                 onChecklistClick={() => setIsChecklistModalOpen(true)}
+                onNoticeClick={() => setIsHistoryModalOpen(true)} // 추가
             />
 
             {/* 모달 모음 */}
@@ -377,6 +447,104 @@ const WorkerDashboard = () => {
                             >
                                 확인하였습니다
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 일반/중요 공지 모달 오버레이 */}
+            {showNoticeModal && activeNotice && (
+                <div style={{ 
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 9998, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' 
+                }}>
+                    <div style={{ 
+                        width: '100%', maxWidth: '400px', background: 'white', borderRadius: '30px', 
+                        overflow: 'hidden', border: `3px solid ${activeNotice.notice_type === 'IMPORTANT' ? '#f59e0b' : '#6366f1'}`
+                    }}>
+                        <div style={{ background: activeNotice.notice_type === 'IMPORTANT' ? '#f59e0b' : '#6366f1', padding: '15px', textAlign: 'center', color: 'white' }}>
+                            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                                <Info size={32} />
+                            </div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: '900', margin: 0 }}>
+                                {activeNotice.notice_type === 'IMPORTANT' ? '⚠️ 중요 공지사항' : '📢 신규 공지사항'}
+                            </h3>
+                        </div>
+                        <div style={{ padding: '25px', textAlign: 'center' }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', marginBottom: '12px' }}>
+                                {activeNotice.title}
+                            </div>
+                            <div style={{ fontSize: '0.95rem', color: '#475569', lineHeight: '1.5', background: '#f8fafc', padding: '15px', borderRadius: '15px', textAlign: 'left' }}>
+                                {activeNotice.content}
+                            </div>
+                            <button 
+                                onClick={handleCloseNotice}
+                                style={{ 
+                                    marginTop: '25px', width: '100%', padding: '14px', 
+                                    background: '#0f172a', color: 'white', border: 'none', 
+                                    borderRadius: '15px', fontWeight: '900', fontSize: '1.1rem', cursor: 'pointer' 
+                                }}
+                            >
+                                확인했습니다
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 공지사항 전체 이력 모달 (새로 추가) */}
+            {isHistoryModalOpen && (
+                <div style={{ 
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                    backdropFilter: 'blur(5px)'
+                }}>
+                    <div style={{ 
+                        width: '100%', maxWidth: '450px', background: 'white', borderRadius: '30px', 
+                        height: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden'
+                    }}>
+                        <div style={{ background: '#6366f1', padding: '20px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Megaphone size={20} />
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: '900', margin: 0 }}>전체 공지사항</h3>
+                            </div>
+                            <button onClick={() => setIsHistoryModalOpen(false)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                        </div>
+                        
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+                            {notices.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '50px', color: '#94a3b8' }}>도착한 공지가 없습니다.</div>
+                            ) : notices.map(n => (
+                                <div 
+                                    key={n.id} 
+                                    onClick={() => {
+                                        setActiveNotice(n);
+                                        setShowNoticeModal(true);
+                                    }}
+                                    style={{ 
+                                        padding: '18px', borderBottom: '1px solid #f1f5f9', cursor: 'pointer',
+                                        background: n.notice_type === 'IMPORTANT' ? '#fffbeb' : 'white',
+                                        borderRadius: '15px', marginBottom: '8px'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                        <span style={{ 
+                                            fontSize: '0.7rem', fontWeight: '900', color: 'white', 
+                                            background: n.notice_type === 'IMPORTANT' ? '#f59e0b' : '#6366f1',
+                                            padding: '2px 6px', borderRadius: '4px'
+                                        }}>
+                                            {n.notice_type === 'IMPORTANT' ? '중요' : '공지'}
+                                        </span>
+                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{new Date(n.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <div style={{ fontWeight: '800', fontSize: '1rem', color: '#1e293b' }}>{n.title}</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {n.content}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
