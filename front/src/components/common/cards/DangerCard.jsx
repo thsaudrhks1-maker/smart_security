@@ -12,12 +12,11 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
     const canApprove = viewerType === 'MANAGER' && isPending;
     const canDelete = onDelete; 
 
-    // 이미지 경로 생성 (동적 호스트네임 사용)
+    // 이미지 경로 생성 (동적 호스트네임 사용 -> 상대 경로로 변경하여 Nginx 태움)
     const getImageUrl = (filename) => {
         const infoFolder = danger.danger_info_id || 'custom';
-        const hostname = window.location.hostname;
-        // 포트 8500은 백엔드 고정 (필요시 환경변수 처리 가능)
-        return `http://${hostname}:8500/uploads/danger_zones/${danger.zone_id}/${infoFolder}/${filename}`;
+        // [수정] http://hostname:8500 삭제 -> /uploads/... (상대 경로) 사용
+        return `/uploads/danger_zones/${danger.zone_id}/${infoFolder}/${filename}`;
     };
 
     return (

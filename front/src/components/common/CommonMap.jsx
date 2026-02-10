@@ -190,9 +190,6 @@ const CommonMap = ({
 
         // 위험 아이콘 (아이콘 사이즈는 유지하되 너무 겹치면 숨김 고려 가능하나, 일단 라벨 위주로 처리)
         if (hasRisk) {
-            const hostname = window.location.hostname;
-            const iconSizeScaled = Math.max(10, 48 * scaleRatio); // 아이콘도 같이 작아지게
-            
             const hazardIcon = L.divIcon({
                 html: `<div style="
                     position: relative; 
@@ -200,7 +197,7 @@ const CommonMap = ({
                     display: flex; align-items: center; justify-content: center;
                     animation: bounce 2s infinite;
                 ">
-                    <img src="http://${hostname}:8500/uploads/icon/image-Photoroom.png" 
+                    <img src="/uploads/icon/image-Photoroom.png" 
                          style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));"
                          onerror="this.style.display='none'"
                     />

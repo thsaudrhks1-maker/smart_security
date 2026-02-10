@@ -138,10 +138,10 @@ function DangerZoneDetailModal({ open, onClose, risk }) {
                   border: '2px solid #e2e8f0',
                   cursor: 'pointer'
                 }}
-                onClick={() => window.open(`http://localhost:8500/static/danger_zone_images/${img.image_name}`, '_blank')}
+                onClick={() => window.open(`/uploads/danger_zones/${risk.zone_id}/${risk.danger_info_id || 'custom'}/${img.image_name}`, '_blank')}
                 >
                   <img
-                    src={`http://localhost:8500/static/danger_zone_images/${img.image_name}`}
+                    src={`/uploads/danger_zones/${risk.zone_id}/${risk.danger_info_id || 'custom'}/${img.image_name}`}
                     alt={`위험 구역 이미지 ${img.id}`}
                     style={{
                       width: '100%',

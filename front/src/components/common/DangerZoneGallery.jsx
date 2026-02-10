@@ -129,7 +129,7 @@ const DangerZoneGallery = ({
                                             +{danger.images.length}장
                                         </div>
                                         <img 
-                                            src={`http://${window.location.hostname}:8500/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
+                                            src={`/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
                                             alt="위험 현장 데이터"
                                             style={{ 
                                                 width: '100%', 
