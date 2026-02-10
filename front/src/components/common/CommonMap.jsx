@@ -92,8 +92,8 @@ const CommonMap = ({
     const colCount = parseInt(gridConfig.cols) || 10;
     
     // 줌 레벨에 따른 폰트/아이콘 크기 계산 비율 (Zoom 19 기준 1배)
-    // 최소값 제한을 없애서 지도가 축소되면 라벨도 계속 작아지도록 함 (사용자 요청 반영)
-    const scaleRatio = Math.pow(1.5, currentZoom - 19);
+    // 실제 지도 스케일과 1:1로 매칭되도록 2의 거듭제곱 사용 (축소 시 절반, 확대 시 2배)
+    const scaleRatio = Math.pow(2, currentZoom - 19);
     
     // 폰트 사이즈 및 박스 스타일도 같이 스케일링
     const fontSize = 12 * scaleRatio;
@@ -180,29 +180,51 @@ const CommonMap = ({
             }}
             pathOptions={{ color: strokeColor, weight: strokeWeight, fillColor, fillOpacity, dashArray }}
           >
-            {isVisible && (
-                <Tooltip permanent direction="center" opacity={hasRisk ? 1 : 0.9} className="zone-label-tooltip">
-                  <div style={{ 
-                      fontSize: `${fontSize}px`,
-                      fontWeight: hasRisk ? '900' : (hasPlan || isMyZone) ? '800' : '400',
-                      color: hasRisk ? '#991b1b' : (hasPlan || isMyZone) ? '#1e40af' : '#cbd5e1',
-                      textShadow: hasRisk ? '0px 0px 2px rgba(255,255,255,0.8)' : 'none',
-                      background: hasRisk ? 'rgba(255, 255, 255, 0.85)' : (hasPlan ? 'rgba(255, 255, 255, 0.8)' : 'transparent'),
-                      padding: `${paddingVertical}px ${paddingHorizontal}px`,
-                      borderRadius: `${borderRadius}px`,
-                      border: hasRisk ? `${borderWidth}px solid #ef4444` : (hasPlan ? `${Math.max(1, borderWidth)}px solid #3b82f6` : 'none'),
-                      boxShadow: hasRisk ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
-                      transition: 'all 0.2s',
-                      whiteSpace: 'nowrap',
-                      lineHeight: '1.2'
-                   }}>
-                      {zoneName}
-                  </div>
-                </Tooltip>
-            )}
+            {/* Tooltip Removed -> using DivIcon Marker instead for better centering */}
             {/* Popup은 필요시 추가 */}
           </Rectangle>
         );
+
+        // Label Marker (New approach for perfect centering)
+        if (isVisible) {
+           const labelIcon = L.divIcon({
+               html: `<div style="
+                 display: flex; align-items: center; justify-content: center;
+                 width: auto; height: auto;
+                 transform: translate(-50%, -50%);
+               ">
+                 <div style="
+                    font-size: ${fontSize}px;
+                    font-weight: ${hasRisk ? '900' : (hasPlan || isMyZone) ? '800' : '400'};
+                    color: ${hasRisk ? '#991b1b' : (hasPlan || isMyZone) ? '#1e40af' : '#cbd5e1'};
+                    text-shadow: ${hasRisk ? '0px 0px 2px rgba(255,255,255,0.8)' : 'none'};
+                    background: ${hasRisk ? 'rgba(255, 255, 255, 0.85)' : (hasPlan ? 'rgba(255, 255, 255, 0.8)' : 'transparent')};
+                    padding: ${paddingVertical}px ${paddingHorizontal}px;
+                    border-radius: ${borderRadius}px;
+                    border: ${hasRisk ? `${borderWidth}px solid #ef4444` : (hasPlan ? `${Math.max(1, borderWidth)}px solid #3b82f6` : 'none')};
+                    box-shadow: ${hasRisk ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'};
+                    white-space: nowrap;
+                    line-height: 1.2;
+                    transition: all 0.2s;
+                 ">
+                    ${zoneName}
+                 </div>
+               </div>`,
+               className: 'zone-label-icon', // css class to reset default marker styles if needed
+               iconSize: null, // Let CSS handle size
+               iconAnchor: [0, 0] // We use translate(-50%, -50%) for perfect centering
+           });
+           
+           cells.push(
+               <Marker 
+                  key={`label-${zoneName}`} 
+                  position={[centerLat, centerLng]} 
+                  icon={labelIcon} 
+                  zIndexOffset={900}
+                  interactive={false} // Click should pass through to Rectangle
+               />
+           );
+        }
       }
     }
     return { cells, hazardMarkers };

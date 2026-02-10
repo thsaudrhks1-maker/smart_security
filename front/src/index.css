@@ -53,3 +53,19 @@ body {
 .text-sub {
   color: #475569 !important;
 }
+
+/* 🚨 Leaflet Tooltip Customization (Zone Labels) 🚨 */
+/* 기본 툴팁 스타일 제거 (패딩, 배경, 그림자) -> 내부 div가 스케일링 담당 */
+.leaflet-tooltip.zone-label-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 0 !important; /* 부모 폰트 사이즈 제거 */
+}
+
+/* 화살표(팁) 제거 */
+.leaflet-tooltip.zone-label-tooltip::before {
+  display: none !important;
+}

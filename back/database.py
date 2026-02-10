@@ -55,6 +55,7 @@ from back.content.work_info.map_model import content_work_safety_map
 from back.content.safety_gear.model import content_safety_gear, content_work_gear_map
 from back.content.safety_info.model import content_safety_info
 from back.content.danger_info.model import content_danger_info
+from back.info.model import info_beacons, daily_worker_locations
 
 # 4. [DAILY] 일일 관리 (누락 복구 완료)
 from back.daily.attendance.model import daily_attendance
