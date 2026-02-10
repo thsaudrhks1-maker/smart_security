@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
           target: 'http://localhost:8500',
           changeOrigin: true,
           secure: false,
+        },
+        // [추가] 이미지 경로 (/uploads)도 백엔드(8500)로 토스 (로컬 개발용)
+        '/uploads': {
+          target: 'http://localhost:8500',
+          changeOrigin: true,
+          secure: false,
         }
       }
     }

@@ -152,6 +152,9 @@ const CommonMap = ({
     // 너무 작아서 안 보일 정도면(Zoom 15 이하) 숨김 처리하여 겹침 방지
     const isVisible = currentZoom > 15;
 
+    // [이동] 여기서 미리 계산 (ReferenceError 방지)
+    const iconSizeScaled = Math.max(10, 48 * scaleRatio);
+
     for (let r = 0; r < rowCount; r++) {
       for (let c = 0; c < colCount; c++) {
         const zoneName = `${highlightLevel}-${chr(65+r)}${c+1}`;
@@ -190,6 +193,7 @@ const CommonMap = ({
 
         // 위험 아이콘 (아이콘 사이즈는 유지하되 너무 겹치면 숨김 고려 가능하나, 일단 라벨 위주로 처리)
         if (hasRisk) {
+            
             const hazardIcon = L.divIcon({
                 html: `<div style="
                     position: relative; 
