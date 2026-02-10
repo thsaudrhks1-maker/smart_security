@@ -113,6 +113,7 @@ const SafetyMap = () => {
                     gridCols={project.grid_cols}
                     highlightLevel={currentLevel}
                     zones={zones}
+                    user={user} // [NEW] 위치 추적을 위해 사용자 정보 전달
                     onZoneClick={(zoneData) => {
                         setSelectedZone(zoneData);
                         setIsReportOpen(true);

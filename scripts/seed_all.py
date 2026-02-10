@@ -19,7 +19,7 @@ from back.company.model import Company, Site, Worker
 from back.safety.model import Zone, DailyDangerZone
 from back.work.model import WorkTemplate, DailyWorkPlan, WorkerAllocation
 from back.info.model import (
-    Notice, DailySafetyInfo, EmergencyAlert, 
+    Notice, DailySafetyInfo, 
     Attendance, SafetyViolation, Weather
 )
 
@@ -30,13 +30,18 @@ async def seed_all_data():
         # 1. 기존 데이터 삭제 (Foreign Key 순서 고려)
         print("   - 기존 데이터 삭제 중...")
         tables = [
-            "safety_violations", "attendance", "emergency_alerts", 
+            "daily_worker_locations", "device_beacons", # 새로 추가된 테이블
+            "safety_violations", "attendance", 
             "daily_safety_info", "daily_danger_zones", "notices", "weather",
             "worker_allocations", "daily_work_plans", "work_templates", 
             "workers", "zones", "sites", "companies", "users"
         ]
         for table in tables:
-            await db.execute(text(f"DELETE FROM {table}"))
+            # 테이블이 없을 수도 있으므로 예외처리
+            try:
+                await db.execute(text(f"DELETE FROM {table}"))
+            except Exception:
+                pass
         await db.commit()
         print("   ✅ 기존 데이터 삭제 완료")
         
@@ -163,7 +168,7 @@ async def seed_all_data():
             # 이영희: 1층 방3에서 배관 용접 (고정위험 + 일일위험)
             DailyWorkPlan(
                 id=2, site_id=1, zone_id=3, template_id=2, 
-                date=today_str, description="급수 배관 용접 작업", 
+                date=today_str, description="급수 배관 용접 작업을 진행합니다", 
                 calculated_risk_score=65, status="PLANNED",
                 daily_hazards=["화재위험", "화상위험", "밀폐공간 질식"]
             ),
@@ -190,7 +195,8 @@ async def seed_all_data():
         # 6. 대시보드 정보 (날씨, 알림 등)
         db.add(Weather(date=today_str, temperature="2.7°C", condition="구름 조금", humidity="45%", wind_speed="2.1m/s"))
         
-        db.add(EmergencyAlert(title="긴급알림", message="강풍 주의! 타워크레인 작업 중지 바람.", severity="HIGH", is_active=True))
+        # EmergencyAlert 제거됨
+
         
         # 일일 안전정보 - 작업별로 다르게
         safety_infos = [

@@ -1,6 +1,6 @@
-
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, Tooltip } from 'react-leaflet';
+import { sendWorkerLocation } from '../../api/dailyApi'; // [NEW] 위치 전송 API
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, CircleMarker } from 'react-leaflet'; // CircleMarker 추가
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -47,6 +47,7 @@ const MapZoomHandler = ({ onZoomChange }) => {
 
 // ... inside CommonMap component ...
 
+
 const CommonMap = ({ 
   center = [37.5665, 126.9780], 
   zoom = 19, 
@@ -59,9 +60,56 @@ const CommonMap = ({
   risks = [],
   zones = [],
   gridConfig = { rows: 10, cols: 10, spacing: 10 }, 
-  style = { height: '100%', width: '100%' }
+  style = { height: '100%', width: '100%' },
+  user = null // [NEW] 로그인한 사용자 정보 (위치 추적용)
 }) => {
   const [currentZoom, setCurrentZoom] = React.useState(zoom);
+  const [myLocation, setMyLocation] = React.useState(null); // [NEW] GPS 위치 상태
+
+  // [NEW] GPS 위치 추적 (5초 간격 API 전송)
+  useEffect(() => {
+    // 1. 작업자인 경우에만 추적
+    if (!user || user.role !== 'worker') return; 
+
+    console.log("📡 위치 추적 시작 (GPS)...");
+    let watchId;
+    let intervalId;
+
+    // (A) 실시간 위치 감시 (지도 표시용)
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setMyLocation([latitude, longitude]);
+      },
+      (err) => console.error("GPS Watch Error:", err),
+      { enableHighAccuracy: true, maximumAge: 0 }
+    );
+
+    // (B) 서버 전송 (5초마다)
+    intervalId = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                // API 호출
+                sendWorkerLocation({
+                    worker_id: user.id,
+                    tracking_mode: 'GPS',
+                    lat: latitude,
+                    lng: longitude
+                });
+                console.log(`📍 위치 전송: ${latitude}, ${longitude}`);
+            },
+            (err) => console.warn("위치 전송 실패:", err),
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
+    }, 5000);
+
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (intervalId) clearInterval(intervalId);
+      console.log("🛑 위치 추적 종료");
+    };
+  }, [user]);
 
   const rows = parseInt(gridConfig.rows) || 10;
   const cols = parseInt(gridConfig.cols) || 10;
@@ -260,6 +308,17 @@ const CommonMap = ({
              <Popup>{m.title}</Popup>
           </Marker>
         ))}
+
+        {/* [NEW] 내 위치 표시 (파란 점) */}
+        {myLocation && (
+            <CircleMarker 
+                center={myLocation} 
+                pathOptions={{ color: 'white', fillColor: '#3b82f6', fillOpacity: 1, weight: 2 }} 
+                radius={8}
+            >
+                <Popup>내 현재 위치 (GPS)</Popup>
+            </CircleMarker>
+        )}
       </MapContainer>
     </div>
   );

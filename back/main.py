@@ -12,6 +12,7 @@ from back.daily.attendance.router import router as attendance_router
 from back.daily.notices.router import router as notices_router
 from back.daily.task_plans.router import router as task_plans_router
 from back.daily.safety_logs.router import router as safety_logs_router
+from back.daily.worker_locations.router import router as worker_locations_router
 from back.manager.router import router as manager_router
 
 from fastapi.staticfiles import StaticFiles
