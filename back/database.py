@@ -55,12 +55,15 @@ from back.content.work_info.map_model import content_work_safety_map
 from back.content.safety_gear.model import content_safety_gear, content_work_gear_map
 from back.content.safety_info.model import content_safety_info
 from back.content.danger_info.model import content_danger_info
-from back.info.model import info_beacons, daily_worker_locations
 
-# 4. [DAILY] 일일 관리 (누락 복구 완료)
+# 4. [DEVICE] 스마트 장비 (New)
+from back.device.beacons.model import device_beacons
+
+# 5. [DAILY] 일일 관리
 from back.daily.attendance.model import daily_attendance
 from back.daily.task_plans.model import daily_work_plans, daily_worker_users
 from back.daily.safety_logs.model import daily_safety_logs, daily_danger_zones, daily_danger_images
 from back.daily.notices.model import daily_notices
 from back.daily.violations.model import daily_violations
+from back.daily.worker_locations.model import daily_worker_locations # 위치 추적 로그
 from back.daily.environment.model import daily_weather # 이 파일에 daily_weather가 있을 것으로 판단
