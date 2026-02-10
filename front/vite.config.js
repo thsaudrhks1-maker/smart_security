@@ -19,7 +19,16 @@ export default defineConfig(({ mode }) => {
     server: {
       port: parseInt(env.FRONT_PORT) || 3500, // .env에서 가져오거나 실패 시 3500
       host: "0.0.0.0",
-      allowedHosts: ["safe.sogething.com", "localhost", "127.0.0.1"] // [허용 도메인 추가]
+      allowedHosts: ["safe.sogething.com", "localhost", "127.0.0.1"], // [허용 도메인 추가]
+      proxy: {
+        // [핵심] /api로 시작하는 요청은 백엔드(8500)로 보냅니다.
+        // 이 설정은 로컬 개발 시 필수이며, 서버 배포 시에는 Nginx가 처리하므로 문제되지 않습니다.
+        '/api': {
+          target: 'http://localhost:8500',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
     }
   }
 })
