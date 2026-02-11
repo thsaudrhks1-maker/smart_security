@@ -103,50 +103,35 @@ const CommonMap = ({
   const [currentZoom, setCurrentZoom] = React.useState(zoom);
   const [myLocation, setMyLocation] = React.useState(null); // [NEW] GPS 위치 상태
 
-  // [NEW] GPS 위치 추적 (5초 간격 API 전송)
-  useEffect(() => {
-    // 1. 작업자인 경우에만 추적
-    if (!user || user.role !== 'worker') return; 
+    // [NEW] GPS 위치 표시 (지도 UI 전용)
+    useEffect(() => {
+        // 1. 로그인 상태인 경우에만 감시
+        if (!user) return; 
 
-    console.log("📡 위치 추적 시작 (GPS)...");
-    let watchId;
-    let intervalId;
+        console.log("📡 내 위치 표시 시작 (GPS)...");
+        let watchId;
 
-    // (A) 실시간 위치 감시 (지도 표시용)
-    watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setMyLocation([latitude, longitude]);
-      },
-      (err) => console.error("GPS Watch Error:", err),
-      { enableHighAccuracy: true, maximumAge: 0 }
-    );
-
-    // (B) 서버 전송 (5초마다)
-    intervalId = setInterval(() => {
-        navigator.geolocation.getCurrentPosition(
+        // 실시간 위치 감시 (지도 표시용 파란 점)
+        watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 const { latitude, longitude } = pos.coords;
-                // API 호출
-                sendWorkerLocation({
-                    worker_id: user.id,
-                    tracking_mode: 'GPS',
-                    lat: latitude,
-                    lng: longitude
-                });
-                console.log(`📍 위치 전송: ${latitude}, ${longitude}`);
+                setMyLocation([latitude, longitude]);
             },
-            (err) => console.warn("위치 전송 실패:", err),
-            { enableHighAccuracy: true, timeout: 5000 }
+            (err) => {
+                if (err.code === 1) {
+                    console.warn("GPS 권한 거부됨: 위치 표시를 위해 권한 허용이 필요합니다.");
+                } else {
+                    console.error("GPS Error:", err);
+                }
+            },
+            { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
         );
-    }, 5000);
 
-    return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
-      if (intervalId) clearInterval(intervalId);
-      console.log("🛑 위치 추적 종료");
-    };
-  }, [user]);
+        return () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            console.log("🛑 내 위치 표시 종료");
+        };
+    }, [user]);
 
   const rows = parseInt(gridConfig.rows) || 10;
   const cols = parseInt(gridConfig.cols) || 10;

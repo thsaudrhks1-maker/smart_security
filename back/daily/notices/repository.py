@@ -15,8 +15,15 @@ class notices_repository:
             params["pid"] = project_id
         
         if date:
-            conditions.append("n.date = :date")
-            params["date"] = date
+            from datetime import datetime
+            try:
+                # 'YYYY-MM-DD' 형식을 date 객체로 변환
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+                conditions.append("n.date = :date")
+                params["date"] = date_obj
+            except ValueError:
+                # 날짜 형식이 올바르지 않으면 무시하거나 에러 처리
+                pass
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -50,7 +57,12 @@ class notices_repository:
         # 기본값 설정
         data.setdefault('notice_type', 'NORMAL')
         if not data.get('date'):
-            data['date'] = datetime.now().date().isoformat()
+            data['date'] = datetime.now().date()
+        elif isinstance(data.get('date'), str):
+            try:
+                data['date'] = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            except ValueError:
+                data['date'] = datetime.now().date()
         
         return await insert_and_return(sql, data)
 

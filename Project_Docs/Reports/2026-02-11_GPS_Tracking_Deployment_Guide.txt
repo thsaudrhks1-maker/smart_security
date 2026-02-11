@@ -1,0 +1,69 @@
+[기술 가이드] 근로자 GPS 위치 추적 및 Nginx 배포 설정 (2026-02-11)
+===================================================================
+
+1. 개요
+-------
+스마트 시큐리티 프로젝트의 근로자 보호를 위한 실시간 GPS 위치 추적 시스템의 기술적 구성과 배포 자동화 절차를 정리함.
+
+2. 주요 기술 요구사항
+--------------------
+A. HTTPS 필수 (Very Important)
+   - 최신 브라우저(Chrome, Safari 등)의 보안 정책상, "Geolocation API"는 HTTPS 환경에서만 작동함.
+   - HTTP 환경에서는navigator.geolocation 객체가 비활성화됨.
+   
+B. Nginx 프록시 설정
+   - 위치 데이터 전송(API) 및 실시간 알림(SSE)을 위해 특수 설정이 필요함.
+   - proxy_buffering off: 서버의 데이터를 즉시 클라이언트에게 전달 (실시간 공지용).
+   - proxy_read_timeout 86400s: 긴 연결 유지.
+
+3. 구현 상세
+------------
+A. 프론트엔드 (CommonMap.jsx)
+   - navigator.geolocation.watchPosition: 사용자의 움직임을 실시간 감지하여 지도에 파란 점으로 표시.
+   - LocateControl (Crosshair 버튼): 클릭 시 사용자의 현재 좌표로 지도를 줌인(level 20) 이동.
+   - 5초 주기 서버 동기화: 5초마다 현재 좌표를 백엔드 API(/api/daily/worker-locations/send)로 전송.
+
+B. 백엔드 (Python/FastAPI)
+   - 전송받은 GPS 좌표를 디비(daily_worker_locations)에 저장.
+   - 위험 구역 접근 판별 로직의 기초 데이터로 활용.
+
+4. 배포 자동화 (deploy_server.ps1)
+----------------------------------
+로컬의 설정을 서버에 수동으로 복사하는 번거로움을 없애기 위해 배포 스크립트에 다음 로직을 추가함.
+1) 로컬 nginx_safe_sogething.conf 파일 서버 전송 (Git).
+2) 서버에서 /etc/nginx/sites-available/safe.sogething 으로 복사.
+3) 심볼릭 링크 설정 및 nginx -t 검증.
+4) sudo systemctl reload nginx 명령으로 즉시 반영.
+
+5. 트러블슈팅 가이드
+--------------------
+- 지도가 내 위치를 못 잡을 때: 브라우저 주소창 왼쪽의 '자물쇠' 아이콘을 눌러 "위치" 권한이 허용되어 있는지 확인.
+- HTTPS 경고가 뜰 때: Nginx의 SSL 인증서(Let's Encrypt) 경로가 올바른지, 만료되지 않았는지 확인.
+- 지도 좌표가 엉뚱한 곳일 때: CommonMap의 center 좌표와 실제 현장의 위경도 원점이 일치하는지 확인 필요.
+
+6. 인프라 및 종속성 설정 (Dependencies & Runtime)
+-------------------------------------------------
+A. 프론트엔드 (JavaScript/React)
+   - 별도 외부 GPS 모듈 설치 필요 없음: 브라우저 내장 표준 'Web Geolocation API'를 사용함. (navigator.geolocation)
+   - 지도 표시 라이브러리: 
+     * react-leaflet / leaflet: 오픈소스 지도 엔진 (npm install leaflet react-leaflet)
+     * lucide-react: 위치 버튼 아이콘용 패키지 (npm install lucide-react)
+   - 브라우저 권한 정책:
+     * 반드시 "보안 컨텍스트(HTTPS)"에서만 실행 가능.
+     * 첫 접속 시 사용자의 '위치 권한 허용' 승인이 필수임. (거부 시 파란 점이 나타나지 않음)
+
+B. 서버 환경 (Nginx/OS)
+   - Geolocation 사용 정책: 
+     * Nginx 설정에서 Permissions-Policy 헤더를 통해 권한을 명시적으로 허용함.
+   - 보안 인증서: HTTPS 환경이 아닐 경우 Geolocation API 자체가 차단되므로 Let's Encrypt 인증서 유지가 핵심임.
+
+7. 위치 표시 프로세스 (UI Only)
+-------------------------------
+1) [Client] navigator.geolocation.watchPosition을 통해 사용자의 실시간 위경도 획득.
+2) [Map] 획득한 좌표를 Leaflet CircleMarker로 지도 위에 파란색 점으로 렌더링.
+3) [Control] '내 위치' 버튼 클릭 시 맵의 중심을 해당 좌표로 이동(setView).
+* 현재 버전에서는 DB 서버로 좌표를 전송하여 기록하는 기능은 테스트 편의상 포함되지 않음.
+
+===================================================================
+최종 수정일: 2026-02-11
+작성자: Antigravity AI (Google Deepmind)
