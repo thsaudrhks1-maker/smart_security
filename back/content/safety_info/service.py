@@ -40,6 +40,7 @@ class SafetyInfoService:
                 "title": title,
                 "desc": content, # 원본은 백업용으로 유지
                 "meas": json.dumps([item.get("measures", "준수사항 확인")], ensure_ascii=False),
+                "summary": processed_text,
                 "emb": embedding
             }
             res = await safety_info_repo.upsert_from_api(data)

@@ -19,12 +19,13 @@ class SafetyInfoRepository:
         """
         sql = """
             INSERT INTO content_safety_info 
-            (category, title, description, safety_measures, embedding)
-            VALUES (:cat, :title, :desc, :meas, :emb)
+            (category, title, description, safety_measures, summary, embedding)
+            VALUES (:cat, :title, :desc, :meas, :summary, :emb)
             ON CONFLICT (title) DO UPDATE 
             SET embedding = EXCLUDED.embedding, 
                 description = EXCLUDED.description,
-                safety_measures = EXCLUDED.safety_measures
+                safety_measures = EXCLUDED.safety_measures,
+                summary = EXCLUDED.summary
             RETURNING id
         """
         return await insert_and_return(sql, data)

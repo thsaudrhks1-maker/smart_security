@@ -54,6 +54,7 @@ from back.content.work_info.model import content_work_info
 from back.content.work_info.map_model import content_work_safety_map
 from back.content.safety_gear.model import content_safety_gear, content_work_gear_map
 from back.content.safety_info.model import content_safety_info
+from back.content.accidents.model import content_accidents
 from back.content.danger_info.model import content_danger_info
 
 # 4. [DEVICE] 스마트 장비 (New)

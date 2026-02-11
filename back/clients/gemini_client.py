@@ -4,21 +4,23 @@ from typing import List, Optional
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-load_dotenv()
+# .env 파일을 절대 경로로 로드하여 경로 문제 방지
+env_path = os.path.join(os.getcwd(), '.env')
+load_dotenv(env_path)
 
 class GeminiClient:
     """
     [CLIENT] Google Generative AI (Gemini) API 연동 클라이언트
-    - 텍스트 생성, 임베딩 생성, 이미지 분석(멀티모달) 등을 담당합니다.
     """
     def __init__(self):
         self.api_key = os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
-            raise ValueError("GOOGLE_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
+            raise ValueError(f"GOOGLE_API_KEY가 설정되지 않았습니다. (Path: {env_path})")
         
         genai.configure(api_key=self.api_key)
-        self.text_model = genai.GenerativeModel('gemini-1.5-flash') # 속도/비용 최적화 모델
-        self.embedding_model = "models/text-embedding-004" # 최신 대규모 임베딩 모델
+        # 안정적인 모델로 변경
+        self.text_model = genai.GenerativeModel('gemini-1.5-flash')
+        self.embedding_model = "models/embedding-001" 
 
     async def get_embedding(self, text: str) -> List[float]:
         """

@@ -13,3 +13,7 @@ class content_safety_info(Base):
     risk_factors = Column(JSON, nullable=True, comment="주요 위험 요소")
     safety_measures = Column(JSON, nullable=True, comment="안전 조치 사항")
     required_ppe = Column(JSON, nullable=True, comment="필수 보호구")
+    
+    # AI 가공 관련 컬럼 추가
+    summary = Column(Text, nullable=True, comment="Gemini AI가 요약한 핵심 지문 (임베딩 대상)")
+    embedding = Column(JSON, nullable=True, comment="AI 임베딩 벡터값 (Vector 타입과 매핑)")
