@@ -1,22 +1,23 @@
-
 import json
 from datetime import datetime
 from back.clients.csi_client import csi_client
-from back.clients.kosha_client import KoshaClient
 from back.clients.gemini_client import gemini_client
 from back.content.accidents.repository import accident_repo
 
 class AccidentService:
     def __init__(self):
-        self.kosha = KoshaClient()
+        self.csi = csi_client
         self.ai = gemini_client
 
-    async def sync_csi_accidents(self, rows: int = 20):
+    async def sync_csi_accidents(self, rows: int = 20, raw_data: list = None):
         """
         [CSI] 국토안전관리원 데이터 수집 + AI 가공 + DB 저장
         """
-        print(f"🚀 [CSI Sync] {rows}건의 사고 사례 동기화 시작...")
-        raw_items = csi_client.fetch_accident_cases(num_rows=rows)
+        if raw_data:
+            raw_items = raw_data
+        else:
+            print(f"🚀 [CSI Sync] {rows}건의 사고 사례 동기화 시작...")
+            raw_items = csi_client.fetch_accident_cases(num_rows=rows)
         
         if not raw_items:
             print("⚠️ CSI에서 가져온 데이터가 없습니다.")
@@ -25,31 +26,49 @@ class AccidentService:
         results = []
         for item in raw_items:
             try:
-                # 1. 데이터 파싱 (CSI 실제 응답 키 기준: accdntNm, accdntYmd, accdntOccrrncCn 등)
+                # [1. 데이터 파싱] 프로브 결과 확인된 정확한 키 사용
                 title = item.get("accdntNm") or item.get("accNm") or "사고명 미상"
+                nation = item.get("nationNm", "대한민국")
+                
+                # 상세 내용과 원인이 다른 키에 들어있는 경우가 많음
+                desc = (item.get("accdntContent") or item.get("accdntOccrrncCn") or "").strip()
+                cause = (item.get("accdntCauseDetail") or item.get("accdntCauseCn") or "").strip()
+
+                # [필터링] 대한민국 사고가 아니거나 내용이 너무 부실하면 패스
+                if "대한민국" not in nation and "한국" not in nation:
+                    continue
+                if len(desc) < 20 and len(cause) < 20:
+                    continue
+
                 occ_date_raw = item.get("accdntYmd") or item.get("accDate") or ""
                 
-                # 고유 ID 생성 (accId가 없으면 제목+날짜 해시)
+                # [2. ID 생성]
                 ext_id = item.get("accId")
                 if not ext_id:
                     import hashlib
                     ext_id = hashlib.md5(f"CSI_{title}_{occ_date_raw}".encode()).hexdigest()
                 
-                desc = item.get("accdntOccrrncCn") or item.get("accContent") or ""
-                cause = item.get("accdntCauseCn") or item.get("accCause") or ""
+                category = item.get("facilKindNm") or item.get("accClsf") or "미분류"
+                loc = item.get("facilAddr") or item.get("accAddr") or ""
                 category = item.get("facilKindNm") or item.get("accClsf") or "미분류"
                 loc = item.get("facilAddr") or item.get("accAddr") or ""
                 
                 # 날짜 변환 (YYYYMMDD 또는 YYYY-MM-DD -> date object)
                 occ_at = None
                 try:
-                    date_str = occ_date_raw.replace("-", "")
-                    if len(date_str) == 8:
-                        occ_at = datetime.strptime(date_str, "%Y%m%d").date()
-                    elif len(date_str) == 4: # 연도만 있는 경우
-                        occ_at = datetime.strptime(date_str, "%Y").date()
+                    date_str = occ_date_raw.replace("-", "").replace(".", "")
+                    if len(date_str) >= 4:
+                        year = int(date_str[:4])
+                        # [2010년 이후 데이터만 수집]
+                        if year < 2010:
+                            continue
+                        
+                        if len(date_str) == 8:
+                            occ_at = datetime.strptime(date_str[:8], "%Y%m%d").date()
+                        else:
+                            occ_at = datetime(year, 1, 1).date()
                     else:
-                        occ_at = datetime.now().date()
+                        occ_at = datetime.now().date()  # 날짜 정보 없으면 현재 날짜
                 except:
                     occ_at = datetime.now().date()
 
@@ -89,5 +108,6 @@ class AccidentService:
                 print(f"❌ 개별 항목 처리 오류 ({item.get('accNm')}): {e}")
 
         return results
+
 
 accident_service = AccidentService()

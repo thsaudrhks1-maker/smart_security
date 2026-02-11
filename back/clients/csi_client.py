@@ -17,14 +17,13 @@ class CsiClient:
         if not self.service_key:
             raise ValueError("KOSHA_API_KEY가 설정되지 않았습니다.")
             
-        # [스크린샷 기반 성공 확인된 주소]
+        # [복구] 시설사고(대형사고) 데이터 소스
         self.base_url = "https://apis.data.go.kr/B552016/FacilAccidentService"
 
     def fetch_accident_cases(self, page_no: int = 1, num_rows: int = 10) -> List[Dict[str, Any]]:
         """
-        [CSI] 건설 사고 사례(아차사고 포함) 정보를 조회합니다.
+        [CSI] 시설물 사고 사례 정보를 조회합니다.
         """
-        # 상세 오퍼레이션 명칭은 공공데이터포털 가이드에 따름 (보통 getFacilAccidentList)
         endpoint = f"{self.base_url}/getFacilAccidentList"
         params = {
             "serviceKey": self.service_key,
