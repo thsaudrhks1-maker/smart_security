@@ -11,16 +11,8 @@ async def list_safety_info(category: Optional[str] = None):
     data = await safety_info_repo.get_all(category)
     return {"success": True, "data": data}
 
-@router.post("/sync-kosha")
-async def sync_kosha(page: int = 1, rows: int = 10):
-    """
-    [Admin] KOSHA 데이터를 실시간으로 동기화합니다.
-    """
-    try:
-        results = await safety_info_service.sync_with_kosha(page, rows)
-        return {"success": True, "count": len(results), "data": results}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+# KOSHA 동기화 엔드포인트는 제거됨 (CSI로 통합)
 
 @router.get("/recommend")
 async def recommend_safety(task: str):
