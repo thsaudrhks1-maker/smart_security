@@ -24,8 +24,8 @@ class SSENoticeManager:
     async def broadcast(self, project_id: int, data: dict):
         """특정 프로젝트의 모든 구독자에게 메시지 전송"""
         if project_id in self.project_queues:
-            # 메시지 포맷팅
-            message = json.dumps(data)
+            # 메시지 포맷팅 (datetime/date 객체 대응을 위해 default=str 추가)
+            message = json.dumps(data, default=str)
             for queue in self.project_queues[project_id]:
                 await queue.put(message)
 
