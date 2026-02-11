@@ -14,6 +14,8 @@ ssh -i "C:\Users\P6\.ssh\id_rsa" ubuntu@168.107.52.201 Backend (터미널 2)
 .\venv\Scripts\uvicorn back.main:app --reload
 .\venv\Scripts\python -m uvicorn back.main:app --reload --port 8500
 
+.\venv\Scripts\python -m uvicorn back.main:app --reload --port 8500 --host 0.0.0.0
+
 python -m venv venv
 
 .\venv\Scripts\activate

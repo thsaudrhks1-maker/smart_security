@@ -18,22 +18,35 @@ class GeminiClient:
             raise ValueError(f"GOOGLE_API_KEY가 설정되지 않았습니다. (Path: {env_path})")
         
         genai.configure(api_key=self.api_key)
-        # 안정적인 모델로 변경
-        self.text_model = genai.GenerativeModel('gemini-1.5-flash')
-        self.embedding_model = "models/embedding-001" 
+        # 사용자 요청: 비용 효율적인 최신 모델 사용 (gemini-2.5-flash)
+        # 정확한 모델 명칭 확인 결과: models/gemini-2.5-flash
+        self.text_model = genai.GenerativeModel('models/gemini-2.5-flash')
+        # 임베딩 모델도 리스트에 있는 정확한 명칭으로 변경
+        self.embedding_model = "models/gemini-embedding-001" 
 
     async def get_embedding(self, text: str) -> List[float]:
         """
-        [Embedding] 텍스트의 임베딩 벡터를 반환합니다.
+        [Embedding] 텍스트의 임베딩 벡터를 반환합니다. (768차원 고정)
         """
         try:
-            result = genai.embed_content(
-                model=self.embedding_model,
-                content=text,
-                task_type="retrieval_document",
-                title="Safety Content Embedding"
-            )
-            return result['embedding']
+            # 768차원을 명시적으로 요청 (지원 모델의 경우)
+            kwargs = {
+                "model": self.embedding_model,
+                "content": text,
+                "task_type": "retrieval_document",
+                "title": "Safety Content Embedding"
+            }
+            
+            # 최신 모델(004 등) 대응을 위해 차원 파라미터 시도
+            if "004" in self.embedding_model:
+                kwargs["output_dimensionality"] = 768
+
+            result = genai.embed_content(**kwargs)
+            embedding = result['embedding']
+            
+            # [안전장치] 만약 그래도 3072가 온다면 768로 슬라이싱 (성능 차이 미미)
+            return embedding[:768]
+            
         except Exception as e:
             raise Exception(f"Gemini Embedding API 호출 실패: {str(e)}")
 

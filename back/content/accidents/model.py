@@ -1,5 +1,6 @@
 
-from sqlalchemy import Column, Integer, String, Text, JSON, Date, DateTime
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime
+from pgvector.sqlalchemy import Vector
 from back.database import Base
 from datetime import datetime
 
@@ -19,8 +20,8 @@ class content_accidents(Base):
     location = Column(String, comment="발생 지역/장소")
     occurred_at = Column(Date, comment="사고 발생 일자")
     
-    # AI 가공 컬럼
+    # AI 가공 컬럼 (768차원 벡터 적용)
     summary = Column(Text, comment="Gemini AI가 가공한 근로자용 친절한 요약 메시지")
-    embedding = Column(JSON, comment="벡터 검색을 위한 임베딩 데이터 (768차원)")
+    embedding = Column(Vector(768), comment="벡터 검색을 위한 임베딩 데이터 (768차원)")
     
     created_at = Column(DateTime, default=datetime.now)
