@@ -15,6 +15,7 @@ import { noticeApi } from '@/api/noticeApi';
 import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
 import ZoneDetailModal from '@/components/common/ZoneDetailModal';
 import DangerZoneGallery from '@/components/common/DangerZoneGallery';
+import BeaconScannerTest from '../components/BeaconScannerTest';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
@@ -45,8 +46,16 @@ const WorkerDashboard = () => {
     // 일반 공지 모달 상태
     const [showNoticeModal, setShowNoticeModal] = useState(false);
     const [activeNotice, setActiveNotice] = useState(null);
+    const [showScanner, setShowScanner] = useState(false); // [NEW] 비콘 스캐너 토글
 
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    // [FIX] UTC(오전 9시 이전 날짜 문제 해결) -> 로컬 시간(KST) 기준 날짜 생성
+    const [selectedDate, setSelectedDate] = useState(() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    });
 
     // ... (findMyTaskFromZones, loadData, useEffect 등 기존 로직 유지) ...
     // findMyTaskFromZones는 아래에서 복붙되지 않으므로 기존 코드 유지 필요. 
@@ -263,6 +272,32 @@ const WorkerDashboard = () => {
                 </button>
             </div>
 
+            {/* [APP TEST] 비콘 스캐너 테스트 (상단 배치) */}
+            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                <button 
+                    onClick={() => setShowScanner(!showScanner)}
+                    style={{ 
+                        width: '100%',
+                        padding: '12px 20px', 
+                        background: '#f1f5f9', 
+                        color: '#64748b', 
+                        border: '1px solid #cbd5e1', 
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: 'bold',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}
+                >
+                    {showScanner ? '블루투스 테스트 닫기' : '🛠️ 블루투스 비콘 테스트 (앱 전용)'}
+                </button>
+                {showScanner && (
+                    <div style={{ marginTop: '10px' }}>
+                        <BeaconScannerTest />
+                    </div>
+                )}
+            </div>
+
             {/* 지도 토글 섹션 (최상단 이동) */}
             <div style={{ marginBottom: '1.5rem' }}>
                 <button 
@@ -382,7 +417,7 @@ const WorkerDashboard = () => {
                 onChecklistClick={() => setIsChecklistModalOpen(true)}
                 onNoticeClick={() => setIsHistoryModalOpen(true)} // 추가
             />
-
+            
             {/* 구역 상세 모달 (작업 계획 보기 + 위험 신고) */}
             {isDetailModalOpen && selectedZone && (
                 <ZoneDetailModal 

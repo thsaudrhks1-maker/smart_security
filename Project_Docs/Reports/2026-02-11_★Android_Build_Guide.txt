@@ -1,0 +1,400 @@
+================================================================================
+[기술 가이드] React 웹 프로젝트를 안드로이드 앱으로 빌드하는 전체 과정
+================================================================================
+
+작성일: 2026-02-11
+작성자: Smart Security 개발팀
+목적: 웹(React) 기반 프로젝트를 Capacitor를 이용해 안드로이드 앱(APK)으로 변환하고,
+      실제 기기(갤럭시 탭)에서 테스트하는 전체 과정 기록
+
+
+================================================================================
+1. 개요 및 배경
+================================================================================
+
+1-1. 왜 앱으로 만드는가?
+   - 웹 브라우저 환경에서는 블루투스 비콘(BLE) 스캔 기능을 사용할 수 없음
+   - 백그라운드 위치 추적 및 실시간 알림 기능 제한
+   - 안드로이드 네이티브 API 접근 필요 (블루투스, GPS, 푸시 알림 등)
+
+1-2. 기술 스택
+   - 프론트엔드: React (Vite)
+   - 앱 변환 도구: Capacitor (Ionic 팀 개발)
+   - 개발 환경: Android Studio
+   - 테스트 기기: Lenovo Tab P11 (Android)
+
+1-3. Capacitor란?
+   - 웹사이트를 "앱 껍데기(Container)"로 감싸는 프레임워크
+   - 내부는 웹뷰(WebView)로 React 코드가 그대로 실행됨
+   - JavaScript에서 네이티브 API(블루투스, 카메라 등)를 호출할 수 있게 해주는 "다리(Bridge)" 역할
+   - 장점: 웹 개발 하나로 iOS/Android 앱을 동시에 만들 수 있음
+
+
+================================================================================
+2. 사전 준비 사항
+================================================================================
+
+2-1. 필수 소프트웨어 설치
+   [PC 환경]
+   - Node.js 및 npm (이미 설치됨)
+   - Android Studio (공식 사이트에서 다운로드 필요)
+     다운로드: https://developer.android.com/studio
+     설치 옵션: Standard (기본 설정) 선택
+     용량: 약 4GB
+
+   [갤럭시 탭 설정]
+   - 개발자 모드 활성화
+   - USB 디버깅 허용
+
+2-2. 갤럭시 탭 개발자 모드 켜는 방법
+   1. [설정] 앱 실행
+   2. 맨 아래로 스크롤 -> [태블릿 정보] 클릭
+   3. [소프트웨어 정보] 클릭
+   4. [빌드 번호]를 빠르게 7번 연속 터치
+   5. "개발자 모드를 켰습니다" 메시지 확인
+   6. [설정] 첫 화면으로 돌아가면 [개발자 옵션] 메뉴가 새로 생김
+   7. [개발자 옵션] -> [USB 디버깅] 스위치 ON
+
+2-3. USB 케이블 확인
+   - 충전 전용 케이블(다이소 1000원짜리 등)은 데이터 전송 불가
+   - 데이터 통신 가능한 케이블 필요 (PC-스마트폰 사진 전송용 케이블)
+   - 확인 방법: PC에 연결 시 "띵동!" 소리가 나고, [내 PC]에 기기 아이콘이 뜨면 정상
+
+
+================================================================================
+3. Capacitor 프로젝트 초기 설정
+================================================================================
+
+3-1. 필수 패키지 설치
+   위치: c:\github\smart_security\front
+   명령어:
+   ```
+   npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor-community/bluetooth-le
+   ```
+
+3-2. Capacitor 초기화
+   명령어:
+   ```
+   npx cap init "Smart Security" "com.sogething.smartsecurity" --web-dir dist
+   ```
+   
+   설명:
+   - "Smart Security": 앱 이름
+   - "com.sogething.smartsecurity": 앱 패키지명 (구글 플레이 스토어 등록 시 필요)
+   - --web-dir dist: React 빌드 결과물이 저장되는 폴더
+
+   결과: front/capacitor.config.json 파일 생성됨
+
+3-3. Android 플랫폼 추가
+   명령어:
+   ```
+   npx cap add android
+   ```
+   
+   결과: front/android 폴더 생성 (안드로이드 네이티브 프로젝트)
+
+3-4. React 프로젝트 빌드
+   명령어:
+   ```
+   npm run build
+   ```
+   
+   결과: front/dist 폴더에 HTML/CSS/JS 파일 생성됨
+
+
+================================================================================
+4. AndroidManifest.xml 권한 설정
+================================================================================
+
+4-1. 파일 위치
+   c:\github\smart_security\front\android\app\src\main\AndroidManifest.xml
+
+4-2. 필수 권한 목록 (블루투스 비콘 스캔용)
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+   
+       <uses-permission android:name="android.permission.INTERNET" />
+       <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+       <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+       <uses-permission android:name="android.permission.BLUETOOTH" />
+       <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+       <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+       <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+       <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+   
+       <application
+           android:allowBackup="true"
+           android:icon="@mipmap/ic_launcher"
+           android:label="@string/app_name"
+           android:roundIcon="@mipmap/ic_launcher_round"
+           android:supportsRtl="true"
+           android:theme="@style/AppTheme"
+           android:usesCleartextTraffic="true">
+           
+           <!-- Activity 및 기타 설정 생략 -->
+       </application>
+   </manifest>
+   ```
+
+4-3. 주요 권한 설명
+   - INTERNET: 서버 API 통신
+   - ACCESS_FINE_LOCATION: GPS 위치 추적 (비콘 스캔 시 필수)
+   - BLUETOOTH_SCAN: 블루투스 기기 스캔
+   - BLUETOOTH_CONNECT: 블루투스 기기 연결
+   - usesCleartextTraffic="true": HTTP 통신 허용 (로컬 테스트용, 배포 시 HTTPS 권장)
+
+
+================================================================================
+5. 비콘 스캐너 컴포넌트 구현
+================================================================================
+
+5-1. 파일 위치
+   c:\github\smart_security\front\src\features\worker\components\BeaconScannerTest.jsx
+
+5-2. 핵심 코드 구조
+   ```javascript
+   import { BleClient } from '@capacitor-community/bluetooth-le';
+   
+   const startScan = async () => {
+       await BleClient.initialize();
+       await BleClient.requestLEScan(
+           { allowDuplicates: true },
+           (result) => {
+               console.log('비콘 발견:', result.device.deviceId, 'RSSI:', result.rssi);
+               // RSSI 값으로 거리 추정 가능 (-34 = 매우 가까움, -90 = 멀리)
+           }
+       );
+   };
+   ```
+
+5-3. WorkerDashboard에 통합
+   - 위치: front/src/features/worker/dashboard/WorkerDashboard.jsx
+   - 상단에 [🛠️ 블루투스 비콘 테스트] 버튼 추가
+   - 클릭 시 BeaconScannerTest 컴포넌트 표시
+
+
+================================================================================
+6. Android Studio 설정 및 실행
+================================================================================
+
+6-1. Android Studio 실행
+   1. Android Studio 프로그램 실행
+   2. [Open] 버튼 클릭
+   3. 경로 선택: C:\github\smart_security\front\android
+   4. [Trust Project] 클릭 (보안 경고 무시)
+   5. Gradle Sync 대기 (1~3분 소요, 하단 진행바 확인)
+
+6-2. 기기 연결 및 인식
+   1. USB 케이블로 PC와 태블릿 연결
+   2. 태블릿 화면에 "USB 디버깅을 허용하시겠습니까?" 팝업 -> [허용] 클릭
+   3. 태블릿 알림창에서 "USB로 충전 중" 클릭 -> [파일 전송] 선택
+   4. Android Studio 상단 기기 목록에서 "LENOVO Lenovo TB-J606F" 등 기기명 확인
+
+6-3. 앱 실행 (빌드 및 설치)
+   1. 상단 기기 목록에서 태블릿 선택
+   2. 초록색 재생 버튼 [▶] 클릭
+   3. 빌드 진행 (1~2분 소요, 하단 Build Output 확인)
+   4. 태블릿 화면에 "Smart Security" 앱 자동 실행됨
+
+
+================================================================================
+7. 네트워크 설정 (로컬 vs 서버)
+================================================================================
+
+7-0. [중요] 안드로이드 앱의 구조적 특징 (Frontend-Only Bundle)
+   - 앱 빌드(.apk) 내부에는 '프론트엔드(React)' 코드만 포함됨 (백엔드 파이썬은 안 들어감)
+   - 따라서 앱이 돌아가려면 "어느 백엔드 서버(PC 혹은 운영서버)에 무전기를 쳐야 하는지"를 명확히 해야 함
+   - 로컬 웹 테스트 시에는 브라우저와 서버가 같은 PC에 있어 'localhost'가 통하지만, 앱은 외부 기기이므로 'localhost'는 작동하지 않음
+   - 이로 인해 안드로이드 배포 전에는 반드시 `VITE_API_URL`을 실제 서버 주소로 바꿔준 뒤 빌드해야 함
+
+7-1. 문제 상황
+   - 웹 브라우저에서는 localhost:8500으로 API 접근 가능
+   - 하지만 태블릿에서 localhost는 "태블릿 자기 자신"을 의미함
+   - 따라서 PC의 백엔드 서버에 접근 불가 -> 로그인 실패
+
+7-2. 해결 방법 (로컬 테스트용)
+   [PC IP 주소 확인]
+   명령어: ipconfig
+   결과 예시: IPv4 주소 . . . . . . . . . : 192.168.0.67
+
+   [.env 파일 수정]
+   파일: c:\github\smart_security\.env
+   변경 전: VITE_API_URL=http://localhost:8500/api
+   변경 후: VITE_API_URL=http://192.168.0.67:8500/api
+
+   [client.js 수정]
+   파일: c:\github\smart_security\front\src\api\client.js
+   변경 전: baseURL: import.meta.env.VITE_API_URL || "/"
+   변경 후: baseURL: import.meta.env.VITE_API_URL || "http://192.168.0.67:8500/api"
+
+7-3. 서버 배포 시 설정
+   - 로컬 테스트: http://192.168.0.67:8500/api (PC IP)
+   - 서버 배포: http://safe.sogething.com/api (운영 서버)
+   - 배포 시 .env 파일만 수정하면 됨
+
+7-4. 주요 에러 및 해결
+   [ERR_CLEARTEXT_NOT_PERMITTED]
+   원인: Android 9 이상에서 HTTP 통신 차단
+   해결: AndroidManifest.xml에 android:usesCleartextTraffic="true" 추가
+
+   [Network Error]
+   원인: localhost 주소 문제
+   해결: PC IP 주소(192.168.0.67)로 변경
+
+
+================================================================================
+8. 앱 디버깅 (Chrome Remote Debugging)
+================================================================================
+
+8-1. 사용 목적
+   - 태블릿 앱에서 발생하는 console.log, 에러 메시지 확인
+   - PC 크롬 개발자 도구(F12)처럼 사용 가능
+
+8-2. 사용 방법
+   1. 태블릿 앱 실행 상태 유지
+   2. PC 크롬 브라우저 주소창에 입력: chrome://inspect/#devices
+   3. Remote Target 목록에서 "Smart Security" (WebView) 찾기
+   4. [inspect] 버튼 클릭
+   5. 새 창에서 개발자 도구 사용 (Console, Network 탭 등)
+
+8-3. 활용 예시
+   - 로그인 실패 시 Network 탭에서 API 요청 URL 확인
+   - Console 탭에서 JavaScript 에러 메시지 확인
+   - 비콘 스캔 시 RSSI 값 실시간 모니터링
+
+
+================================================================================
+9. 개발 워크플로우
+================================================================================
+
+9-1. 코드 수정 후 앱 업데이트 과정
+   1. VSCode에서 React 코드 수정 (예: WorkerDashboard.jsx)
+   2. Android Studio에서 [▶] 재생 버튼 클릭
+   3. 자동으로 빌드 및 태블릿에 재설치됨
+   4. 앱이 자동으로 재실행되며 변경사항 반영
+
+9-2. 주의사항
+   - .env 파일 수정 시 반드시 앱 재빌드 필요
+   - AndroidManifest.xml 수정 시 Gradle Sync 필요
+   - 권한 추가 시 앱 재설치 필요 (기존 앱 삭제 후 재설치)
+
+
+================================================================================
+10. 비콘 테스트 시나리오
+================================================================================
+
+10-1. 테스트 준비물
+   - 보유 비콘: MiniBeacon (ID: 18661, 18662 등)
+   - 테스트 앱: Smart Security (Worker Dashboard)
+
+10-2. 테스트 절차
+   1. 앱 실행 후 worker1 / 1234 로그인
+   2. 대시보드 상단 [🛠️ 블루투스 비콘 테스트] 버튼 클릭
+   3. [스캔 시작] 버튼 클릭
+   4. 비콘을 태블릿 가까이 대기 (0~10cm)
+   5. 화면에 비콘 ID 및 RSSI 값 표시 확인
+   6. 비콘을 멀리 이동 (1m, 5m, 10m) 하며 RSSI 변화 관찰
+
+10-3. RSSI 값 해석
+   - -34 dBm: 밀착 상태 (0m)
+   - -50 ~ -60 dBm: 근거리 (2~3m)
+   - -70 ~ -80 dBm: 원거리 (약 10m, 신호 유효 한계선)
+   - -90 dBm 이하: 신호 약함 (감지 불가능)
+
+
+================================================================================
+11. 트러블슈팅 (발생한 문제 및 해결)
+================================================================================
+
+11-1. Android Studio에서 기기 인식 안 됨
+   증상: 기기 목록에 "Medium Phone API 36" (가상폰)만 뜸
+   원인: USB 디버깅 미허용 또는 케이블 문제
+   해결:
+   - 태블릿 [개발자 옵션] -> [USB 디버깅] ON 확인
+   - USB 케이블 교체 (데이터 통신 가능한 케이블 사용)
+   - 태블릿 알림창에서 [파일 전송] 모드 선택
+   - Android Studio [Troubleshoot Device Connections] -> [Rescan devices] 클릭
+
+11-2. 빌드 실패 (application 태그 오류)
+   증상: Build android: failed - "application" 태그 관련 에러
+   원인: AndroidManifest.xml에서 <application> 태그가 중복되거나 잘못 닫힘
+   해결: XML 구조 수정 (권한은 <application> 밖에, 속성은 안에)
+
+11-3. 로그인 실패 (Network Error)
+   증상: 앱에서 로그인 시 "로그인 실패" 메시지
+   원인: localhost 주소 문제 또는 HTTP 차단
+   해결:
+   - .env 파일에서 VITE_API_URL을 PC IP로 변경 (192.168.0.67)
+   - AndroidManifest.xml에 android:usesCleartextTraffic="true" 추가
+   - 앱 재빌드 필수
+
+11-4. 비콘 스캔 안 됨
+   증상: [스캔 시작] 클릭 시 "권한이 없습니다" 에러
+   원인: 위치 권한 미허용
+   해결:
+   - 앱 실행 시 "위치 권한 허용" 팝업에서 [앱 사용 중에만 허용] 선택
+   - 또는 [설정] -> [앱] -> [Smart Security] -> [권한] -> [위치] ON
+
+
+================================================================================
+12. 향후 작업 계획
+================================================================================
+
+12-1. 단기 목표 (1주일 이내)
+   - 비콘 신호 수신 성공 확인
+   - RSSI 값을 서버로 전송하는 API 연동
+   - Zone-Beacon 매핑 로직 구현 (비콘 ID -> 구역 ID 변환)
+
+12-2. 중기 목표 (1개월 이내)
+   - 백그라운드 비콘 스캔 구현 (앱 화면 꺼져도 작동)
+   - 위험 구역 진입 시 푸시 알림 발송
+   - 앱 아이콘 및 스플래시 화면 디자인 적용
+
+12-3. 장기 목표 (3개월 이내)
+   - 구글 플레이 스토어 출시
+   - APK 파일 서명 및 배포 자동화
+   - iOS 버전 개발 (Capacitor iOS 플랫폼 추가)
+
+
+================================================================================
+13. 참고 자료
+================================================================================
+
+13-1. 공식 문서
+   - Capacitor 공식 문서: https://capacitorjs.com/docs
+   - Bluetooth LE 플러그인: https://github.com/capacitor-community/bluetooth-le
+   - Android Studio 다운로드: https://developer.android.com/studio
+
+13-2. 관련 보고서
+   - 2026-02-10_Location_Tracking_Feasibility_Report.txt
+     (비콘 기반 실내 위치 추적 기술 검토 보고서)
+
+13-3. 핵심 파일 위치
+   - Capacitor 설정: front/capacitor.config.json
+   - Android 프로젝트: front/android/
+   - 권한 설정: front/android/app/src/main/AndroidManifest.xml
+   - 비콘 스캐너: front/src/features/worker/components/BeaconScannerTest.jsx
+   - API 클라이언트: front/src/api/client.js
+   - 환경 변수: .env
+
+
+================================================================================
+14. 결론
+================================================================================
+
+본 가이드를 통해 React 웹 프로젝트를 Capacitor를 이용하여 안드로이드 앱으로 변환하고,
+실제 기기에서 블루투스 비콘 스캔 기능을 테스트하는 전체 과정을 완료하였습니다.
+
+주요 성과:
+- Capacitor 기반 하이브리드 앱 구조 구축 완료
+- Android Studio 개발 환경 설정 완료
+- 블루투스 비콘 스캔 기능 구현 및 테스트 준비 완료
+- 네트워크 설정 (로컬/서버) 이해 및 적용
+
+이제 실제 비콘 기기를 이용한 현장 테스트를 진행하고, RSSI 값 기반 위치 추정 알고리즘을
+구현하여 스마트 건설 안전 시스템의 핵심 기능을 완성할 수 있습니다.
+
+
+2026. 02. 11.
+작성자: Smart Security 개발팀

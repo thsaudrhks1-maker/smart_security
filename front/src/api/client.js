@@ -5,7 +5,8 @@ const client = axios.create({
   // 현재 접속한 주소의 호스트를 기반으로 API 주소 동적 결정
   // 예: http://168.107.52.201:3500 에서 접속 시 -> http://168.107.52.201:8500/api 로 요청
   // baseURL: import.meta.env.VITE_API_URL || "http://localhost:8500",
-baseURL: import.meta.env.VITE_API_URL || "/", // [수정됨] 로컬에선 .env(8500), 서버에선 /(상대경로) 사용
+// [FIX] 안드로이드 테스트를 위해 로컬호스트 대신 실IP 사용
+  baseURL: import.meta.env.VITE_API_URL || "http://192.168.0.67:8500/api",
   timeout: 5000, // 5초 타임아웃 설정 (무한 로딩 방지)
   // withCredentials: true, // 토큰 인증 사용 시 불필요할 수 있음 (CORS 복잡성 감소)
   headers: {

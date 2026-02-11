@@ -33,7 +33,12 @@ const ManagerDashboard = () => {
 
     const loadDashboardData = async () => {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            // [FIX] UTC(오전 9시 이전 날짜 문제 해결) -> 로컬 시간(KST) 기준 날짜 생성
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
             let siteId = user?.project_id;
 
             if (!siteId) {
@@ -368,7 +373,13 @@ const ManagerDashboard = () => {
             {isZoneDetailOpen && selectedZone && (
                 <ZoneDetailModal 
                     zone={selectedZone}
-                    date={new Date().toISOString().split('T')[0]}
+                    date={() => {
+                        const d = new Date();
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }}
                     projectId={user?.project_id || 1}
                     approvedWorkers={approvedWorkers}
                     onClose={() => {
