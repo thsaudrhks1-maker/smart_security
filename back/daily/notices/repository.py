@@ -5,13 +5,20 @@ class notices_repository:
     """[DAILY_NOTICES] 공지사항 및 긴급 알람 데이터 접근"""
 
     @staticmethod
-    async def get_all_notices(project_id: int = None):
+    async def get_all_notices(project_id: int = None, date: str = None):
         """공지사항 목록 (긴급 알람 우선 정렬)"""
         params = {}
-        where_clause = ""
+        conditions = []
+        
         if project_id:
-            where_clause = "WHERE n.project_id = :pid"
+            conditions.append("n.project_id = :pid")
             params["pid"] = project_id
+        
+        if date:
+            conditions.append("n.date = :date")
+            params["date"] = date
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
         sql = f"""
             SELECT n.*, u.full_name as author_name,
@@ -32,15 +39,18 @@ class notices_repository:
     @staticmethod
     async def create_notice(data: Dict[str, Any]):
         """공지사항 또는 긴급 알람 생성"""
+        from datetime import datetime
         sql = """
             INSERT INTO daily_notices (
-                project_id, title, content, notice_type, notice_role, created_by
+                project_id, date, title, content, notice_type, notice_role, created_by
             ) VALUES (
-                :project_id, :title, :content, :notice_type, :notice_role, :created_by
+                :project_id, :date, :title, :content, :notice_type, :notice_role, :created_by
             ) RETURNING *
         """
         # 기본값 설정
         data.setdefault('notice_type', 'NORMAL')
+        if not data.get('date'):
+            data['date'] = datetime.now().date().isoformat()
         
         return await insert_and_return(sql, data)
 

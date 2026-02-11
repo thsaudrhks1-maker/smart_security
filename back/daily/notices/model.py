@@ -8,10 +8,12 @@ class daily_notices(Base):
     __tablename__ = "daily_notices"
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("project_master.id", ondelete="CASCADE"), nullable=False)
+    date = Column(Date, nullable=False, index=True, default=datetime.now().date)
     title = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     notice_type = Column(String(50), default="NORMAL") # NORMAL, IMPORTANT, EMERGENCY
     notice_role = Column(String(50), nullable=True)     # ADMIN, MANAGER, PARTNER
+    created_by = Column(Integer, nullable=True) # created_by 컬럼이 repository에서 사용되므로 추가 (기존 코드에서 빠져있었음)
     created_at = Column(DateTime, default=datetime.now)
 
 class daily_safety_info(Base):

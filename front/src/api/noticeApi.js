@@ -3,7 +3,7 @@ import client from './client';
 
 export const noticeApi = {
     // [DAILY] 일일 공지사항 목록
-    getNotices: (projectId) => client.get('/daily/notices', { params: { project_id: projectId } }),
+    getNotices: (projectId, date) => client.get('/daily/notices', { params: { project_id: projectId, date: date } }),
     
     // [DAILY] 신규 공지 작성
     createNotice: (data) => client.post('/daily/notices', data),

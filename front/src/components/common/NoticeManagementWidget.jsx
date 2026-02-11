@@ -13,6 +13,7 @@ const NoticeManagementWidget = ({ projectId }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [noticeType, setNoticeType] = useState('NORMAL'); // NORMAL, IMPORTANT, EMERGENCY
+    const [noticeDate, setNoticeDate] = useState(new Date().toISOString().split('T')[0]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -43,6 +44,7 @@ const NoticeManagementWidget = ({ projectId }) => {
             setIsSubmitting(true);
             const data = {
                 project_id: projectId,
+                date: noticeDate,
                 title,
                 content,
                 notice_type: noticeType,
@@ -103,6 +105,20 @@ const NoticeManagementWidget = ({ projectId }) => {
                             <option value="IMPORTANT">중요공지</option>
                             <option value="EMERGENCY">🚨 긴급알람</option>
                         </select>
+                        <input 
+                            type="date"
+                            value={noticeDate}
+                            onChange={(e) => setNoticeDate(e.target.value)}
+                            style={{ 
+                                padding: '8px', 
+                                borderRadius: '8px', 
+                                border: '1px solid #e2e8f0',
+                                fontSize: '0.85rem',
+                                fontWeight: '700',
+                                color: '#475569',
+                                outline: 'none'
+                            }}
+                        />
                         <input 
                             type="text"
                             placeholder="제목을 입력하세요"

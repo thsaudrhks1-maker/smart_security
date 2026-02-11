@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { sendWorkerLocation } from '../../api/dailyApi'; // [NEW] 위치 전송 API
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, CircleMarker } from 'react-leaflet'; // CircleMarker 추가
+import { Crosshair } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -43,6 +44,42 @@ const MapZoomHandler = ({ onZoomChange }) => {
     }
   });
   return null;
+};
+
+/** [NEW] 내 위치로 지도 중심 이동 버튼 컴포넌트 */
+const LocateControl = ({ myLocation }) => {
+    const map = useMap();
+    const handleLocate = (e) => {
+        e.stopPropagation();
+        if (myLocation) {
+            map.setView(myLocation, 20); // 줌 레벨 20으로 내 위치 이동
+        } else {
+            alert("위치 정보를 수신 대기 중입니다...");
+        }
+    };
+
+    return (
+        <div className="leaflet-bottom leaflet-right" style={{ marginBottom: '80px', marginRight: '10px' }}>
+            <div className="leaflet-control">
+                <button 
+                    onClick={handleLocate}
+                    style={{
+                        width: '45px', height: '45px',
+                        background: 'white',
+                        border: '2px solid rgba(0,0,0,0.2)',
+                        borderRadius: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                        color: '#3b82f6'
+                    }}
+                    title="내 위치로 이동"
+                >
+                    <Crosshair size={24} />
+                </button>
+            </div>
+        </div>
+    );
 };
 
 // ... inside CommonMap component ...
@@ -320,6 +357,9 @@ const CommonMap = ({
                 <Popup>내 현재 위치 (GPS)</Popup>
             </CircleMarker>
         )}
+
+        {/* [NEW] 내 위치 버튼 */}
+        <LocateControl myLocation={myLocation} />
       </MapContainer>
     </div>
   );

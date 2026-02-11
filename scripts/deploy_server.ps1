@@ -53,6 +53,11 @@ $RemoteCommand = "
     cd $REMOTE_DIR && 
     git fetch --all && 
     git reset --hard origin/main && 
+    echo '⚙️ Syncing Nginx Config...' &&
+    sudo cp nginx_safe_sogething.conf /etc/nginx/sites-available/safe.sogething &&
+    sudo ln -sf /etc/nginx/sites-available/safe.sogething /etc/nginx/sites-enabled/ &&
+    sudo nginx -t &&
+    sudo systemctl reload nginx &&
     echo '📦 Backend Dependencies...' &&
     ./venv/bin/pip install -r requirements.txt && 
     echo '📦 Frontend Build...' &&
@@ -60,7 +65,7 @@ $RemoteCommand = "
     npm install && 
     npm run build && 
     cd .. && 
-    echo '🔄 Restarting Server...' &&
+    echo '🔄 Restarting App Processes...' &&
     pm2 restart all
 "
 

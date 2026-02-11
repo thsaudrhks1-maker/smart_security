@@ -11,6 +11,7 @@ router = APIRouter()
 
 class NoticeCreate(BaseModel):
     project_id: int
+    date: Optional[str] = None
     title: str
     content: str
     notice_type: Optional[str] = "NORMAL" # NORMAL, IMPORTANT, EMERGENCY
@@ -18,8 +19,8 @@ class NoticeCreate(BaseModel):
     created_by: Optional[int] = None
 
 @router.get("/")
-async def list_notices(project_id: Optional[int] = None):
-    notices = await notices_repository.get_all_notices(project_id)
+async def list_notices(project_id: Optional[int] = None, date: Optional[str] = None):
+    notices = await notices_repository.get_all_notices(project_id, date)
     return {"success": True, "data": notices}
 
 @router.post("/")

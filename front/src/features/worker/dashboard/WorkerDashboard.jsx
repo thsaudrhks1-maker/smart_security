@@ -120,7 +120,7 @@ const WorkerDashboard = () => {
 
             // 공지사항 목록 조회
             try {
-                const noticeRes = await noticeApi.getNotices(projectId);
+                const noticeRes = await noticeApi.getNotices(projectId, selectedDate);
                 if (noticeRes.data?.success) {
                     const noticeList = noticeRes.data.data || [];
                     setNotices(noticeList);
@@ -375,6 +375,7 @@ const WorkerDashboard = () => {
                             highlightLevel={currentLevel}
                             myZoneNames={myPlans.map(p => p.zone_name)} // 모든 작업존 배열로 전달
                             zones={zones}
+                            user={user}
 
                             onZoneClick={(zoneData) => {
                               setSelectedZone(zoneData);
