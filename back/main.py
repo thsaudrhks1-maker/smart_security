@@ -13,6 +13,7 @@ from back.daily.notices.router import router as notices_router
 from back.daily.task_plans.router import router as task_plans_router
 from back.daily.safety_logs.router import router as safety_logs_router
 from back.daily.worker_locations.router import router as worker_locations_router
+from back.content.safety_info.router import router as safety_info_router
 from back.manager.router import router as manager_router
 
 from fastapi.staticfiles import StaticFiles
@@ -48,6 +49,7 @@ app.include_router(locations_router, prefix="/api/project/locations", tags=["Pro
 # [CONTENT]
 app.include_router(work_info_router, prefix="/api/content/work_info", tags=["Content_WorkInfo"])
 app.include_router(danger_info_router, prefix="/api/content/danger_info", tags=["Content_DangerInfo"])
+app.include_router(safety_info_router, prefix="/api/content/safety_info", tags=["Content_SafetyInfo"])
 
 # [DAILY]
 app.include_router(attendance_router, prefix="/api/daily/attendance", tags=["Daily_Attendance"])

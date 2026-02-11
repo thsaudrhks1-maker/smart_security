@@ -100,3 +100,20 @@ Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 관계의 �
 | **CONTENT** | `content_work_templates`, `content_safety_gear`, `content_work_gear_map` |
 | **DAILY** | `daily_attendance`, `daily_weather`, `daily_notices`, `daily_work_tasks`, `daily_worker_allocations`, `daily_safety_logs`, `daily_danger_zones`, `daily_danger_images`, `daily_violations` |
 
+---
+
+## 5. AI 기술 표준 (AI Integration Standard)
+
+### A. AI 모델 사용 원칙 (Model Selection)
+- **Google Generative AI (GenAI) 우선**: 프로젝트의 모든 AI 기능(텍스트 생성, 임베딩, 이미지 생성, 멀티모달)은 Google의 GenAI (Gemini) API를 사용한다.
+- **예외 사항**: `LangChain` 또는 `LangGraph` 프레임워크를 사용하는 특수한 경우를 제외하고는 OpenAI 등 타사 모델을 직접 호출하지 않는다.
+- **적용 영역**:
+  - **텍스트 생성 (LLM)**: 작업 안전 수칙 요약, 사고 사례 분석 등.
+  - **임베딩 (Embedding)**: 안전 콘텐츠 및 작업 설명의 벡터 변환.
+  - **이미지 생성 (Image Gen)**: 안전 아이콘 및 교육용 이미지 생성.
+  - **멀티모달 (Multimodal)**: 현장 사진 분석 및 위험 요소 탐지.
+
+### B. 데이터 가공 및 임베딩 (Processing & Embedding)
+- **사전 가공 필수**: 원본 데이터를 임베딩하기 전, AI를 이용해 핵심 요약 및 노이즈 제거를 수행하여 검색 정확도를 높인다.
+- **벡터 검색**: 가공된 텍스트의 임베딩 값을 저장하고 코사인 유사도 기반 검색을 수행한다.
+
