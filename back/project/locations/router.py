@@ -14,6 +14,7 @@ async def list_sites(project_id: int):
 @router.get("/{project_id}/zones/details")
 async def get_zones_with_details(project_id: int, date: Optional[str] = None):
     """구역별 작업, 작업자, 위험요소 통합 조회"""
-    target_date = date or str(date.today())
+    from datetime import date as date_type
+    target_date = date or str(date_type.today())
     zones = await locations_repository.get_zones_with_details(project_id, target_date)
     return {"success": True, "data": zones}

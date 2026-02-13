@@ -15,6 +15,7 @@ from back.daily.safety_logs.router import router as safety_logs_router
 from back.daily.worker_locations.router import router as worker_locations_router
 from back.content.safety_info.router import router as safety_info_router
 from back.manager.router import router as manager_router
+from back.admin.router import router as admin_router
 
 from fastapi.staticfiles import StaticFiles
 
@@ -57,6 +58,7 @@ app.include_router(notices_router, prefix="/api/daily/notices", tags=["Daily_Not
 app.include_router(task_plans_router, prefix="/api/daily/task_plans", tags=["Daily_TaskPlans"])
 app.include_router(safety_logs_router, prefix="/api/daily/safety_logs", tags=["Daily_SafetyLogs"])
 app.include_router(manager_router, prefix="/api/manager", tags=["Manager"])
+app.include_router(admin_router, prefix="/api/admin", tags=["Admin"])
 
 @app.get("/")
 async def root():

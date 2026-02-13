@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { sendWorkerLocation } from '../../api/dailyApi'; // [NEW] 위치 전송 API
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, CircleMarker } from 'react-leaflet'; // CircleMarker 추가
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polygon, CircleMarker } from 'react-leaflet'; // Rectangle 제거, Polygon 추가
 import { Crosshair } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -177,6 +177,29 @@ const CommonMap = ({
     // [이동] 여기서 미리 계산 (ReferenceError 방지)
     const iconSizeScaled = Math.max(10, 48 * scaleRatio);
 
+    // 회전 관련 설정
+    const angleRad = ((gridConfig.angle || 0) * Math.PI) / 180;
+    const cosA = Math.cos(angleRad);
+    const sinA = Math.sin(angleRad);
+
+    // 좌표 회전 함수 (중심 기준)
+    const rotatePoint = (lat, lng, centerLat, centerLng) => {
+        // 위경도를 미터 단위 느낌으로 선형화하여 계산 후 다시 변환
+        const dLat = lat - centerLat;
+        const dLng = (lng - centerLng) * Math.cos(centerLat * Math.PI / 180);
+        
+        const rotatedDLng = dLng * cosA - dLat * sinA;
+        const rotatedDLat = dLng * sinA + dLat * cosA;
+        
+        return [
+            centerLat + rotatedDLat,
+            centerLng + (rotatedDLng / Math.cos(centerLat * Math.PI / 180))
+        ];
+    };
+
+    const startRLat = - (rows * latStep) / 2;
+    const startRLng = - (cols * lngStep) / 2;
+
     for (let r = 0; r < rowCount; r++) {
       for (let c = 0; c < colCount; c++) {
         const zoneName = `${highlightLevel}-${chr(65+r)}${c+1}`;
@@ -209,9 +232,15 @@ const CommonMap = ({
           fillColor = '#bfdbfe'; fillOpacity = 0.3; strokeColor = '#2563eb'; strokeWeight = 2;
         }
         
-        const b = [[startLat - r * latStep, startLng + c * lngStep], [startLat - (r + 1) * latStep, startLng + (c + 1) * lngStep]];
-        const centerLat = (b[0][0] + b[1][0]) / 2;
-        const centerLng = (b[0][1] + b[1][1]) / 2;
+        // 격자 꼭짓점 (회전 적용)
+        const p1 = rotatePoint(center[0] - (startRLat + r * latStep), center[1] + (startRLng + c * lngStep), center[0], center[1]);
+        const p2 = rotatePoint(center[0] - (startRLat + r * latStep), center[1] + (startRLng + (c + 1) * lngStep), center[0], center[1]);
+        const p3 = rotatePoint(center[0] - (startRLat + (r + 1) * latStep), center[1] + (startRLng + (c + 1) * lngStep), center[0], center[1]);
+        const p4 = rotatePoint(center[0] - (startRLat + (r + 1) * latStep), center[1] + (startRLng + c * lngStep), center[0], center[1]);
+        
+        const polyPoints = [p1, p2, p3, p4];
+        const centerLat = (p1[0] + p3[0]) / 2;
+        const centerLng = (p1[1] + p3[1]) / 2;
 
         // 위험 아이콘 (아이콘 사이즈는 유지하되 너무 겹치면 숨김 고려 가능하나, 일단 라벨 위주로 처리)
         if (hasRisk) {
@@ -240,7 +269,7 @@ const CommonMap = ({
         }
 
         cells.push(
-          <Rectangle key={`cell-${zoneName}`} bounds={b}
+          <Polygon key={`cell-${zoneName}`} positions={polyPoints}
             eventHandlers={{
               click: () => {
                  if (onZoneClick) onZoneClick({ name: zoneName, level: highlightLevel, id: zoneData?.id, tasks: zoneTasks, dangers: zoneDangers });
@@ -250,10 +279,7 @@ const CommonMap = ({
               mouseout: (e) => e.target.setStyle({ weight: strokeWeight, color: strokeColor, fillOpacity: fillOpacity })
             }}
             pathOptions={{ color: strokeColor, weight: strokeWeight, fillColor, fillOpacity, dashArray }}
-          >
-            {/* Tooltip Removed -> using DivIcon Marker instead for better centering */}
-            {/* Popup은 필요시 추가 */}
-          </Rectangle>
+          />
         );
 
         // Label Marker (New approach for perfect centering)

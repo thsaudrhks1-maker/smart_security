@@ -2,7 +2,7 @@ fastapi
 uvicorn
 python-dotenv
 sqlalchemy
-alembic
+atlas-provider-sqlalchemy
 asyncpg
 psycopg[binary]
 python-multipart

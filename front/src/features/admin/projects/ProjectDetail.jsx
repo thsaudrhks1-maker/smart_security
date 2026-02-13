@@ -16,17 +16,38 @@ const ProjectDetail = () => {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('개요');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState(null);
+    const [updateLoading, setUpdateLoading] = useState(false);
 
     useEffect(() => {
         const load = async () => {
             try {
                 const res = await projectApi.getProject(id);
                 setProject(res.data.data);
+                setEditData(res.data.data);
             } catch (e) { console.error(e); }
             finally { setLoading(false); }
         };
         load();
     }, [id]);
+
+    const handleUpdate = async () => {
+        setUpdateLoading(true);
+        try {
+            const res = await projectApi.updateProject(id, editData);
+            if (res.data.success) {
+                setProject(editData);
+                setIsEditing(false);
+                alert('프로젝트 정보가 수정되었습니다.');
+            }
+        } catch (e) {
+            console.error('업데이트 실패:', e);
+            alert('정보 수정에 실패했습니다.');
+        } finally {
+            setUpdateLoading(false);
+        }
+    };
 
     if (loading) return <div style={{ color: '#1e293b', padding: '2rem' }}>현장 정보를 불러오고 있습니다...</div>;
     if (!project) return <div style={{ color: '#1e293b', padding: '2rem' }}>프로젝트 정보를 찾을 수 없습니다.</div>;
@@ -55,9 +76,30 @@ const ProjectDetail = () => {
                       <span style={{ fontSize: '0.8rem', padding: '4px 12px', background: '#fef3c7', color: '#d97706', borderRadius: '20px', fontWeight: '800' }}>{project.status === 'ACTIVE' ? '진행중' : '계획'}</span>
                     </div>
                 </div>
-                <button style={{ padding: '0.75rem 1.5rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}>
-                   <Edit3 size={18}/> 정보 수정
-                </button>
+                {!isEditing ? (
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    style={{ padding: '0.75rem 1.5rem', background: '#f59e0b', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
+                  >
+                    <Edit3 size={18}/> 정보 수정
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                      onClick={() => setIsEditing(false)}
+                      style={{ padding: '0.75rem 1.5rem', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                      취소
+                    </button>
+                    <button 
+                      onClick={handleUpdate}
+                      disabled={updateLoading}
+                      style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
+                    >
+                      {updateLoading ? '저장 중...' : '저장하기'}
+                    </button>
+                  </div>
+                )}
             </div>
 
             <div style={{ color: '#475569', fontSize: '0.95rem', display: 'flex', gap: '1.5rem', marginBottom: '2.5rem', fontWeight: '500' }}>
@@ -118,11 +160,34 @@ const ProjectDetail = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '2rem' }}>
                 {/* Project Info Card */}
                 <InfoCard title="프로젝트 상세 정보">
-                    <InfoRow label="공사명" value={project.name} />
+                    <EditableInfoRow 
+                        label="공사명" 
+                        isEditing={isEditing} 
+                        value={editData.name} 
+                        onChange={(val) => setEditData({...editData, name: val})} 
+                    />
                     <InfoRow label="공사 유형" value="일반 건축" />
-                    <InfoRow label="공사 금액" value="₩50,000,000" isBold />
-                    <InfoRow label="착공일" value={project.start_date || '-'} />
-                    <InfoRow label="준공 예정일" value={project.end_date || '-'} />
+                    <EditableInfoRow 
+                        label="공사 금액 (원)" 
+                        isEditing={isEditing} 
+                        value={editData.budget} 
+                        type="number"
+                        onChange={(val) => setEditData({...editData, budget: val})} 
+                    />
+                    <EditableInfoRow 
+                        label="착공일" 
+                        isEditing={isEditing} 
+                        value={editData.start_date} 
+                        type="date"
+                        onChange={(val) => setEditData({...editData, start_date: val})} 
+                    />
+                    <EditableInfoRow 
+                        label="준공 예정일" 
+                        isEditing={isEditing} 
+                        value={editData.end_date} 
+                        type="date"
+                        onChange={(val) => setEditData({...editData, end_date: val})} 
+                    />
                 </InfoCard>
 
                 {/* Relation Info Card */}
@@ -134,17 +199,41 @@ const ProjectDetail = () => {
                 {/* Location Map Card */}
                 <InfoCard title="위치 및 지도 정보">
                     <p style={{ color: '#475569', fontSize: '0.9rem', marginBottom: '1.25rem', lineHeight: 1.5 }}>
-                      <strong>주소:</strong> {project.location_address || '주소 정보가 없습니다.'}
+                      <strong>주소:</strong> {isEditing ? (
+                        <input 
+                            style={{ width: '100%', padding: '10px', marginTop: '8px', borderRadius: '10px', border: '1.5px solid #3b82f6', outline: 'none' }}
+                            value={editData.location_address || ''}
+                            onChange={(e) => setEditData({...editData, location_address: e.target.value})}
+                        />
+                      ) : (project.location_address || '주소 정보가 없습니다.')}
                     </p>
-                    <div style={{ height: '300px' }}>
+
+                    {isEditing && (
+                        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#475569' }}>격자 회전 각도</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '900', color: '#3b82f6' }}>{editData.grid_angle || 0}°</span>
+                            </div>
+                            <input 
+                                type="range" min="-180" max="180" step="1"
+                                value={editData.grid_angle || 0}
+                                onChange={(e) => setEditData({...editData, grid_angle: e.target.value})}
+                                style={{ width: '100%', cursor: 'pointer', accentColor: '#3b82f6' }}
+                            />
+                        </div>
+                    )}
+
+                    <div style={{ height: '350px' }}>
                         <CommonMap 
-                            center={[project.lat || 37.5665, project.lng || 126.9780]} 
-                            zoom={16} 
-                            markers={[{ lat: project.lat || 37.5665, lng: project.lng || 126.9780, title: project.name }]}
+                            center={[editData.lat || 37.5665, editData.lng || 126.9780]} 
+                            zoom={18} 
+                            onMapClick={isEditing ? (latlng) => setEditData({...editData, ...latlng}) : null}
+                            markers={[{ lat: editData.lat, lng: editData.lng, title: '격자 중심점' }]}
                             gridConfig={{
-                              grid_rows: project.grid_rows,
-                              grid_cols: project.grid_cols,
-                              grid_spacing: project.grid_spacing
+                              rows: editData.grid_rows,
+                              cols: editData.grid_cols,
+                              spacing: editData.grid_spacing,
+                              angle: parseFloat(editData.grid_angle || 0)
                             }}
                         />
                     </div>
@@ -172,6 +261,29 @@ const InfoRow = ({ label, value, isBold = false }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f8fafc', paddingBottom: '0.75rem' }}>
         <span style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: '600' }}>{label}</span>
         <span style={{ color: '#1e293b', fontSize: '1rem', fontWeight: isBold ? '800' : '700', textAlign: 'right' }}>{value}</span>
+    </div>
+);
+
+// [NEW] 재사용 컴포넌트: 수정 가능한 정보 열
+const EditableInfoRow = ({ label, value, isEditing, onChange, type = "text" }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f8fafc', paddingBottom: '0.75rem' }}>
+        <span style={{ color: '#64748b', fontSize: '0.95rem', fontWeight: '600' }}>{label}</span>
+        {isEditing ? (
+            <input 
+                type={type}
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value)}
+                style={{ 
+                    padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #3b82f6', 
+                    fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', outline: 'none',
+                    textAlign: 'right', width: '60%'
+                }}
+            />
+        ) : (
+            <span style={{ color: '#1e293b', fontSize: '1rem', fontWeight: '700', textAlign: 'right' }}>
+                {type === 'number' && value ? `₩${Number(value).toLocaleString()}` : (value || '-')}
+            </span>
+        )}
     </div>
 );
 

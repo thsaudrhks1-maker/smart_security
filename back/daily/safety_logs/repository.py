@@ -81,29 +81,22 @@ class safety_logs_repository:
     
     @staticmethod
     async def delete_danger_zone(danger_id: int):
-        """위험 구역 삭제 및 물리 파일 정리"""
+        """위험 구역 삭제 및 물리 파일 정리 (Flat 구조 대응)"""
         from back.database import execute, fetch_all
         import os
         
-        # 1. 삭제 전 이미지 정보 및 경로 확보
-        # 폴더 구조: uploads/danger_zones/{zone_id}/{info_id}/{filename}
-        sql_info = """
-            SELECT dz.zone_id, i.danger_info_id, i.image_url
-            FROM daily_danger_zones dz
-            JOIN daily_danger_images i ON dz.id = i.danger_zone_id
-            WHERE dz.id = :id
-        """
+        # 1. 삭제 전 이미지 정보 확보
+        sql_info = "SELECT image_url FROM daily_danger_images WHERE danger_zone_id = :id"
         images = await fetch_all(sql_info, {"id": danger_id})
         
-        # 2. 물리 파일 삭제
+        # 2. 물리 파일 삭제 (Flat 구조: uploads/daily_danger_images/파일명)
         for img in images:
-            info_folder = str(img["danger_info_id"]) if img["danger_info_id"] else "custom"
-            file_path = f"uploads/danger_zones/{img['zone_id']}/{info_folder}/{img['image_url']}"
+            file_path = f"uploads/daily_danger_images/{img['image_url']}"
             if os.path.exists(file_path):
                 try:
                     os.remove(file_path)
                 except Exception as e:
-                    print(f"파일 삭제 실패: {file_path}, {e}")
+                    print(f"이미지 파일 삭제 실패: {file_path}, {e}")
 
         # 3. DB 삭제 (Cascade 설정으로 daily_danger_images 행도 자동 삭제됨)
         await execute("DELETE FROM daily_danger_zones WHERE id = :id", {"id": danger_id})

@@ -8,7 +8,7 @@ description: SQLAlchemy ORM과 Raw SQL을 효과적으로 함께 사용하기 �
 이 프로젝트는 DB 상호 작용의 명확성을 위해 다음과 같은 **역할 분담**을 채택합니다.
 
 1.  **SQLAlchemy ORM (Maintenance & Schema)**:
-    *   **용도**: 테이블 구조 정의(Models), 마이그레이션(Alembic), 시스템 초기화 및 더미 데이터 생성(Seeding/Reset).
+    *   **용도**: 테이블 구조 정의(Models), 마이그레이션(Atlas), 시스템 초기화 및 더미 데이터 생성(Seeding/Reset).
     *   **이유**: 스키마 변경 시의 유연성과 관계 설정을 편리하게 관리하기 위함.
 
 2.  **Raw SQL (Standard Application Logic - CRUD)**:

@@ -49,7 +49,8 @@ const CreateProject = () => {
     grid_rows: 5,
     grid_spacing: 10,
     floors_above: 1,
-    floors_below: 0
+    floors_below: 0,
+    grid_angle: 0
   });
 
   // 직접 입력 모드
@@ -319,7 +320,8 @@ const CreateProject = () => {
                    gridConfig={{ 
                       rows: parseInt(formData.grid_rows), 
                       cols: parseInt(formData.grid_cols), 
-                      spacing: parseFloat(formData.grid_spacing) 
+                      spacing: parseFloat(formData.grid_spacing),
+                      angle: parseFloat(formData.grid_angle)
                    }}
                    markers={[{ lat: formData.lat, lng: formData.lng, title: '격자 중심점' }]}
                 />
@@ -358,6 +360,27 @@ const CreateProject = () => {
                <option value="20">20m (대형)</option>
                <option value="50">50m (광역)</option>
              </Select>
+           </div>
+           
+           <div>
+             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+               <Label>격자 방위각 (회전)</Label>
+               <span style={{ fontSize: '0.8rem', fontWeight: '800', color: '#3b82f6' }}>{formData.grid_angle}°</span>
+             </div>
+             <input 
+               type="range" 
+               min="-180" 
+               max="180" 
+               step="1"
+               value={formData.grid_angle} 
+               onChange={e => setFormData({...formData, grid_angle: e.target.value})}
+               style={{ width: '100%', cursor: 'pointer', accentColor: '#3b82f6' }}
+             />
+             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '4px' }}>
+                <span>-180°</span>
+                <span>0° (정북)</span>
+                <span>180°</span>
+             </div>
            </div>
 
            <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>

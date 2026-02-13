@@ -35,6 +35,17 @@ async def get_project_detail(project_id: int):
         raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     return {"success": True, "data": detail}
 
+@router.put("/{project_id}")
+async def update_project(project_id: int, request: Request):
+    """프로젝트 정보 업데이트 (격자 각도 조절 등)"""
+    data = await request.json()
+    try:
+        await project_repository.update_project(project_id, data)
+        return {"success": True, "message": "프로젝트 정보가 업데이트되었습니다."}
+    except Exception as e:
+        print(f"Project Update Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/{project_id}/approve-worker/{user_id}")
 async def approve_worker(project_id: int, user_id: int):
     """작업자 승인 (project_users에 추가)"""

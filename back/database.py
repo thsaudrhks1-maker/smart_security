@@ -64,7 +64,7 @@ from back.device.beacons.model import device_beacons
 from back.daily.attendance.model import daily_attendance
 from back.daily.task_plans.model import daily_work_plans, daily_worker_users
 from back.daily.safety_logs.model import daily_safety_logs, daily_danger_zones, daily_danger_images
-from back.daily.notices.model import daily_notices
+from back.daily.notices.model import daily_notices, daily_notice_reads, daily_safety_info
 from back.daily.violations.model import daily_violations
 from back.daily.worker_locations.model import daily_worker_locations # 위치 추적 로그
 from back.daily.environment.model import daily_weather # 이 파일에 daily_weather가 있을 것으로 판단

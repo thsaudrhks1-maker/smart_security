@@ -2,23 +2,37 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectApi } from '@/api/projectApi';
+import { adminApi } from '@/api/adminApi';
 import { 
   Building2, Users, Layout, Map, Plus, List, ChevronRight,
-  TrendingUp, AlertTriangle, CheckCircle2, Zap, Shield, Trash2, Calendar, MapPin
+  TrendingUp, AlertTriangle, CheckCircle2, Zap, Shield, Trash2, Calendar, MapPin,
+  Clock, Activity
 } from 'lucide-react';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [stats, setStats] = useState({
+        project_count: 0,
+        user_count: 0,
+        emergency_count: 0,
+        system_status: '대기'
+    });
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const res = await projectApi.getProjects();
-            setProjects(res.data.data || []);
+            const [projRes, statsRes] = await Promise.all([
+                projectApi.getProjects(),
+                adminApi.getStats()
+            ]);
+            setProjects(projRes.data.data || []);
+            if (statsRes.success) {
+                setStats(statsRes.data);
+            }
         } catch (e) {
-            console.error('프로젝트 목록 로드 실패', e);
+            console.error('데이터 로드 실패', e);
         } finally {
             setLoading(false);
         }
@@ -41,63 +55,130 @@ const AdminDashboard = () => {
     };
 
     return (
-        <div style={{ padding: '2.5rem', maxWidth: '1400px', margin: '0 auto', color: '#1e293b' }}>
+        <div style={{ 
+            padding: '2rem', 
+            minHeight: '100vh',
+            background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)',
+            color: '#f8fafc',
+            fontFamily: "'Inter', sans-serif"
+        }}>
             {/* Header */}
-            <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                   <h1 style={{ fontSize: '2.2rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>👨‍💻 시스템 관리자 대시보드</h1>
-                   <p style={{ color: '#64748b', fontSize: '1.1rem' }}>플랫폼의 전체 프로젝트 현황과 시스템 상태를 최상위 레벨에서 관리합니다.</p>
+                    <h1 style={{ 
+                        fontSize: '2.5rem', 
+                        fontWeight: '950', 
+                        margin: 0, 
+                        background: 'linear-gradient(to right, #60a5fa, #a855f7)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        letterSpacing: '-0.04em'
+                    }}>
+                        SYSTEM CONTROL CENTER
+                    </h1>
+                    <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginTop: '0.5rem', fontWeight: '500' }}>
+                        종합 건설안전 플랫폼 시스템 관리 마스터 대시보드
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                    <div className="dark-card" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
+                        <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#10b981' }}>SERVER ONLINE</span>
+                    </div>
                 </div>
             </div>
 
             {/* Stats Overview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '3rem' }}>
-                <StatCard icon={<Building2 />} label="활성 프로젝트" value={projects.length} unit="개" color="#3b82f6" />
-                <StatCard icon={<Users />} label="전체 등록 사용자" value="128" unit="명" color="#10b981" />
-                <StatCard icon={<AlertTriangle />} label="미해결 긴급 신고" value="0" unit="건" color="#f59e0b" />
-                <StatCard icon={<Shield />} label="시스템 보안 상태" value="정상" unit="" color="#6366f1" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <StatCard icon={<Building2 />} label="활속 프로젝트" value={stats.project_count} unit="개" color="#3b82f6" secondaryColor="rgba(59, 130, 246, 0.1)" />
+                <StatCard icon={<Users />} label="전체 등록 사용자" value={stats.user_count} unit="명" color="#10b981" secondaryColor="rgba(16, 185, 129, 0.1)" />
+                <StatCard icon={<AlertTriangle />} label="미해결 긴급 신고" value={stats.emergency_count} unit="건" color="#f59e0b" secondaryColor="rgba(245, 158, 11, 0.1)" />
+                <StatCard icon={<Shield />} label="시스템 보안 상태" value={stats.system_status} unit="" color="#6366f1" secondaryColor="rgba(99, 102, 241, 0.1)" />
             </div>
 
-            {/* Quick Actions */}
-            <section style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', marginBottom: '3rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
-                    <QuickButton icon={<Plus />} label="새 프로젝트 생성" color="#3b82f6" onClick={() => navigate('/admin/projects/create')} />
-                    <QuickButton icon={<List />} label="프로젝트 목록 조회" color="#10b981" onClick={() => navigate('/admin/projects')} />
-                    <QuickButton icon={<MapPin />} label="전체 부지 지도" color="#ef4444" onClick={() => navigate('/admin/map')} />
-                    <QuickButton icon={<Shield />} label="보안/로그 정책" color="#6366f1" onClick={() => {}} />
-                </div>
-            </section>
+            {/* Quick Actions & Project List Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* Quick Actions */}
+                    <section style={{ 
+                        background: 'rgba(30, 41, 59, 0.4)', 
+                        padding: '1.25rem', 
+                        borderRadius: '24px', 
+                        border: '1px solid rgba(148, 163, 184, 0.1)',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+                            <QuickButton icon={<Plus />} label="새 프로젝트 생성" color="#3b82f6" onClick={() => navigate('/admin/projects/create')} />
+                            <QuickButton icon={<List />} label="프로젝트 목록" color="#10b981" onClick={() => navigate('/admin/projects')} />
+                            <QuickButton icon={<MapPin />} label="관제 지도" color="#ef4444" onClick={() => navigate('/admin/map')} />
+                            <QuickButton icon={<Activity />} label="시스템 로그" color="#6366f1" onClick={() => {}} />
+                        </div>
+                    </section>
 
-            {/* Main Content: 프로젝트 목록 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: '2rem' }}>
-                <div style={{ background: 'white', padding: '2rem', borderRadius: '32px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '900', color: '#0f172a' }}>최근 프로젝트 목록</h3>
-                        <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '700' }}>총 {projects.length}개 운영 중</span>
-                    </div>
+                    {/* 프로젝트 목록 */}
+                    <div style={{ 
+                        background: 'rgba(30, 41, 59, 0.3)', 
+                        padding: '2rem', 
+                        borderRadius: '32px', 
+                        border: '1px solid rgba(148, 163, 184, 0.1)',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: '#3b82f620', padding: '10px', borderRadius: '12px' }}>
+                                    <Layout size={20} color="#3b82f6" />
+                                </div>
+                                <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900', color: '#fff' }}>최근 프로젝트 관리</h3>
+                            </div>
+                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '700', background: 'rgba(15, 23, 42, 0.5)', padding: '6px 14px', borderRadius: '20px' }}>
+                                총 {projects.length}개 현장
+                            </span>
+                        </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {projects.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#94a3b8' }}>등록된 프로젝트가 없습니다.</div>
-                        ) : (
-                            projects.map((proj) => (
-                                <ProjectRow 
-                                    key={proj.id} 
-                                    project={proj} 
-                                    onDelete={() => handleDelete(proj.id, proj.name)} 
-                                    onView={() => navigate(`/admin/projects/${proj.id}`)}
-                                />
-                            ))
-                        )}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            {projects.length === 0 ? (
+                                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem 0', color: '#94a3b8' }}>등록된 프로젝트가 없습니다.</div>
+                            ) : (
+                                projects.map((proj) => (
+                                    <ProjectCard 
+                                        key={proj.id} 
+                                        project={proj} 
+                                        onDelete={() => handleDelete(proj.id, proj.name)} 
+                                        onView={() => navigate(`/admin/projects/${proj.id}`)}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    <div style={{ background: 'white', padding: '2rem', borderRadius: '32px', border: '1px solid #e2e8f0' }}>
-                        <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.1rem', fontWeight: '800' }}>시스템 알림</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <SystemAlert type="success" message="서버 코어 안정화 완료" time="2시간 전" />
-                            <SystemAlert type="info" message="정기 데이터 백업 수행됨" time="5시간 전" />
+                    <div style={{ 
+                        background: 'rgba(30, 41, 59, 0.3)', 
+                        padding: '2rem', 
+                        borderRadius: '32px', 
+                        border: '1px solid rgba(148, 163, 184, 0.1)',
+                        height: '100%'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
+                            <Zap size={20} color="#f59e0b" />
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>실시간 시스템 상태</h3>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <SystemAlert type="success" message="서버 코어 엔진 가동 중" time="2시간 전" />
+                            <SystemAlert type="info" message="DB 일일 백업 완료 (db_backups)" time="5시간 전" />
+                            <SystemAlert type="warning" message="새로운 현장 승인 요청" time="방금 전" />
+                        </div>
+
+                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '800', marginBottom: '1rem' }}>CPU/MEM USAGE</div>
+                            <div style={{ height: '4px', background: '#1e293b', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
+                                <div style={{ width: '35%', height: '100%', background: '#3b82f6' }} />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#475569', fontWeight: '700' }}>
+                                <span>35% Utilized</span>
+                                <span>v3.4.0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -107,65 +188,127 @@ const AdminDashboard = () => {
 };
 
 /* Components */
-const ProjectRow = ({ project, onDelete, onView }) => (
-    <div style={{ padding: '1.5rem', borderRadius: '20px', border: '1px solid #f1f5f9', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}>
-        <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span style={{ background: '#3b82f6', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: '900' }}>{project.status || '진행'}</span>
-                <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b' }}>{project.name}</span>
+const ProjectCard = ({ project, onDelete, onView }) => (
+    <div className="dark-card" style={{ 
+        padding: '1.25rem', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '12px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: 'pointer',
+        border: '1px solid rgba(148, 163, 184, 0.05)'
+    }}
+    onMouseEnter={e => e.currentTarget.style.borderColor = '#3b82f6'}
+    onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.05)'}
+    >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ background: '#3b82f6', color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: '950' }}>{project.status || 'ACTIVE'}</span>
+                <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#f1f5f9', letterSpacing: '-0.02em' }}>{project.name}</span>
             </div>
-            <div style={{ display: 'flex', gap: '15px', fontSize: '0.85rem', color: '#64748b' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> {project.location_address || '위치 미지정'}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> {project.floors_above}F / {project.floors_below}B</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onView(); }}
+                    style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                    <ChevronRight size={18} />
+                </button>
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: 'none', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                    <Trash2 size={16} />
+                </button>
             </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-            <button 
-                onClick={onView}
-                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}
-            >
-                상세보기
-            </button>
-            <button 
-                onClick={onDelete}
-                style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '8px 12px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
-                onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}
-            >
-                <Trash2 size={16} />
-            </button>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b' }}>
+                <MapPin size={14} /> {project.location_address || '위치 미지정'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', justifyContent: 'flex-end' }}>
+                <Layout size={14} /> {project.floors_above}F / {project.floors_below}B
+            </div>
         </div>
     </div>
 );
 
-const StatCard = ({ icon, label, value, unit, color }) => (
-    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', border: '1px solid #e2e8f0', borderLeft: `6px solid ${color}` }}>
-        <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '800', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {React.cloneElement(icon, { size: 16 })} {label}
+const StatCard = ({ icon, label, value, unit, color, secondaryColor }) => (
+    <div className="dark-card" style={{ 
+        padding: '1.5rem', 
+        position: 'relative', 
+        overflow: 'hidden',
+        borderLeft: `2px solid ${color}`
+    }}>
+        <div style={{ position: 'absolute', top: '-10px', right: '-10px', opacity: 0.1, color: color }}>
+            {React.cloneElement(icon, { size: 80 })}
         </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: '900', color: '#0f172a' }}>{value}</span>
-            <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: '700' }}>{unit}</span>
+        <div style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ background: secondaryColor, padding: '6px', borderRadius: '8px', color: color }}>
+                {React.cloneElement(icon, { size: 16 })}
+            </div>
+            {label}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            <span style={{ fontSize: '2rem', fontWeight: '950', color: '#fff', letterSpacing: '-0.02em' }}>{value}</span>
+            <span style={{ fontSize: '0.9rem', color: '#475569', fontWeight: '800' }}>{unit}</span>
         </div>
     </div>
 );
 
 const QuickButton = ({ icon, label, color, onClick }) => (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '1.25rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = color}>
-        <div style={{ width: '40px', height: '40px', background: 'white', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: color, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-            {React.cloneElement(icon, { size: 20 })}
+    <button 
+        onClick={onClick} 
+        className="dark-card"
+        style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '12px', 
+            padding: '1.25rem', 
+            background: 'rgba(15, 23, 42, 0.3)', 
+            border: '1px solid rgba(255,255,255,0.02)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s' 
+        }} 
+        onMouseEnter={e => {
+            e.currentTarget.style.borderColor = color;
+            e.currentTarget.style.background = `${color}10`;
+        }}
+        onMouseLeave={e => {
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.02)';
+            e.currentTarget.style.background = 'rgba(15, 23, 42, 0.3)';
+        }}
+    >
+        <div style={{ width: '44px', height: '44px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: color, border: `1px solid ${color}30` }}>
+            {React.cloneElement(icon, { size: 22 })}
         </div>
-        <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b' }}>{label}</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#94a3b8' }}>{label}</span>
     </button>
 );
 
 const SystemAlert = ({ type, message, time }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: type === 'success' ? '#10b981' : '#3b82f6' }} />
-            <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#475569' }}>{message}</span>
+    <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '12px 16px', 
+        background: 'rgba(15, 23, 42, 0.2)', 
+        borderRadius: '16px', 
+        border: '1px solid rgba(255,255,255,0.03)' 
+    }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ 
+                width: '8px', 
+                height: '8px', 
+                borderRadius: '50%', 
+                background: type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#3b82f6',
+                boxShadow: `0 0 8px ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#3b82f6'}`
+            }} />
+            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#cbd5e1' }}>{message}</span>
         </div>
-        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{time}</span>
+        <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: '600' }}>{time}</span>
     </div>
 );
 

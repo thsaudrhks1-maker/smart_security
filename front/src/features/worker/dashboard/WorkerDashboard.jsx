@@ -4,22 +4,26 @@ import { useAuth } from '@/context/AuthContext';
 import { safetyApi } from '@/api/safetyApi';
 import { projectApi } from '@/api/projectApi';
 import { workApi } from '@/api/workApi';
-import { Shield, Bell, Map as MapIcon, Info, LayoutDashboard } from 'lucide-react';
+import { Shield, Bell, Map as MapIcon, Info, LayoutDashboard, Clock } from 'lucide-react';
 import CommonMap from '@/components/common/CommonMap';
 import AttendanceCard from './AttendanceCard';
+import SmartSiteMap from '@/components/common/SmartSiteMap';
 import WorkerMainTiles from './WorkerMainTiles';
 import DailyChecklistModal from './DailyChecklistModal';
 // import DangerZoneModal from '@/components/common/DangerZoneModal';
 import { SafetyGuideModal } from './DashboardModals';
+import { getMyAttendance } from '@/api/attendanceApi';
 import { noticeApi } from '@/api/noticeApi';
-import { X, Volume2, AlertTriangle, Megaphone } from 'lucide-react';
+import { X, Volume2, AlertTriangle, Megaphone, CheckCircle, HelpCircle } from 'lucide-react';
 import ZoneDetailModal from '@/components/common/ZoneDetailModal';
 import DangerZoneGallery from '@/components/common/DangerZoneGallery';
 import BeaconScannerTest from '../components/BeaconScannerTest';
+import './WorkerDashboard.css';
 
 const WorkerDashboard = () => {
     const { user } = useAuth();
     const [project, setProject] = useState(null);
+    const [attendance, setAttendance] = useState(null); // [추가] 출근 상태
     const [zones, setZones] = useState([]);
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +50,10 @@ const WorkerDashboard = () => {
     // 일반 공지 모달 상태
     const [showNoticeModal, setShowNoticeModal] = useState(false);
     const [activeNotice, setActiveNotice] = useState(null);
+    const [showPushModal, setShowPushModal] = useState(false);
+    const [activePushAlert, setActivePushAlert] = useState(null);
     const [showScanner, setShowScanner] = useState(false); // [NEW] 비콘 스캐너 토글
+    const [isAttendanceVisible, setIsAttendanceVisible] = useState(true); // [추가] 출결 카드 토글
 
     // [FIX] UTC(오전 9시 이전 날짜 문제 해결) -> 로컬 시간(KST) 기준 날짜 생성
     const [selectedDate, setSelectedDate] = useState(() => {
@@ -63,54 +70,90 @@ const WorkerDashboard = () => {
 
     // zones 데이터에서 내 작업 모두 찾기 함수
     const findAllMyTasks = (zonesList) => {
-        if (!user || !zonesList) return [];
+        if (!user || !zonesList || zonesList.length === 0) return [];
         const myTasks = [];
-        for (const zone of zonesList) {
+        const currentUserId = Number(user.id || user.user_id);
+        const currentUserName = (user.full_name || '').replace(/\s/g, ''); // 공백 제거 후 비교
+
+        zonesList.forEach(zone => {
             if (zone.tasks && Array.isArray(zone.tasks)) {
-                for (const task of zone.tasks) {
+                zone.tasks.forEach(task => {
                      if (task.workers && Array.isArray(task.workers)) {
-                        const isMine = task.workers.some(w => Number(w.id) === Number(user.id || user.user_id));
-                        if (isMine) myTasks.push({ ...task, zone_name: zone.name, level: zone.level });
+                        // [FIX] ID 또는 성명(공백 무시)으로 매칭
+                        const isMine = task.workers.some(w => {
+                            if (typeof w === 'object' && w !== null) {
+                                const wid = Number(w.id || w.worker_id || w.user_id);
+                                const wname = (w.full_name || '').replace(/\s/g, '');
+                                return (wid === currentUserId) || (wname === currentUserName);
+                            }
+                            return Number(w) === currentUserId;
+                        });
+                        
+                        if (isMine) {
+                            myTasks.push({ 
+                                ...task, 
+                                id: task.id || task.task_id,
+                                zone_name: zone.name, 
+                                level: zone.level 
+                            });
+                        }
                      }
-                }
+                });
             }
-        }
+        });
         return myTasks;
     };
 
     const loadData = async () => {
         try {
+            setLoading(true);
             const projectId = user?.project_id || 1;
             
-            const [projectRes, zonesRes] = await Promise.all([
+            // API 호출 시도
+            const [projectRes, zonesRes] = await Promise.allSettled([
                 projectApi.getProject(projectId),
                 projectApi.getZonesWithDetails(projectId, selectedDate)
             ]);
             
-            if (projectRes?.data?.success) {
-                const p = projectRes.data.data;
+            // 프로젝트 정보 처리 (실패 시 null 유지)
+            if (projectRes.status === 'fulfilled' && projectRes.value?.data?.success) {
+                const p = projectRes.value.data.data;
                 setProject({
                     ...p,
                     lat: p.lat || 37.5665,
                     lng: p.lng || 126.9780,
                     grid_rows: p.grid_rows || 10,
                     grid_cols: p.grid_cols || 10,
-                    grid_spacing: p.grid_spacing || 10
+                    grid_spacing: p.grid_spacing || 10,
+                    grid_angle: p.grid_angle || 0
                 });
+            } else {
+                setProject(null);
             }
             
-            const zonesData = zonesRes?.data?.data || [];
+            // 구역 및 작업 정보 처리 (실패 시 빈 배열 [] 유지)
+            const zonesData = (zonesRes.status === 'fulfilled' ? zonesRes.value?.data?.data : []) || [];
             setZones(zonesData);
 
             const myTasks = findAllMyTasks(zonesData);
             setPlans(myTasks);
             
-            // 추가: 나의 안전 점검 로그 조회하여 '점검 완료' 상태 확인
             const currentUserId = user?.id || user?.user_id;
+
+            // 출근 정보 로드
             if (projectId && currentUserId) {
-                 const logRes = await workApi.getMySafetyLogs(projectId, currentUserId, selectedDate);
-                 if (logRes?.success) {
-                     setMySafetyLogs(logRes.data);
+                 try {
+                     const attRes = await getMyAttendance(currentUserId);
+                     if (attRes.data?.success) {
+                         setAttendance(attRes.data.data);
+                         if (attRes.data.data) setIsAttendanceVisible(false); // [추가] 출근 완료 시 자동 접힘
+                     }
+
+                     const logRes = await workApi.getMySafetyLogs(projectId, currentUserId, selectedDate);
+                     if (logRes?.success) setMySafetyLogs(logRes.data);
+                 } catch (e) { 
+                     setAttendance(null);
+                     setMySafetyLogs([]); 
                  }
             }
 
@@ -118,7 +161,7 @@ const WorkerDashboard = () => {
                 setCurrentLevel(myTasks[0].level);
             }
 
-            // 공지사항 목록 조회
+            // 공지사항
             try {
                 const noticeRes = await noticeApi.getNotices(projectId, selectedDate);
                 if (noticeRes.data?.success) {
@@ -130,11 +173,15 @@ const WorkerDashboard = () => {
                     }
                 }
             } catch (e) {
-                console.error('공지사항 로드 실패:', e);
+                setNotices([]);
             }
 
         } catch (e) {
-            console.error('근로자 대시보드 로드 실패', e);
+            console.error('근로자 대시보드 로드 실패:', e);
+            // 에러 시 기본값 강제 설정
+            setProject(null);
+            setZones([]);
+            setPlans([]);
         } finally {
             setLoading(false);
         }
@@ -143,30 +190,26 @@ const WorkerDashboard = () => {
     useEffect(() => { 
         loadData(); 
         
-        // [REAL-TIME] SSE 연결 관리 (단방향 푸시 알림)
         let eventSource = null;
 
         const connectSSE = () => {
+            if (eventSource) return; // 이미 연결되어 있으면 중복 생성 방지
+
             const projectId = user?.project_id || 1;
-            const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:8500' : '';
-            const sseUrl = `${baseUrl}/api/daily/notices/sse/${projectId}`;
+            const userId = user?.id || user?.user_id;
+            const sseUrl = noticeApi.getSseUrl(projectId, userId);
             
             console.log('📡 SSE 실시간 알림 채널 연결 시도:', sseUrl);
             eventSource = new EventSource(sseUrl);
             
-            eventSource.onopen = () => {
-                console.log('✅ SSE 실시간 알림 채널 연결 성공');
-            };
-
             eventSource.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
+                    
+                    // 1. 공지사항 (Notice)
                     if (message.type === 'NEW_NOTICE') {
                         const notice = message.data;
-                        
-                        // 리스트 최상단에 추가
                         setNotices(prev => [notice, ...prev.slice(0, 19)]);
-                        
                         if (notice.notice_type === 'EMERGENCY') {
                             setLatestEmergency(notice);
                             setShowEmergency(true);
@@ -176,23 +219,48 @@ const WorkerDashboard = () => {
                             setActiveNotice(notice);
                             setShowNoticeModal(true);
                         }
+                    } 
+                    
+                    // 2. 실시간 푸시 알림 (Push Alert)
+                    else if (message.type === 'PUSH_ALERT') {
+                        setActivePushAlert(message.data);
+                        setShowPushModal(true);
                     }
                 } catch (e) {
                     console.error('SSE 데이터 파싱 실패:', e);
                 }
             };
 
-            eventSource.onerror = (err) => {
-                console.error('❌ SSE 연결 오류 발생. 브라우저가 자동으로 재연결을 시도합니다.');
-                // EventSource는 기본적으로 자동 재연결을 시도하지만, 
-                // 심각한 오류 시 명시적으로 닫고 다시 열 수도 있습니다.
+            eventSource.onerror = () => {
+                console.error('❌ SSE 연결 오류. 재연결 시도...');
+                eventSource.close();
+                eventSource = null;
             };
         };
 
+        const disconnectSSE = () => {
+            if (eventSource) {
+                console.log('🔌 SSE 연결 해제');
+                eventSource.close();
+                eventSource = null;
+            }
+        };
+
+        // 브라우저 탭 활성 상태에 따른 제어
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                connectSSE();
+            } else {
+                disconnectSSE(); // 탭을 가리면 서버 연결을 끊어줌 (서버 종료 원활)
+            }
+        };
+
         connectSSE();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            if (eventSource) eventSource.close();
+            disconnectSSE();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [user, selectedDate, lastAlertId]);
 
@@ -237,101 +305,93 @@ const WorkerDashboard = () => {
     });
 
     return (
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem', color: '#1e293b', paddingBottom: '100px' }}>
-            {/* 상단 알림 및 인사 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div>
-                   <h2 style={{ fontSize: '1.25rem', fontWeight: '900', margin: 0 }}>
-                       {isToday ? '안전한 하루 되세요! 🛡️' : '지난 작업 기록'}
-                   </h2>
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '1.25rem', color: '#f1f5f9', paddingBottom: '100px', position: 'relative', zIndex: 1 }}>
+            {/* 상단 통합 헤더 - 프리미엄 스타일 */}
+            <header style={{ 
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)', 
+                padding: '1rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(10px)'
+            }}>
+                <div style={{ flex: 1 }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: '950', margin: 0, color: '#fff', letterSpacing: '-0.03em' }}>
+                            {isToday ? '오늘도 안전하게! 🛡️' : '현장 리포트'}
+                        </h2>
+                        {/* 출근 상태 배지 추가 */}
+                        {isToday && (
+                            <div style={{ 
+                                display: 'flex', alignItems: 'center', gap: '5px',
+                                background: attendance ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: attendance ? '#10b981' : '#f87171',
+                                padding: '5px 12px', borderRadius: '12px',
+                                fontSize: '0.75rem', fontWeight: '900',
+                                border: `1px solid ${attendance ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                                marginRight: '10px'
+                            }}>
+                                {attendance ? <CheckCircle size={14} /> : <HelpCircle size={14} />}
+                                {attendance ? '정시 출근' : '미출근'}
+                            </div>
+                        )}
+                   </div>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                     <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}><strong>{user?.full_name}</strong> 님</p>
+                     <p style={{ fontSize: '0.85rem', color: '#3b82f6', margin: 0, fontWeight: '900' }}>{user?.full_name} <span style={{ color: '#94a3b8', fontWeight: '700' }}>님</span></p>
+                     <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
                      <input 
                        type="date"
                        value={selectedDate}
                        onChange={(e) => setSelectedDate(e.target.value)}
                        style={{ 
-                         border: 'none', 
-                         background: '#f1f5f9', 
-                         borderRadius: '8px',
-                         padding: '2px 8px',
-                         fontSize: '0.8rem', 
-                         color: '#64748b', 
-                         cursor: 'pointer',
-                         outline: 'none',
-                         fontWeight: '700'
+                         border: 'none', background: 'transparent', fontSize: '0.8rem', 
+                         color: '#94a3b8', cursor: 'pointer', outline: 'none', fontWeight: '700'
                        }}
                      />
                    </div>
                 </div>
                 <button 
                   onClick={() => setIsGuideModalOpen(true)}
-                  style={{ width: '45px', height: '45px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '15px', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ 
+                      width: '42px', height: '42px', background: 'rgba(245, 158, 11, 0.1)', 
+                      border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '14px', 
+                      color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      cursor: 'pointer', transition: '0.3s' 
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.2)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)'}
                 >
-                  <Bell size={22} />
+                  <Bell size={20} />
                 </button>
-            </div>
+            </header>
 
-            {/* [APP TEST] 비콘 스캐너 테스트 (상단 배치) */}
-            <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                <button 
-                    onClick={() => setShowScanner(!showScanner)}
-                    style={{ 
-                        width: '100%',
-                        padding: '12px 20px', 
-                        background: '#f1f5f9', 
-                        color: '#64748b', 
-                        border: '1px solid #cbd5e1', 
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        fontWeight: 'bold',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                    }}
-                >
-                    {showScanner ? '블루투스 테스트 닫기' : '🛠️ 블루투스 비콘 테스트 (앱 전용)'}
-                </button>
-                {showScanner && (
-                    <div style={{ marginTop: '10px' }}>
-                        <BeaconScannerTest />
-                    </div>
-                )}
-            </div>
-
-            {/* 지도 토글 섹션 (최상단 이동) */}
+            {/* 지도 토글 - 프리미엄 익스팬더 */}
             <div style={{ marginBottom: '1.5rem' }}>
-                <button 
+                <div 
                     onClick={() => setIsMapVisible(!isMapVisible)}
                     style={{ 
-                        width: '100%', 
-                        padding: '1rem', 
-                        background: 'white', 
-                        border: '1px solid #e2e8f0', 
-                        borderRadius: '20px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        cursor: 'pointer',
-                        marginBottom: isMapVisible ? '1rem' : '0',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        width: '100%', padding: '0.8rem 1.25rem', 
+                        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.5) 100%)', 
+                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', marginBottom: isMapVisible ? '0.75rem' : '0',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                     }}
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ background: '#eff6ff', padding: '8px', borderRadius: '12px' }}>
-                            <MapIcon size={24} color="#3b82f6" />
+                        <div style={{ background: 'rgba(59, 130, 246, 0.15)', padding: '8px', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                            <MapIcon size={18} color="#60a5fa" />
                         </div>
                         <div style={{ textAlign: 'left' }}>
-                            <div style={{ fontWeight: '800', fontSize: '1rem', color: '#1e293b' }}>실시간 현장 지도</div>
-                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>작업 위치 및 위험 구역 확인</div>
+                            <div style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '-0.02em' }}>실시간 현장 지도</div>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '700' }}>나의 위치와 위험구역 모니터링</div>
                         </div>
                     </div>
-                    <div style={{ color: '#94a3b8' }}>
-                         {isMapVisible ? '접기 ▲' : '펼치기 ▼'}
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                         {isMapVisible ? '▲' : '▼'}
                     </div>
-                </button>
+                </div>
 
                 {isMapVisible && (
-                    <section id="work-map-section" style={{ background: 'white', padding: '1.25rem', borderRadius: '28px', border: '1px solid #e2e8f0' }}>
+                    <section id="work-map-section" style={{ background: 'rgba(30, 41, 59, 0.4)', padding: '1.25rem', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                         {/* 층 선택 버튼 */}
                         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
@@ -343,7 +403,7 @@ const WorkerDashboard = () => {
                                 padding: '8px 14px',
                                 borderRadius: '10px',
                                 border: 'none',
-                                background: currentLevel === level ? '#3b82f6' : '#f1f5f9',
+                                background: currentLevel === level ? '#3b82f6' : 'rgba(15, 23, 42, 0.5)',
                                 color: currentLevel === level ? 'white' : '#64748b',
                                 fontWeight: '800',
                                 fontSize: '0.75rem',
@@ -357,26 +417,19 @@ const WorkerDashboard = () => {
                             ))}
                         </div>
                         <div style={{ display: 'flex', gap: '8px', fontSize: '0.7rem', fontWeight: '800' }}>
-                          <span style={{ color: '#2563eb' }}>작업 {taskCount}</span>
-                          <span style={{ color: '#dc2626' }}>위험 {dangerCount}</span>
+                          <span style={{ color: '#60a5fa' }}>작업 {taskCount}</span>
+                          <span style={{ color: '#f87171' }}>위험 {dangerCount}</span>
                         </div>
                       </div>
                       
-                      <div style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                      <div style={{ height: '350px', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                         {project && (
-                          <CommonMap 
-                            center={[project.lat, project.lng]}
-                            zoom={19}
-                            gridConfig={{ 
-                              rows: parseInt(project.grid_rows), 
-                              cols: parseInt(project.grid_cols), 
-                              spacing: parseFloat(project.grid_spacing) 
-                            }}
+                          <SmartSiteMap 
+                            projectId={project.id}
                             highlightLevel={currentLevel}
-                            myZoneNames={myPlans.map(p => p.zone_name)} // 모든 작업존 배열로 전달
+                            myZoneNames={myPlans.map(p => p.zone_name)}
                             zones={zones}
                             user={user}
-
                             onZoneClick={(zoneData) => {
                               setSelectedZone(zoneData);
                               setIsDetailModalOpen(true);
@@ -402,9 +455,48 @@ const WorkerDashboard = () => {
                 )}
             </div>
 
-            {/* 메인 출석 카드 */}
-            <AttendanceCard projectInfo={{ project_id: project?.id, project_name: '금일 현장' }} />
-            <div style={{ height: '24px' }} />
+            {/* 출역 관리 센터 토글 */}
+            <div style={{ marginBottom: '1.5rem', padding: '0 1rem' }}>
+                <div 
+                    onClick={() => setIsAttendanceVisible(!isAttendanceVisible)}
+                    style={{ 
+                        width: '100%', padding: '0.8rem 1.25rem', 
+                        background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.5) 100%)', 
+                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        cursor: 'pointer', marginBottom: isAttendanceVisible ? '0.75rem' : '0',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)', transition: 'all 0.4s'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.15)', padding: '8px', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                            <Clock size={18} color="#60a5fa" />
+                        </div>
+                        <div style={{ textAlign: 'left' }}>
+                            <div style={{ fontWeight: '900', fontSize: '0.9rem', color: '#fff', letterSpacing: '-0.02em' }}>출역 관리 센터</div>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '700' }}>
+                                {attendance ? `${new Date(attendance.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} 출근 완료` : '미출근 상태'}
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                         {isAttendanceVisible ? '▲' : '▼'}
+                    </div>
+                </div>
+
+                {isAttendanceVisible && (
+                    <AttendanceCard 
+                        projectInfo={{ 
+                            project_id: project?.id, 
+                            project_name: project?.name || '담당 현장' 
+                        }} 
+                        onCheckInSuccess={() => {
+                            loadData();
+                            setIsAttendanceVisible(false); // 출근 성공 시 자동으로 접기
+                        }}
+                    />
+                )}
+            </div>
 
             {/* 타일 그리드 */}
             <WorkerMainTiles 
@@ -612,7 +704,75 @@ const WorkerDashboard = () => {
                     70% { transform: scale(1.02); box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
                     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
                 }
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
             `}} />
+            
+            {/* 실시간 커스텀 푸시 알림 모달 */}
+            {showPushModal && activePushAlert && (
+                <div style={{ 
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 10000, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                    backdropFilter: 'blur(10px)'
+                }}>
+                    <div style={{ 
+                        width: '100%', maxWidth: '400px', 
+                        background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)', 
+                        borderRadius: '35px', overflow: 'hidden', 
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        animation: 'fadeInUp 0.4s ease-out'
+                    }}>
+                        <div style={{ 
+                            background: 'rgba(59, 130, 246, 0.15)', padding: '25px', 
+                            textAlign: 'center', color: '#fff',
+                            borderBottom: '1px solid rgba(59, 130, 246, 0.2)'
+                        }}>
+                            <div style={{ 
+                                width: '60px', height: '60px', background: '#3b82f6', 
+                                borderRadius: '20px', display: 'flex', alignItems: 'center', 
+                                justifyContent: 'center', margin: '0 auto 15px auto',
+                                boxShadow: '0 8px 16px rgba(59, 130, 246, 0.4)'
+                            }}>
+                                <Volume2 size={32} color="white" />
+                            </div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: '950', margin: 0, letterSpacing: '-0.02em' }}>현장 관리자 호출</h3>
+                            <p style={{ margin: '8px 0 0 0', opacity: 0.7, fontSize: '0.85rem', fontWeight: '700' }}>실시간 안전 메시지</p>
+                        </div>
+                        <div style={{ padding: '30px' }}>
+                            <div style={{ 
+                                background: 'rgba(15, 23, 42, 0.5)', padding: '20px', 
+                                borderRadius: '20px', marginBottom: '25px',
+                                border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#3b82f6', marginBottom: '10px' }}>
+                                    {activePushAlert.title}
+                                </div>
+                                <div style={{ fontSize: '1rem', color: '#cbd5e1', lineHeight: '1.6', fontWeight: '600' }}>
+                                    {activePushAlert.content}
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowPushModal(false)}
+                                style={{ 
+                                    width: '100%', padding: '18px', 
+                                    background: '#3b82f6', color: 'white', border: 'none', 
+                                    borderRadius: '18px', fontWeight: '950', fontSize: '1.1rem', 
+                                    cursor: 'pointer', transition: '0.3s',
+                                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                확인하였습니다
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -13,7 +13,7 @@ description: 스마트 시큐리티 프로젝트 통합 기술 표준 (백엔드
 | 영역 | 스킬 이름 | 역할 및 내용 |
 | :--- | :--- | :--- |
 | **Backend** | `sql_repository_pattern` | 라우터/리포지토리 작성 규칙, 순수 SQL 사용 원칙 |
-| **Database** | `db_lifecycle_manager` | 스키마 구조, 시딩 순서, 마이그레이션 절차 |
+| **Database** | `db_lifecycle_manager` | 스키마 구조, 시딩 순서, 마이그레이션(Atlas) 워크플로우를 담당하는 스킬. |
 | **Frontend** | `frontend_standard` | 컴포넌트 구조, 디자인 패턴 |
 | **Common** | `core_utils` | 날짜 처리(Date Utils), 에러 핸들링, 로깅 유틸 |
 
@@ -99,6 +99,11 @@ Many-to-Many 관계를 위한 중간 테이블(연결 테이블)은 관계의 �
 | **PROJECT** | `project_master`, `project_sites`, `project_zones`, `project_members`, `project_companies` |
 | **CONTENT** | `content_work_templates`, `content_safety_gear`, `content_work_gear_map` |
 | **DAILY** | `daily_attendance`, `daily_weather`, `daily_notices`, `daily_work_tasks`, `daily_worker_allocations`, `daily_safety_logs`, `daily_danger_zones`, `daily_danger_images`, `daily_violations` |
+
+### B. 데이터 유지 관리 및 백업 (Maintenance)
+- **정기 백업 필수**: 데이터 손실 방지를 위해 중요 변경 전후에는 반드시 백업을 수행한다.
+- **백업 관리**: `db_backups/` 폴더와 `scripts/` 내의 백업/복구 스크립트를 사용하여 일관된 방식으로 데이터를 관리한다.
+- **상세 지침**: 구체적인 실행 방법은 `db_lifecycle_manager` 스킬 문서를 참조한다.
 
 ---
 

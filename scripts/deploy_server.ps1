@@ -45,15 +45,17 @@ try {
 Write-Host "`n🚀 [2/3] 서버 업데이트, 빌드 및 재시작..." -ForegroundColor Cyan
 
 # 서버 실행 명령어
-# 1. git fetch & reset: 최신 코드 반영
-# 2. backend: 패키지 설치
-# 3. frontend: 패키지 설치 -> 빌드(Build) -> 빌드된 파일 사용 준비
-# 4. pm2 restart: 프로세스 확실하게 재시작
+# 1. DB Backup: 업데이트 전 서버의 현재 데이터 백업
+# 2. git fetch & reset: 최신 코드 반영
+# ... (이하 동일)
 $RemoteCommand = "
     cd $REMOTE_DIR && 
+    echo '📥 [Step 0] Backing up REAL Server DB before update...' &&
+    ./venv/bin/python server_db_backup.py &&
+    echo '🚀 [Step 1] Updating Code (Git Reset)...' &&
     git fetch --all && 
     git reset --hard origin/main && 
-    echo '⚙️ Syncing Nginx Config...' &&
+    echo '⚙️ [Step 2] Syncing Nginx Config...' &&
     sudo cp nginx_safe_sogething.conf /etc/nginx/sites-available/safe.sogething &&
     sudo ln -sf /etc/nginx/sites-available/safe.sogething /etc/nginx/sites-enabled/ &&
     sudo nginx -t &&

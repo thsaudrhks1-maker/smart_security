@@ -1,0 +1,29 @@
+업무 및 이슈 보고 (2026-02-13)
+===
+
+1. 금일 작업 요약
+---
+- DB 백업 및 복구 프로세스 표준화 및 스킬(Skill) 반영 완료.
+- scripts/db_backup.py 및 scripts/db_restore.py 스크립트 상태 점검 및 가이드 작성.
+- db_backups/ 폴더를 통한 데이터 백업본 관리 체계 명시.
+
+2. 현재 이슈 및 수정 사항
+---
+- 이슈: DB 데이터 백업 여부 확인 및 수동 백업/복구 절차에 대한 가이드 부재.
+- 해결: db_lifecycle_manager 및 smart_security_standard 스킬에 관련 지침 추가하여 에이전트가 상시 참조 가능하게 함.
+
+4. 오후 작업 마무리 (2026-02-13)
+---
+- 기존 Alembic 마이그레이션 도구를 제거하고 Atlas CLI 기반의 선언적 관리 체계로 전환 완료.
+- atlas.hcl 및 atlas_schema.py 설정을 통해 SQLAlchemy 모델 - Atlas - 로컬 DB(Docker) 간의 연동 구축.
+- Windows 환경의 UTF-8 인코딩 및 pgvector 확장(Extension) 인식 문제 해결 완료.
+- 누락된 테이블(daily_notice_reads, daily_safety_info) 수동 생성 및 모델 임포트 누락 버그 해결.
+- 프론트엔드(WorkerDashboard) SSE 연결 시 자원 최적화(VisibilityChange 대응) 로직 반영.
+- 향후 모델 수정 시 별도의 revision 생성 없이 atlas apply 명령으로 즉시 스키마 동기화 가능.
+- 관련 상세 가이드 작성: Project_Docs/Atlas_Migration_Guide.txt
+
+5. 익일 진행 계획
+---
+- Atlas 기반의 첫 번째 실제 스키마 변경 테스트 및 검증.
+- (예정) 공공데이터 API 연동 및 실시간 안전 수칙 전송 로직 개발 지속.
+- 데모 시나리오 데이터 주입(Seeder) 고도화.

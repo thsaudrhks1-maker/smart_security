@@ -49,10 +49,41 @@ Many-to-Many 관계의 중간 테이블은 관계의 성격을 명확히 나타�
 - **데이터 무결성:** 참조 테이블 생성 시 반드시 `FOREIGN KEY` 제약 조건을 걸어 데이터 정합성을 보장합니다.
 - **정규화:** 제3정규화까지 고려하여 중복 데이터를 최소화합니다.
 
-## 3. 마이그레이션 규칙 (Alembic)
-- 스키마 변경 시 반드시 `alembic revision --autogenerate`를 통해 이력을 관리합니다.
-- 새로운 테이블 추가 시 `back/database.py`의 하단 모델 임포트 리스트에 반드시 등록해야 합니다.
+## 3. 마이그레이션 규칙 (Atlas)
+
+본 프로젝트는 스키마의 가시성과 관리 효율을 위해 **Atlas**를 마이그레이션 도구로 사용합니다. SQLAlchemy 모델을 '진실의 원천(Source of Truth)'으로 삼아 DB 상태를 동기화합니다.
+
+- **선언적 방식 (Declarative):** `atlas schema apply` 명령을 사용하여 모델의 변경 사항을 DB에 즉시 반영하거나 마이그레이션 계획을 생성합니다.
+- **Provider 설정:** `atlas-provider-sqlalchemy`를 사용하여 파이썬 모델(Base)을 Atlas가 인식할 수 있는 데이터 소스로 연결합니다.
+- **실행 프로세스 (CLI):**
+    - **변경 사항 확인:** `atlas schema diff --from "postgres://..." --to "sqlalchemy://back.database?dialect=postgresql"`
+    - **드라이 런 (Dry Run):** `atlas schema apply --to "sqlalchemy://back.database?dialect=postgresql" --url "postgres://..." --dry-run`
+    - **실제 서버 적용:** `atlas schema apply --to "sqlalchemy://back.database?dialect=postgresql" --url "postgres://..." --auto-approve`
+- **시각화:** Atlas UI를 통해 ER 다이어그램을 확인하고, 구조 변경 시 데이터 파괴 위험(Drop column 등)을 사전에 린팅(Linting)합니다.
+- **모델 등록 필수:** 새로운 테이블 추가 시 반드시 `back/database.py`의 하단 모델 임포트 리스트에 등록해야 Atlas가 인식할 수 있습니다.
 
 ## 4. 주요 스크립트 명세
-- `script_test/master_data.py`: 업체, 공종 템플릿 등 기초 마스터 정보 주입
+- `master_seed_combined.py`: 업체, 유저, 프로젝트, 일일 계획 등 통합 골든 시드 데이터 주입
+- `local_db_backup.py`: 현재 로컬 데이터베이스를 `db_backups/` 폴더에 .sql 파일로 백업
 - `script_test/scenario_seeder.py`: 특정 인물(강공남 등) 중심의 일일 현장 시나리오 생성
+- `scripts/db_restore.py`: `db_backups/` 내의 특정 파일을 선택하여 데이터베이스를 복구
+
+## 5. DB 백업 및 복구 지침 (Backup & Restore)
+데이터베이스의 안전한 관리와 데이터 영속성을 위해 다음 지침을 따릅니다.
+
+- **백업 파일 위치:** 모든 DB 백업 파일은 루트의 `db_backups/` 폴더에 보관합니다.
+- **백업 자동화:** 주요 기능 개발 완료 또는 데이터 대량 수정 전에는 반드시 `scripts/db_backup.py`를 실행하여 백업본을 생성합니다.
+- **복구 절차:** 데이터 유실이나 환경 재설정 시 `scripts/db_restore.py`를 통해 가장 최신의 정상 백업본을 로드합니다.
+- **파일명 컨벤션:** `backup_{db_name}_{YYYYMMDD_HHMMSS}.sql` 형식을 유지하여 생성 시점을 명확히 합니다.
+
+## 6. 골든 시드 관리 정책 (Golden Seed Management Policy)
+
+개발 및 데모 환경의 일관성을 위해 모든 대표 더미 데이터는 통합된 하나의 파일에서 관리되어야 합니다.
+
+- **통합 파일:** `master_seed_combined.py` (루트 디렉토리)
+- **업데이트 원칙:**
+    1. 새로운 시나리오나 데이터 유형(예: 새로운 센서 데이터, 위반 사례 등)을 시딩해야 할 경우, 파편화된 새로운 파일을 만들기보다 `master_seed_combined.py`의 적절한 PHASE에 해당 로직을 통합합니다.
+    2. 통합 시드 파일만 실행해도 시스템 전체의 대표적인 상태(업체, 유저, 프로젝트, 일일 계획, 리얼리티 출결 등)가 재현되어야 합니다.
+    3. 시드 파일 수정 시, 해당 파일만 봐도 DB에 어떤 종류의 데이터가 어떤 논리로 들어가 있는지(예: 출근 확률 85% 등) 한눈에 파악할 수 있도록 주석을 상세히 작성합니다.
+- **관리 이점:** 에이전트가 새로운 기능을 개발할 때 다른 시드 파일을 일일이 뒤지지 않고 `master_seed_combined.py` 하나만 참고하여 현재의 데이터 페르소나를 즉시 이해할 수 있습니다.
+

@@ -2,7 +2,7 @@ import React from 'react';
 import { Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 
 /**
- * 위험 구역 카드
+ * 위험 구역 카드 - 다크 테마 적용
  * - 상태(PENDING/APPROVED) 표시
  * - 승인(Approve) 기능 (Manager only)
  * - 이미지 표시
@@ -12,93 +12,89 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
     const canApprove = viewerType === 'MANAGER' && isPending;
     const canDelete = onDelete; 
 
-    // 이미지 경로 생성 (동적 호스트네임 사용 -> 상대 경로로 변경하여 Nginx 태움)
     const getImageUrl = (filename) => {
-        const infoFolder = danger.danger_info_id || 'custom';
-        // [수정] http://hostname:8500 삭제 -> /uploads/... (상대 경로) 사용
-        return `/uploads/danger_zones/${danger.zone_id}/${infoFolder}/${filename}`;
+        return `/uploads/daily_danger_images/${filename}`;
     };
 
     return (
         <div style={{ 
-            padding: '1rem', 
-            background: isPending ? '#fff7ed' : '#fef2f2', // Pending: Orange tint, Approved: Red tint
-            border: `1.5px solid ${isPending ? '#fdba74' : '#fca5a5'}`, 
-            borderRadius: '16px',
-            marginBottom: '12px',
+            padding: '1.2rem', 
+            background: isPending ? 'rgba(245, 158, 11, 0.05)' : 'rgba(239, 68, 68, 0.05)', 
+            border: `1.5px solid ${isPending ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`, 
+            borderRadius: '20px',
+            marginBottom: '15px',
             transition: 'all 0.2s',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+            boxShadow: 'none'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                         <div style={{ 
                             padding: '4px 10px', 
-                            background: isPending ? '#f97316' : '#dc2626', 
-                            color: 'white', 
+                            background: isPending ? '#fbbf24' : '#f87171', 
+                            color: isPending ? '#0f172a' : '#ffffff', 
                             borderRadius: '6px',
-                            fontSize: '0.7rem',
-                            fontWeight: '800',
+                            fontSize: '0.75rem',
+                            fontWeight: '900',
                         }}>
                             {danger.risk_type || danger.custom_type || '위험 요소'}
                         </div>
                         {isPending && (
                             <div style={{ 
-                                padding: '4px 8px', 
-                                background: 'white', 
-                                color: '#f97316', 
-                                border: '1px solid #f97316',
+                                padding: '4px 10px', 
+                                background: 'rgba(245, 158, 11, 0.1)', 
+                                color: '#fbbf24', 
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
                                 borderRadius: '6px',
-                                fontSize: '0.7rem',
-                                fontWeight: '700',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px'
+                                gap: '6px'
                             }}>
-                                <AlertCircle size={12} /> 승인 대기
+                                <AlertCircle size={14} /> 승인 대기 중
                             </div>
                         )}
                         {!isPending && (
                              <div style={{ 
-                                padding: '4px 8px', 
-                                background: 'white', 
-                                color: '#dc2626', 
-                                border: '1px solid #dc2626',
+                                padding: '4px 10px', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                color: '#f87171', 
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
                                 borderRadius: '6px',
-                                fontSize: '0.7rem',
-                                fontWeight: '700',
+                                fontSize: '0.75rem',
+                                fontWeight: '800',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px'
+                                gap: '6px'
                             }}>
-                                <CheckCircle size={12} /> 등록 완료
+                                <CheckCircle size={14} /> 현장 등록 완료
                             </div>
                         )}
                     </div>
                     
-                    <div style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '700', marginBottom: '6px', paddingRight: '1rem', lineHeight: '1.4' }}>
-                        {danger.description || '위험 설명이 없습니다.'}
+                    <div style={{ fontSize: '1rem', color: '#e2e8f0', fontWeight: '800', marginBottom: '8px', paddingRight: '1rem', lineHeight: '1.5' }}>
+                        {danger.description || '현장 위험 설명이 등록되어 있지 않습니다.'}
                     </div>
                 </div>
                 
-                <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
                     {canApprove && (
                         <button 
                             onClick={() => onApprove(danger.id)}
+                            className="dark-button active"
                             style={{ 
                                 padding: '8px 16px', 
-                                background: '#22c55e', 
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                borderColor: 'rgba(16, 185, 129, 0.3)',
                                 color: 'white',
-                                border: 'none', 
-                                borderRadius: '8px', 
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontWeight: '700',
+                                fontSize: '0.85rem',
+                                fontWeight: '900',
                                 whiteSpace: 'nowrap',
-                                boxShadow: '0 2px 4px rgba(34, 197, 94, 0.2)'
+                                boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.2)'
                             }}
                         >
-                            승인하기
+                            신고 승인
                         </button>
                     )}
                     
@@ -106,19 +102,22 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
                         <button 
                             onClick={onDelete}
                             style={{ 
-                                padding: '8px', 
-                                background: '#fee2e2', 
-                                border: 'none', 
-                                borderRadius: '8px', 
+                                padding: '10px', 
+                                background: 'rgba(239, 68, 68, 0.1)', 
+                                border: '1.5px solid rgba(239, 68, 68, 0.2)', 
+                                borderRadius: '10px', 
                                 cursor: 'pointer',
-                                color: '#991b1b',
+                                color: '#f87171',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                alignSelf: 'flex-end'
+                                alignSelf: 'flex-end',
+                                transition: 'all 0.2s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                         </button>
                     )}
                 </div>
@@ -126,31 +125,37 @@ const DangerCard = ({ danger, onDelete, onApprove, viewerType }) => {
 
             {/* 현장 사진 표시 */}
             {danger.images && danger.images.length > 0 && (
-                <div style={{ marginTop: '12px' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>
-                        현장 사진 ({danger.images.length})
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(148, 163, 184, 0.1)' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', marginBottom: '10px', textTransform: 'uppercase' }}>
+                        현장 채증 사진 ({danger.images.length})
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    <div className="dark-scrollbar" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
                         {danger.images.map((img, idx) => {
                              const imgUrl = getImageUrl(img);
                              return (
                                 <div key={idx} style={{ 
                                     position: 'relative', 
-                                    width: '100px', 
-                                    height: '100px', 
-                                    borderRadius: '8px',
-                                    border: '1px solid #e2e8f0',
+                                    width: '120px', 
+                                    height: '120px', 
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(148, 163, 184, 0.2)',
                                     overflow: 'hidden',
                                     flexShrink: 0,
-                                    cursor: 'pointer'
-                                }} onClick={() => window.open(imgUrl, '_blank')}>
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s',
+                                    background: '#0f172a'
+                                }} 
+                                onClick={() => window.open(imgUrl, '_blank')}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
                                     <img 
                                         src={imgUrl} 
                                         alt={`현장 사진 ${idx + 1}`} 
                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                         onError={(e) => {
                                             e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML = '<div style="width:100%;height:100%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.75rem;font-weight:700;">이미지<br>없음</div>';
+                                            e.target.parentElement.innerHTML = '<div style=\"width:100%;height:100%;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.75rem;text-align:center;padding:10px;\">이미지<br>로드 실패</div>';
                                         }}
                                     />
                                 </div>

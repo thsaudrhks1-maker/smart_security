@@ -36,7 +36,9 @@ const SafetyMap = () => {
                         lat: projectRes.data.lat || 37.5013068,
                         lng: projectRes.data.lng || 127.0398106,
                         grid_rows: projectRes.data.grid_rows || 4,
-                        grid_cols: projectRes.data.grid_cols || 3
+                        grid_cols: projectRes.data.grid_cols || 3,
+                        grid_spacing: projectRes.data.grid_spacing || 10,
+                        grid_angle: projectRes.data.grid_angle || 0
                     });
                 }
                 
@@ -109,11 +111,15 @@ const SafetyMap = () => {
                 <CommonMap 
                     center={[project.lat, project.lng]}
                     zoom={19}
-                    gridRows={project.grid_rows}
-                    gridCols={project.grid_cols}
                     highlightLevel={currentLevel}
                     zones={zones}
-                    user={user} // [NEW] 위치 추적을 위해 사용자 정보 전달
+                    user={user}
+                    gridConfig={{
+                        rows: project.grid_rows,
+                        cols: project.grid_cols,
+                        spacing: project.grid_spacing,
+                        angle: project.grid_angle
+                    }}
                     onZoneClick={(zoneData) => {
                         setSelectedZone(zoneData);
                         setIsReportOpen(true);

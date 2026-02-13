@@ -1,36 +1,36 @@
 import React from 'react';
 
 /**
- * 작업자 배정 폼
+ * 작업자 배정 폼 - 다크 테마 적용
  */
 const WorkerAssignmentForm = ({ task, approvedWorkers, onAssign, onRemove, onComplete }) => {
     return (
-        <div style={{ 
+        <div className="dark-card" style={{ 
             padding: '1.5rem', 
-            background: '#f0f9ff', 
-            borderRadius: '16px', 
-            border: '1px solid #bae6fd' 
+            background: 'rgba(30, 41, 59, 0.3)', 
+            boxShadow: 'none',
+            border: '1px solid rgba(148, 163, 184, 0.1)'
         }}>
-            <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#0c4a6e', marginBottom: '4px' }}>
-                    작업: {task?.work_type || '선택된 작업'}
+            <div style={{ marginBottom: '1.2rem' }}>
+                <div style={{ fontWeight: '900', fontSize: '1.1rem', color: '#60a5fa', marginBottom: '6px' }}>
+                    🛠️ 대상 작업: {task?.work_type || '선택된 작업'}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
                     {task?.description}
                 </div>
             </div>
             
-            <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '700', fontSize: '0.85rem' }}>
-                    작업자 선택 (승인된 인원)
+            <div style={{ marginBottom: '1.5rem' }}>
+                <label className="dark-label">
+                    현장 가용 인원 배정 (승인됨)
                 </label>
-                <div style={{ 
+                <div className="dark-scrollbar" style={{ 
                     maxHeight: '300px', 
                     overflowY: 'auto', 
-                    background: 'white', 
-                    borderRadius: '12px', 
-                    border: '1px solid #e0f2fe',
-                    padding: '8px'
+                    background: 'rgba(15, 23, 42, 0.4)', 
+                    borderRadius: '16px', 
+                    border: '1px solid rgba(148, 163, 184, 0.1)',
+                    padding: '10px'
                 }}>
                     {approvedWorkers && approvedWorkers.length > 0 ? (
                         approvedWorkers.map(worker => {
@@ -39,34 +39,27 @@ const WorkerAssignmentForm = ({ task, approvedWorkers, onAssign, onRemove, onCom
                                 <div 
                                     key={worker.id} 
                                     style={{ 
-                                        padding: '10px 12px', 
-                                        marginBottom: '6px',
-                                        background: isAssigned ? '#dbeafe' : '#f8fafc',
-                                        borderRadius: '10px',
+                                        padding: '12px 14px', 
+                                        marginBottom: '8px',
+                                        background: isAssigned ? 'rgba(59, 130, 246, 0.1)' : 'rgba(30, 41, 59, 0.2)',
+                                        borderRadius: '12px',
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        border: isAssigned ? '2px solid #3b82f6' : '1px solid #e2e8f0'
+                                        border: isAssigned ? '2px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(148, 163, 184, 0.05)',
+                                        transition: 'all 0.2s'
                                     }}
                                 >
                                     <div>
-                                        <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#1e293b' }}>
+                                        <div style={{ fontWeight: '800', fontSize: '0.9rem', color: isAssigned ? '#e2e8f0' : '#94a3b8' }}>
                                             {worker.full_name}
                                             {worker.job_title && (
-                                                <span style={{ 
-                                                    marginLeft: '6px',
-                                                    padding: '2px 6px',
-                                                    background: '#e0e7ff',
-                                                    borderRadius: '6px',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: '800',
-                                                    color: '#4338ca'
-                                                }}>
+                                                <span className="dark-badge-blue" style={{ marginLeft: '10px' }}>
                                                     {worker.job_title}
                                                 </span>
                                             )}
                                         </div>
-                                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
                                             {worker.company_name}
                                         </div>
                                     </div>
@@ -78,25 +71,25 @@ const WorkerAssignmentForm = ({ task, approvedWorkers, onAssign, onRemove, onCom
                                                 onAssign(task.id, worker.id);
                                             }
                                         }}
+                                        className="dark-button"
                                         style={{
-                                            padding: '6px 12px',
+                                            padding: '6px 14px',
                                             borderRadius: '8px',
-                                            border: 'none',
-                                            background: isAssigned ? '#ef4444' : '#3b82f6',
-                                            color: 'white',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '700',
-                                            cursor: 'pointer'
+                                            background: isAssigned ? 'rgba(239, 68, 68, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                            color: isAssigned ? '#f87171' : '#60a5fa',
+                                            borderColor: isAssigned ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: '800'
                                         }}
                                     >
-                                        {isAssigned ? '제거' : '추가'}
+                                        {isAssigned ? '배정 취소' : '인원 추가'}
                                     </button>
                                 </div>
                             );
                         })
                     ) : (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                            승인된 작업자가 없습니다.
+                        <div className="dark-empty-state" style={{ padding: '2rem' }}>
+                            현재 가용 가능한 인원이 없습니다.
                         </div>
                     )}
                 </div>
@@ -104,18 +97,14 @@ const WorkerAssignmentForm = ({ task, approvedWorkers, onAssign, onRemove, onCom
             
             <button 
                 onClick={onComplete}
+                className="dark-button active"
                 style={{ 
                     width: '100%',
-                    padding: '12px', 
-                    borderRadius: '12px', 
-                    border: 'none', 
-                    background: '#3b82f6', 
-                    color: 'white', 
-                    fontWeight: '900',
-                    cursor: 'pointer'
+                    padding: '14px', 
+                    fontSize: '1.1rem'
                 }}
             >
-                완료
+                인원 배정 완료 및 저장
             </button>
         </div>
     );

@@ -8,8 +8,8 @@ from back.daily.safety_logs.repository import safety_logs_repository
 
 router = APIRouter()
 
-# 업로드 루트 경로 설정
-UPLOAD_DIR = "uploads/danger_zones"
+# 업로드 루트 경로 설정 (Flat 구조)
+UPLOAD_DIR = "uploads/daily_danger_images"
 
 @router.get("/")
 async def get_safety_logs(project_id: int, date: str):
@@ -47,13 +47,9 @@ async def report_danger(
     danger_zone_id = danger_zone["id"]
     saved_images = []
 
-    # 2. 사진 저장 (사용자님 제안 구조: /zone_id/info_id/...)
-    # 템플릿 ID가 없으면 '0' 또는 'custom'으로 처리
-    info_folder = str(danger_info_id) if danger_info_id else "custom"
-    target_dir = os.path.join(UPLOAD_DIR, str(zone_id), info_folder)
-    
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir, exist_ok=True)
+    # 2. 사진 저장 (Flat 구조: uploads/daily_danger_images/파일명)
+    if not os.path.exists(UPLOAD_DIR):
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     from back.database import execute
 
@@ -61,13 +57,13 @@ async def report_danger(
         # 파일명 규칙: danger_zone_id + uuid
         ext = os.path.splitext(file.filename)[1]
         filename = f"{danger_zone_id}_{uuid.uuid4().hex}{ext}"
-        file_path = os.path.join(target_dir, filename)
+        file_path = os.path.join(UPLOAD_DIR, filename)
         
         with open(file_path, "wb") as buffer:
             content = await file.read()
             buffer.write(content)
         
-        # DB 기록 (ID 기반 이름만 저장해도 나중에 경로 유추 가능)
+        # DB 기록 (파일명만 저장)
         img_sql = """
             INSERT INTO daily_danger_images (danger_zone_id, danger_info_id, image_url, created_at)
             VALUES (:dzid, :diid, :url, NOW())
@@ -75,7 +71,7 @@ async def report_danger(
         await execute(img_sql, {
             "dzid": danger_zone_id,
             "diid": danger_info_id,
-            "url": filename # 파일 이름만 저장 (폴더는 ID로 유추)
+            "url": filename  # 파일명만 저장
         })
         saved_images.append(filename)
 

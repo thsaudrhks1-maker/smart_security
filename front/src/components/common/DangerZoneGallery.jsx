@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 /**
- * 위험 구역 사진 갤러리 (공통 컴포넌트)
- * - 매니저 대시보드: 우측 사이드바 (고정)
- * - 워커 대시보드: 지도 하단 (토글 가능)
+ * 위험 구역 사진 갤러리 (공통 컴포넌트) - 다크 테마 반영
  */
 const DangerZoneGallery = ({ 
     zones = [], 
@@ -30,25 +28,23 @@ const DangerZoneGallery = ({
 
     return (
         <div style={{ 
-            border: '1px solid #e2e8f0', 
-            borderRadius: '16px', 
-            background: '#f8fafc', 
             display: 'flex', 
             flexDirection: 'column',
             overflow: 'hidden',
-            height: isCollapsible && !isExpanded ? 'auto' : '100%', // 접혔을 때는 auto
-            maxHeight: isCollapsible && !isExpanded ? '60px' : 'none', // 접혔을 때 높이 제한
-            transition: 'max-height 0.3s ease-in-out'
+            height: isCollapsible && !isExpanded ? 'auto' : '100%', 
+            maxHeight: isCollapsible && !isExpanded ? '60px' : 'none', 
+            transition: 'max-height 0.3s ease-in-out',
+            background: 'transparent' // 부모가 dark-card인 경우가 많음
         }}>
             {/* 헤더 */}
             <div 
                 onClick={() => isCollapsible && setIsExpanded(!isExpanded)}
                 style={{ 
                     padding: '12px 16px', 
-                    background: 'white', 
-                    borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none',
+                    background: 'rgba(59, 130, 246, 0.05)', 
+                    borderBottom: isExpanded ? '1px solid rgba(148, 163, 184, 0.1)' : 'none',
                     fontWeight: '800',
-                    color: '#ef4444',
+                    color: '#f87171',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -57,30 +53,42 @@ const DangerZoneGallery = ({
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>📸 위험 구역 사진첩</span>
+                    <span style={{ 
+                        background: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>📸 위험 구역 사진첩</span>
                     {isCollapsible && (
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                             {isExpanded ? '접기 ▲' : '펼치기 ▼'}
                         </span>
                     )}
                 </div>
-                <span style={{ fontSize: '0.8rem', background: '#fee2e2', padding: '2px 8px', borderRadius: '8px', color: '#991b1b' }}>
+                <span style={{ 
+                    fontSize: '0.8rem', 
+                    background: 'rgba(239, 68, 68, 0.2)', 
+                    padding: '2px 8px', 
+                    borderRadius: '8px', 
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.3)'
+                }}>
                     {dangerCount} 건
                 </span>
             </div>
 
             {/* 리스트 영역 */}
             {isExpanded && (
-                <div style={{ 
+                <div className="dark-scrollbar" style={{ 
                     flex: 1, 
-                    overflowY: 'auto', // 부모 높이에 따라 스크롤 (매니저 대시보드)
+                    overflowY: 'auto', 
                     padding: '12px', 
                     display: 'flex', 
                     flexDirection: 'column', 
                     gap: '12px'
                 }}>
                     {dangerCount === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.9rem' }}>
+                        <div className="dark-empty-state">
                             현재 층에 위험 구역이 없습니다.
                         </div>
                     ) : (
@@ -88,35 +96,43 @@ const DangerZoneGallery = ({
                             <div 
                                 key={`${danger.id}-${idx}`}
                                 onClick={() => onZoneClick && onZoneClick(danger.zone_data)}
+                                className="dark-card"
                                 style={{ 
-                                    background: 'white', 
-                                    borderRadius: '12px', 
-                                    border: '1px solid #e2e8f0', 
-                                    overflow: 'hidden', 
+                                    borderRadius: '16px', 
+                                    background: 'rgba(30, 41, 59, 0.4)',
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s, box-shadow 0.2s',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                    overflow: 'hidden'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                    e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.4)';
+                                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
                                 }}
                                 onMouseLeave={(e) => {
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                    e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)';
                                 }}
                             >
                                 {/* 상단 정보 */}
-                                <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#1e293b' }}>{danger.zone_name}</div>
+                                <div style={{ 
+                                    padding: '10px 14px', 
+                                    borderBottom: '1px solid rgba(148, 163, 184, 0.1)', 
+                                    display: 'flex', 
+                                    justifyContent: 'space-between', 
+                                    alignItems: 'center',
+                                    background: 'rgba(30, 41, 59, 0.2)'
+                                }}>
+                                    <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#e2e8f0' }}>{danger.zone_name}</div>
                                     <div style={{ 
                                         fontSize: '0.7rem', 
-                                        padding: '2px 6px', 
-                                        background: danger.status === 'PENDING' ? '#fff7ed' : '#fef2f2', 
-                                        color: danger.status === 'PENDING' ? '#c2410c' : '#dc2626', 
-                                        borderRadius: '4px',
-                                        border: `1px solid ${danger.status === 'PENDING' ? '#fdba74' : '#fca5a5'}`,
-                                        fontWeight: '700'
+                                        padding: '2px 8px', 
+                                        background: 'rgba(239, 68, 68, 0.15)', 
+                                        color: '#f87171', 
+                                        borderRadius: '6px',
+                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        fontWeight: '800'
                                     }}>
                                         {danger.risk_type || '위험'}
                                     </div>
@@ -124,34 +140,46 @@ const DangerZoneGallery = ({
                                 
                                 {/* 이미지 영역 */}
                                 {danger.images && danger.images.length > 0 ? (
-                                    <div style={{ position: 'relative', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
-                                        <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 1, background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                                    <div style={{ position: 'relative', background: '#0f172a' }}>
+                                        <div style={{ 
+                                            position: 'absolute', 
+                                            top: '10px', 
+                                            right: '10px', 
+                                            zIndex: 1, 
+                                            background: 'rgba(15, 23, 42, 0.8)', 
+                                            color: '#e2e8f0', 
+                                            padding: '4px 8px', 
+                                            borderRadius: '6px', 
+                                            fontSize: '0.75rem', 
+                                            fontWeight: '900',
+                                            border: '1px solid rgba(148, 163, 184, 0.2)',
+                                            backdropFilter: 'blur(4px)'
+                                        }}>
                                             +{danger.images.length}장
                                         </div>
                                         <img 
-                                            src={`/uploads/danger_zones/${danger.zone_id}/${danger.danger_info_id || 'custom'}/${danger.images[0]}`}
+                                            src={`/uploads/daily_danger_images/${danger.images[0]}`}
                                             alt="위험 현장 데이터"
                                             style={{ 
                                                 width: '100%', 
                                                 height: 'auto', 
                                                 display: 'block'
-                                                // minHeight 제거: 왜곡 방지 및 원본 비율 유지
                                             }}
                                             onError={(e) => {
                                                 e.target.style.display = 'none';
-                                                e.target.parentElement.innerHTML = '<div style="height:150px; display:flex; flexDirection:column; align-items:center; justifyContent:center; background:#f1f5f9; color:#94a3b8; font-size:0.8rem;"><span>🚫</span><span>이미지 없음</span></div>';
+                                                e.target.parentElement.innerHTML = '<div style=\"height:150px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e293b; color:#64748b; font-size:0.8rem;\"><span>🚫</span><span>이미지 없음</span></div>';
                                             }}
                                         />
                                     </div>
                                 ) : (
-                                    <div style={{ height: '80px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
-                                        📷 사진 없음
+                                    <div style={{ height: '100px', background: 'rgba(15, 23, 42, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.9rem' }}>
+                                        📷 사진 데이터 없음
                                     </div>
                                 )}
                                 
                                 {/* 설명 하단 */}
                                 {danger.description && (
-                                    <div style={{ padding: '10px', fontSize: '0.8rem', color: '#64748b', borderTop: '1px solid #f1f5f9' }}>
+                                    <div style={{ padding: '12px 14px', fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(30, 41, 59, 0.1)' }}>
                                         {danger.description}
                                     </div>
                                 )}

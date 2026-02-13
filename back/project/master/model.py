@@ -17,6 +17,7 @@ class project_master(Base):
     grid_cols = Column(Integer, default=5) # 가로 칸 수
     grid_rows = Column(Integer, default=5) # 세로 칸 수
     grid_spacing = Column(Float, default=10.0) # 격자 간격 (미터)
+    grid_angle = Column(Float, default=0.0) # [NEW] 격자 회전 각도 (Degree)
     floors_above = Column(Integer, default=1) # 지상 층수
     floors_below = Column(Integer, default=0) # 지하 층수
     

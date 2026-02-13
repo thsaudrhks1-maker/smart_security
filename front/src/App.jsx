@@ -16,6 +16,7 @@ import ManagerDashboard from './features/manager/dashboard/ManagerDashboard';
 import DailyPlanManagement from './features/manager/work/DailyPlanManagement';
 import WorkerDashboard from './features/worker/dashboard/WorkerDashboard';
 import SafetyMap from './features/worker/safety/SafetyMap';
+import WorkerContents from './features/worker/contents/WorkerContents';
 
 // Common
 import AttendanceStatusPage from './components/common/AttendanceStatusPage';
@@ -29,6 +30,13 @@ import ManagerContents from './features/manager/contents/ManagerContents';
 import ProjectList from './features/admin/projects/ProjectList';
 import ProjectDetail from './features/admin/projects/ProjectDetail';
 import CreateProject from './features/admin/projects/CreateProject';
+
+// Demo
+import DataFlowDemo from './features/DataFlowDemo';
+
+import LocationManagement from './features/manager/locations/LocationManagement';
+
+import SafetyAnalytics from './features/manager/safety/SafetyAnalytics';
 
 const ProtectedRoute = ({ children, allowedRoles, layout: Layout = MainLayout }) => {
   const { user, loading } = useAuth();
@@ -59,6 +67,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/demo" element={<DataFlowDemo />} />
           
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
@@ -83,12 +92,13 @@ function App() {
                 <Route path="dashboard" element={<ManagerDashboard />} />
                 <Route path="work" element={<DailyPlanManagement />} />
                 <Route path="contents" element={<ManagerContents />} />
-                <Route path="locations" element={<ManagerDashboard />} />
+                <Route path="locations" element={<LocationManagement />} />
+
                 <Route path="companies" element={<CompanyManagement />} />
                 <Route path="workers" element={<WorkerManagement />} />
                 <Route path="attendance" element={<AttendanceStatusPage />} />
 
-                <Route path="safety-info" element={<ManagerDashboard />} />
+                <Route path="safety-info" element={<SafetyAnalytics />} />
                 <Route path="violations" element={<ManagerDashboard />} />
                 <Route path="location" element={<ManagerDashboard />} />
                 <Route path="education" element={<ManagerDashboard />} />
@@ -105,6 +115,7 @@ function App() {
               <Routes>
                 <Route path="dashboard" element={<WorkerDashboard />} />
                 <Route path="safety" element={<SafetyMap />} />
+                <Route path="contents" element={<WorkerContents />} />
                 <Route path="attendance" element={<AttendanceStatusPage />} />
                 <Route path="" element={<Navigate to="/worker/dashboard" replace />} />
               </Routes>

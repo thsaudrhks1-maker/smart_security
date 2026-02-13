@@ -68,36 +68,41 @@ const NoticeManagementWidget = ({ projectId }) => {
 
     return (
         <section style={{ 
-            background: 'white', 
-            borderRadius: '20px', 
-            border: '1px solid #e2e8f0', 
+            background: 'rgba(30, 41, 59, 0.4)', 
+            borderRadius: '24px', 
+            border: '1px solid rgba(255, 255, 255, 0.05)', 
             display: 'flex', 
             flexDirection: 'column',
             height: '100%',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+            backdropFilter: 'blur(8px)'
         }}>
-            {/* Header / Tabs */}
-            <div style={{ padding: '1.2rem', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1' }}>
-                    <Megaphone size={20} />
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: '900', margin: 0, color: '#0f172a' }}>현장 공지 및 긴급 알림</h2>
+            {/* Header */}
+            <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '6px', borderRadius: '8px' }}>
+                        <Megaphone size={18} color="#818cf8" />
+                    </div>
+                    <h2 style={{ fontSize: '1rem', fontWeight: '900', margin: 0, color: '#fff' }}>현장 공지 및 긴급 알림</h2>
                 </div>
             </div>
 
             {/* Form Section */}
-            <div style={{ padding: '1.2rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <select 
                             value={noticeType}
                             onChange={(e) => setNoticeType(e.target.value)}
                             style={{ 
-                                padding: '8px', 
-                                borderRadius: '8px', 
-                                border: '1px solid #e2e8f0',
-                                fontSize: '0.85rem',
+                                padding: '10px', 
+                                borderRadius: '12px', 
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                background: 'rgba(15, 23, 42, 0.6)',
+                                fontSize: '0.8rem',
                                 fontWeight: '700',
-                                color: noticeType === 'EMERGENCY' ? '#dc2626' : noticeType === 'IMPORTANT' ? '#f59e0b' : '#475569',
+                                color: noticeType === 'EMERGENCY' ? '#f87171' : noticeType === 'IMPORTANT' ? '#fbbf24' : '#94a3b8',
                                 outline: 'none'
                             }}
                         >
@@ -106,30 +111,18 @@ const NoticeManagementWidget = ({ projectId }) => {
                             <option value="EMERGENCY">🚨 긴급알람</option>
                         </select>
                         <input 
-                            type="date"
-                            value={noticeDate}
-                            onChange={(e) => setNoticeDate(e.target.value)}
-                            style={{ 
-                                padding: '8px', 
-                                borderRadius: '8px', 
-                                border: '1px solid #e2e8f0',
-                                fontSize: '0.85rem',
-                                fontWeight: '700',
-                                color: '#475569',
-                                outline: 'none'
-                            }}
-                        />
-                        <input 
                             type="text"
                             placeholder="제목을 입력하세요"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             style={{ 
                                 flex: 1, 
-                                padding: '8px 12px', 
-                                borderRadius: '8px', 
-                                border: '1px solid #e2e8f0',
-                                fontSize: '0.9rem',
+                                padding: '10px 15px', 
+                                borderRadius: '12px', 
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                background: 'rgba(15, 23, 42, 0.6)',
+                                fontSize: '0.85rem',
+                                color: '#fff',
                                 outline: 'none'
                             }}
                         />
@@ -139,33 +132,39 @@ const NoticeManagementWidget = ({ projectId }) => {
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
                         style={{ 
-                            height: '60px', 
-                            padding: '10px 12px', 
-                            borderRadius: '8px', 
-                            border: '1px solid #e2e8f0',
+                            height: '80px', 
+                            padding: '12px 15px', 
+                            borderRadius: '12px', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(15, 23, 42, 0.6)',
                             fontSize: '0.85rem',
+                            color: '#cbd5e1',
                             resize: 'none',
-                            outline: 'none'
+                            outline: 'none',
+                            lineHeight: '1.5'
                         }}
                     />
                     <button 
                         type="submit"
                         disabled={isSubmitting || !title || !content}
                         style={{ 
-                            padding: '10px', 
-                            background: noticeType === 'EMERGENCY' ? '#dc2626' : '#0f172a',
+                            padding: '12px', 
+                            background: noticeType === 'EMERGENCY' ? '#ef4444' : '#3b82f6',
                             color: 'white',
                             border: 'none',
-                            borderRadius: '8px',
-                            fontWeight: '800',
+                            borderRadius: '12px',
+                            fontWeight: '900',
                             fontSize: '0.9rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            transition: 'opacity 0.2s'
+                            transition: 'all 0.2s',
+                            boxShadow: noticeType === 'EMERGENCY' ? '0 4px 12px rgba(239, 68, 68, 0.3)' : '0 4px 12px rgba(59, 130, 246, 0.3)'
                         }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
                     >
                         {isSubmitting ? '전송 중...' : (
                             <>
@@ -177,59 +176,68 @@ const NoticeManagementWidget = ({ projectId }) => {
             </div>
 
             {/* List Section */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="scroll-section" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>로드 중...</div>
+                        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>데이터 동기화 중...</div>
                     ) : notices.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '0.85rem' }}>최근 공지 내역이 없습니다.</div>
+                        <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b', fontSize: '0.8rem' }}>도착한 공지가 없습니다.</div>
                     ) : notices.map(notice => (
                         <div key={notice.id} style={{ 
-                            padding: '12px', 
-                            borderRadius: '12px', 
-                            border: `1.5px solid ${notice.notice_type === 'EMERGENCY' ? '#fca5a5' : notice.notice_type === 'IMPORTANT' ? '#fde68a' : '#f1f5f9'}`,
-                            background: notice.notice_type === 'EMERGENCY' ? '#fef2f2' : notice.notice_type === 'IMPORTANT' ? '#fffbeb' : 'white'
+                            padding: '15px', 
+                            borderRadius: '16px', 
+                            border: '1px solid rgba(255, 255, 255, 0.03)',
+                            background: notice.notice_type === 'EMERGENCY' ? 'rgba(239, 68, 68, 0.08)' : notice.notice_type === 'IMPORTANT' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(15, 23, 42, 0.3)',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {notice.notice_type === 'EMERGENCY' ? <ShieldAlert size={16} color="#dc2626" /> : notice.notice_type === 'IMPORTANT' ? <AlertTriangle size={16} color="#f59e0b" /> : <Info size={16} color="#3b82f6" />}
+                            {/* Accent Line */}
+                            <div style={{ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px',
+                                background: notice.notice_type === 'EMERGENCY' ? '#ef4444' : notice.notice_type === 'IMPORTANT' ? '#f59e0b' : '#3b82f6'
+                            }} />
+                            
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ 
-                                        fontSize: '0.7rem', 
+                                        fontSize: '0.65rem', 
                                         fontWeight: '900', 
-                                        padding: '2px 6px', 
-                                        borderRadius: '4px',
-                                        background: notice.notice_type === 'EMERGENCY' ? '#dc2626' : notice.notice_type === 'IMPORTANT' ? '#f59e0b' : '#3b82f6',
-                                        color: 'white'
+                                        padding: '2px 8px', 
+                                        borderRadius: '6px',
+                                        background: notice.notice_type === 'EMERGENCY' ? '#ef4444' : notice.notice_type === 'IMPORTANT' ? '#f59e0b' : '#3b82f6',
+                                        color: 'white',
+                                        textTransform: 'uppercase'
                                     }}>
-                                        {notice.notice_type === 'EMERGENCY' ? '긴급' : notice.notice_type === 'IMPORTANT' ? '중요' : '공지'}
+                                        {notice.notice_type === 'EMERGENCY' ? 'EMERGENCY' : notice.notice_type === 'IMPORTANT' ? 'IMPORTANT' : 'NOTICE'}
                                     </span>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b' }}>{notice.title}</span>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#f1f5f9' }}>{notice.title}</span>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: '600' }}>
                                     {new Date(notice.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.4', marginBottom: '6px' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.6', marginBottom: '10px' }}>
                                 {notice.content}
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
                                     <Clock size={12} />
-                                    <span>작성: {notice.author_name || '관리자'} ({notice.notice_role || 'MANAGER'})</span>
+                                    <span>{notice.author_name || '관리자'} ({notice.notice_role || 'MANAGER'})</span>
                                 </div>
                                 <div style={{ 
                                     fontSize: '0.7rem', 
-                                    fontWeight: '800', 
-                                    color: notice.read_count > 0 ? '#3b82f6' : '#94a3b8',
-                                    background: notice.read_count > 0 ? '#eff6ff' : '#f8fafc',
-                                    padding: '2px 8px',
-                                    borderRadius: '10px',
+                                    fontWeight: '900', 
+                                    color: notice.read_count > 0 ? '#60a5fa' : '#475569',
+                                    background: notice.read_count > 0 ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                                    padding: '3px 10px',
+                                    borderRadius: '20px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '4px'
+                                    gap: '6px',
+                                    border: notice.read_count > 0 ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)'
                                 }}>
                                     <CheckSquare size={12} />
-                                    확인: {notice.read_count || 0}명
+                                    <span>확인: {notice.read_count || 0}명</span>
                                 </div>
                             </div>
                         </div>

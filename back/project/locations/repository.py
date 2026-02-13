@@ -37,18 +37,7 @@ class locations_repository:
                 dwt.status,
                 dwt.work_info_id,
                 wi.work_type,
-                COALESCE(
-                (
-                    SELECT json_agg(DISTINCT elem)
-                    FROM (
-                        SELECT json_array_elements_text(COALESCE(csi.checklist, '[]'::json)) as elem
-                        FROM content_work_safety_map wsm
-                        JOIN content_safety_info csi ON wsm.safety_info_id = csi.id
-                        WHERE wsm.work_info_id = wi.id
-                    ) sub
-                ),
-                '[]'::json
-            ) as checklist_items,
+                COALESCE(wi.checklist_items, '[]'::json) as checklist_items,
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -66,7 +55,7 @@ class locations_repository:
             LEFT JOIN sys_users u ON dwu.worker_id = u.id
             LEFT JOIN sys_companies c ON u.company_id = c.id
             WHERE dwt.project_id = :pid AND dwt.date = :date
-            GROUP BY dwt.id, dwt.zone_id, dwt.description, dwt.calculated_risk_score, dwt.status, wi.id, wi.work_type
+            GROUP BY dwt.id, dwt.zone_id, dwt.description, dwt.calculated_risk_score, dwt.status, wi.id, wi.work_type, wi.checklist_items::text
         """
         tasks = await fetch_all(tasks_sql, {"pid": pid, "date": target_date})
         

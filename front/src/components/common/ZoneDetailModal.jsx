@@ -8,8 +8,7 @@ import TaskSection from './sections/TaskSection';
 import DangerSection from './sections/DangerSection';
 
 /**
- * 구역 상세 모달 (작업 계획 + 위험 구역 관리)
- * 데스크톱, 모바일 모두 사용 가능
+ * 구역 상세 모달 (작업 계획 + 위험 구역 관리) - 다크 테마 적용
  */
 const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, initialViewerType }) => {
     const { user } = useAuth();
@@ -20,7 +19,6 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
     const [selectedTaskForWorkers, setSelectedTaskForWorkers] = useState(null);
     const [files, setFiles] = useState([]);
 
-    // 뷰어 타입 결정 (props로 받거나 유저 정보로 판단. 기본값은 MANAGER)
     const viewerType = initialViewerType || (user?.role === 'WORKER' ? 'WORKER' : 'MANAGER');
 
     const [taskForm, setTaskForm] = useState({
@@ -40,7 +38,6 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
         risk_level: 3
     });
     
-    // 이 부분은 추후 API 연동 가능
     const [workTemplates] = useState([
         { id: 1, work_type: '거푸집 작업' },
         { id: 2, work_type: '고소 작업' },
@@ -172,7 +169,6 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
             }
             
             formData.append('description', dangerForm.description);
-            // WORKER면 PENDING, MANAGER면 APPROVED
             formData.append('status', viewerType === 'WORKER' ? 'PENDING' : 'APPROVED');
 
             files.forEach(file => {
@@ -243,46 +239,30 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
     };
 
     return (
-        <div style={{ 
-            position: 'fixed', 
-            inset: 0, 
-            background: 'rgba(0,0,0,0.6)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            zIndex: 10000,
-            backdropFilter: 'blur(4px)'
-        }}>
-            <div style={{ 
-                background: 'white', 
-                padding: '2rem', 
-                borderRadius: '32px', 
-                width: '800px', 
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)', 
-                border: '1px solid #e2e8f0' 
-            }}>
+        <div className="dark-modal-overlay">
+            <div className="dark-modal-content dark-scrollbar">
                 {/* 헤더 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ margin: 0, fontWeight: '900', color: '#0f172a', fontSize: '1.5rem' }}>
-                        {zone.name} 상세
-                    </h2>
-                    <button onClick={onClose} style={{ 
-                        background: '#f1f5f9', 
-                        border: 'none', 
-                        borderRadius: '12px', 
-                        padding: '8px', 
-                        cursor: 'pointer' 
+                    <h2 style={{ 
+                        margin: 0, 
+                        fontWeight: '900', 
+                        fontSize: '1.8rem',
+                        background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
                     }}>
-                        <X size={20} />
+                        {zone.name} 상세 정보
+                    </h2>
+                    <button onClick={onClose} className="dark-close-button">
+                        <X size={24} />
                     </button>
                 </div>
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>로딩 중...</div>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>데이터를 불러오는 중입니다...</div>
                 ) : (
-                    <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         <TaskSection 
                             mode={mode}
                             setMode={setMode}
@@ -315,7 +295,7 @@ const ZoneDetailModal = ({ zone, date, projectId, approvedWorkers, onClose, init
                             viewerType={viewerType}
                             onApprove={handleApproveDanger}
                         />
-                    </>
+                    </div>
                 )}
             </div>
         </div>

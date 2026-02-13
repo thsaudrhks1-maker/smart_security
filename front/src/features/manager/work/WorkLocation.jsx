@@ -103,6 +103,12 @@ const WorkLocation = () => {
                             zoom={19}
                             gridOnly={true}
                             highlightLevel={selectedLevel}
+                            gridConfig={{
+                                rows: project.grid_rows,
+                                cols: project.grid_cols,
+                                spacing: project.grid_spacing,
+                                angle: project.grid_angle
+                            }}
                         />
                     )}
                    </div>

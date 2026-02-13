@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 
 /**
- * [MANAGER] 현장 건물 단면(층별) 뷰 컴포넌트
+ * [MANAGER] 현장 건물 단면(층별) 뷰 컴포넌트 - 다크 테마
  */
 const BuildingSectionView = ({ project, allZones, activeLevel, onLevelChange }) => {
   
@@ -32,35 +32,13 @@ const BuildingSectionView = ({ project, allZones, activeLevel, onLevelChange }) 
             <button
               key={lv}
               onClick={() => onLevelChange(lv)}
-              style={{
-                padding: '12px 16px',
-                borderRadius: '16px',
-                border: '1px solid',
-                borderColor: isActive ? '#3b82f6' : '#f1f5f9',
-                background: isActive ? '#eff6ff' : 'white',
-                color: isActive ? '#3b82f6' : '#475569',
-                fontWeight: '800',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transition: 'all 0.2s',
-                boxShadow: isActive ? '0 4px 6px -1px rgba(59, 130, 246, 0.1)' : 'none'
-              }}
+              className={`dark-level-button ${isActive ? 'active' : ''}`}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isActive ? '#3b82f6' : '#e2e8f0' }} />
+                <div className={`dark-level-indicator ${isActive ? 'active' : ''}`} />
                 {lv}
               </div>
-              <span style={{ 
-                fontSize: '0.7rem', 
-                padding: '4px 8px', 
-                background: isActive ? '#3b82f6' : '#f8fafc',
-                color: isActive ? 'white' : '#94a3b8',
-                borderRadius: '8px',
-                fontWeight: '700'
-              }}>
+              <span className={`dark-level-count ${isActive ? 'active' : ''}`}>
                 {zoneCount}
               </span>
             </button>

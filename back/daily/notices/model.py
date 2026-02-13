@@ -13,8 +13,16 @@ class daily_notices(Base):
     content = Column(Text, nullable=False)
     notice_type = Column(String(50), default="NORMAL") # NORMAL, IMPORTANT, EMERGENCY
     notice_role = Column(String(50), nullable=True)     # ADMIN, MANAGER, PARTNER
-    created_by = Column(Integer, nullable=True) # created_by 컬럼이 repository에서 사용되므로 추가 (기존 코드에서 빠져있었음)
+    created_by = Column(Integer, ForeignKey("sys_users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=datetime.now)
+
+class daily_notice_reads(Base):
+    """[DAILY] 공지사항 확인 기록"""
+    __tablename__ = "daily_notice_reads"
+    id = Column(Integer, primary_key=True, index=True)
+    notice_id = Column(Integer, ForeignKey("daily_notices.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("sys_users.id", ondelete="CASCADE"), nullable=False)
+    read_at = Column(DateTime, default=datetime.now)
 
 class daily_safety_info(Base):
     """[DAILY] 일일 안전 정보 (작업자 전용 TBM 정보 등)"""

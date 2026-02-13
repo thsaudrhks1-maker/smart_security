@@ -1,0 +1,50 @@
+💡 건설 프로젝트 도메인 모델 및 계층 구조 (Domain Model) 🏗️
+
+이 문서는 스마트 시큐리티 프로젝트의 핵심 엔티티 간의 계층 구조와 비즈니스 논리(이해관계)를 정의합니다.
+시드 데이터 생성 및 API 로직 작성 시 반드시 이 구조를 따릅니다.
+
+1. 계층 구조 (Hierarchy)
+===
+[시스템 (System)]
+  - 최상위에 업체(sys_companies)와 모든 사용자(sys_users)가 등록됩니다.
+  - 사용자는 반드시 하나의 업체에 소속됩니다.
+
+[프로젝트 (Project)]
+  - 특정 현장(project_master)이 생성됩니다.
+  - 업체 참여(project_companies): 발주처, 시공사, 협력업체가 프로젝트에 연결됩니다.
+  - 사용자 참여(project_users): 각 소속사 직원이 프로젝트 멤버로 등록됩니다.
+
+2. 업체 역할 (Company Roles)
+===
+- 발주처 (CLIENT): 프로젝트의 주인 (예: 건설본부, 시행사).
+- 시공사 (CONSTRUCTOR): 현장을 총괄 관리하는 메인 건설사.
+- 협력업체 (PARTNER): 실제 인력을 투입하여 공종별 작업을 수행하는 전문 건설사.
+
+3. 사용자 역할 및 권한 (User Roles/Permissions)
+===
+- 관리자 (admin): 시스템 전체 제어.
+- 현장소장/매니저 (manager): 시공사/발주처 소속. 프로젝트 전체 관리, 작업 승인 권한.
+- 안전관리자 (safety_manager): 시공사 소속. 위험 구역 설정, 안전 수칙 배포, 사고 관리.
+- 작업자 (worker): 협력업체 소속. 비콘 태그 소지, 안전 점검 수행, 작업 대시보드 사용.
+
+4. 데이터 연결 메커니즘 (Data Linking)
+===
+- 프로젝트 생성: 관리자가 project_master를 생성하고 client_company, constructor_company 명칭을 기록합니다.
+- 멤버십 구성: 
+  1. 실제 시공사/발주처의 ID를 project_companies 테이블에 'CONSTRUCTOR', 'CLIENT' 역할로 링크합니다.
+  2. 협력업체들은 'PARTNER' 역할로 링크합니다.
+  3. 시공사의 안전관리자나 매니저는 project_users에 멤버로 등록되어야 해당 현장 관리 권한을 얻습니다.
+
+5. 시드 데이터 주입 순서 (Seeding Order)
+===
+1. sys_companies (업체 목록)
+2. sys_users (사용자 목록 - 업체에 소속됨)
+3. project_master (현장 정보)
+4. project_companies (현장에 업체 배분 - 역할 부여)
+5. project_users (현장에 인력 배분)
+6. content_* (작업/위험/안전 정보 템플릿)
+7. daily_* (구역, 계획, 출결 등 실시간 데이터)
+
+---
+마지막 업데이트: 2026-02-13
+작성자: Anti-gravity AI Agent

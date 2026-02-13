@@ -61,6 +61,6 @@ class FeatureRepository:
 ```
 
 ## 3. ORM은 언제 쓰는가?
-- **오직 스키마 관리용 (Alembic Migrations)** 및 **테이블/컬럼 정의**.
+- **오직 스키마 관리용 (Atlas Migrations)** 및 **테이블/컬럼 정의**.
 - **초기 시딩(Seeding)**: 더미 데이터 생성 시에는 ORM이 편리할 수 있습니다.
 - 실제 서비스의 실시간 CRUD 로직은 반드시 Raw SQL 패턴을 사용하십시오.

@@ -39,7 +39,7 @@ const ManagerLayout = ({ children }) => {
   ];
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#f8fafc', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#0f172a', overflow: 'hidden' }}>
       {/* Sidebar (Smart Site manager) */}
       <aside style={{
         width: '260px',
@@ -145,7 +145,7 @@ const ManagerLayout = ({ children }) => {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#f8fafc', color: '#1e293b' }}>
+      <main style={{ flex: 1, padding: '0', overflowY: 'auto', height: '100vh', background: '#0b1120', color: '#f1f5f9' }}>
         {children}
       </main>
     </div>

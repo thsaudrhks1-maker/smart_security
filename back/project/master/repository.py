@@ -10,10 +10,10 @@ class project_repository:
         # 1. 프로젝트 마스터 생성
         project_sql = """
             INSERT INTO project_master (
-                name, location_address, lat, lng, grid_cols, grid_rows, grid_spacing, 
+                name, location_address, lat, lng, grid_cols, grid_rows, grid_spacing, grid_angle,
                 floors_above, floors_below, budget, start_date, end_date, status
             ) VALUES (
-                :name, :location_address, :lat, :lng, :grid_cols, :grid_rows, :grid_spacing,
+                :name, :location_address, :lat, :lng, :grid_cols, :grid_rows, :grid_spacing, :grid_angle,
                 :floors_above, :floors_below, :budget, :start_date, :end_date, 'ACTIVE'
             ) RETURNING id
         """
@@ -34,6 +34,7 @@ class project_repository:
             "grid_cols": int(data.get('grid_cols', 5)),
             "grid_rows": int(data.get('grid_rows', 5)),
             "grid_spacing": float(data.get('grid_spacing', 10.0)),
+            "grid_angle": float(data.get('grid_angle', 0.0)),
             "floors_above": int(data.get('floors_above', 1)),
             "floors_below": int(data.get('floors_below', 0)),
             "budget": int(data.get('budget')) if data.get('budget') else None,
@@ -92,6 +93,43 @@ class project_repository:
     @staticmethod
     async def get_by_id(project_id: int):
         return await fetch_one("SELECT * FROM project_master WHERE id = :pid", {"pid": project_id})
+
+    @staticmethod
+    async def update_project(pid: int, data: dict):
+        """프로젝트 기본 정보 업데이트 (격자 각도 포함)"""
+        sql = """
+            UPDATE project_master 
+            SET name = :name,
+                location_address = :location_address,
+                lat = :lat,
+                lng = :lng,
+                grid_angle = :grid_angle,
+                budget = :budget,
+                start_date = :start_date,
+                end_date = :end_date
+            WHERE id = :id
+        """
+        # 날짜 타입 변환
+        start_date = data.get('start_date')
+        if start_date and isinstance(start_date, str):
+            start_date = date.fromisoformat(start_date)
+            
+        end_date = data.get('end_date')
+        if end_date and isinstance(end_date, str):
+            end_date = date.fromisoformat(end_date)
+
+        await execute(sql, {
+            "id": pid,
+            "name": data['name'],
+            "location_address": data.get('location_address'),
+            "lat": data.get('lat'),
+            "lng": data.get('lng'),
+            "grid_angle": float(data.get('grid_angle', 0.0)),
+            "budget": int(data.get('budget')) if data.get('budget') else None,
+            "start_date": start_date,
+            "end_date": end_date
+        })
+        return True
 
     @staticmethod
     async def delete_project(pid: int):

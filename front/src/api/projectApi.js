@@ -12,6 +12,8 @@ export const projectApi = {
     approveWorker: (projectId, userId) => client.post(`/project/master/${projectId}/approve-worker/${userId}`),
     // [PROJECT] 새 프로젝트 등록
     createProject: (data) => client.post('/project/master', data),
+    // [PROJECT] 프로젝트 정보 수정
+    updateProject: (id, data) => client.put(`/project/master/${id}`, data),
     // [PROJECT] 프로젝트 삭제
     deleteProject: (id) => client.delete(`/project/master/${id}`),
     // [PROJECT] 프로젝트 멤버(참여 인력) 조회
